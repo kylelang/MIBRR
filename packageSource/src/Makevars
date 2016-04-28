@@ -1,0 +1,46 @@
+## -*- mode: makefile; -*-
+
+## Title:    Makevars for the MIBRR Package
+## Author:   Kyle M. Lang
+## Created:  2016-APR-24
+## Modified: 2016-APR-28
+## NOTE:     - This makefile will make ensure that the local copy of nlopt that
+##           ships with mibrr is correctly configured and linked with the mibrr
+##           library.
+## NOTE:     - This code was adapted from the Makevars file used by versions of
+##           nloptr < 1.0.2 (developed by Jelmer Ypma)
+
+# Define objects for R to build
+OBJ = mibrr.o
+
+.PHONY: all
+
+all: $(SHLIB)
+
+$(SHLIB): nlopt/lib/libnlopt.a ${OBJ}
+
+${OBJ}: nlopt/include/nlopt.h
+
+## Install nlopt as a static library:
+nlopt/include/nlopt.h nlopt/lib/libnlopt.a: nlopt/configure
+	cd nlopt; \
+	./configure --prefix=`pwd` --enable-shared --quiet \
+	--without-guile --without-python --without-octave --without-matlab; \
+	make > /dev/null; \
+	make install > /dev/null; \
+	ls | grep -v ^include$ | grep -v ^lib$ | xargs rm -rf; \
+	rm -rf .libs;
+
+## Tell the compiler where the nlopt library lives:
+PKG_LIBS = -L`pwd`/nlopt/lib -lnlopt -lm
+
+## Tell the compiler where nlopt's 'includes' directory lives:
+PKG_CPPFLAGS = -I`pwd`/nlopt/include
+
+## With R 3.1.0 or later, you can uncomment the following line to tell R to 
+## enable compilation with C++11 (where available)
+USE_CXX1X = 
+
+clean:
+	rm -rf *.so
+	rm -rf *.o
