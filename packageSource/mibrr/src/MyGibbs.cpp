@@ -314,31 +314,6 @@ void MyGibbs::updateTaus(MyData &myData)
   }
   catch (int e) { tauError(e); }
   
-  //if(e == 1) {
-  //  cerr << "\nSomething terrible has occured while updating Tau, ";
-  //  cerr << "and one of the mean values has wound up non-positive.\n";
-  //  cerr << "This program will now crash...have a nice day :)\n" << endl;
-  //}
-  //else if (e == 2) {
-  //  cerr << "\nSomething terrible has occured while updating Tau, ";
-  //  cerr << "and the scale value has wound up non-positive.\n";
-  //  cerr << "This program will now crash...have a nice day :)\n" << endl;
-  //}
-  //if(_verboseErrors) {
-  //  cerr << "Oh yeah, the following information may help you ";
-  //  cerr << "track down the origin of this horrible calamity:\n\n" << endl;
-  //  cerr << "Target variable column index: " << _targetIndex << "\n" << endl;
-  //  cerr << "Tau Means:\n" << tauMeans << "\n" << endl;
-  //  cerr << "Tau Scale: " << tauScale << "\n" << endl;
-  //  cerr << "Lambda1: " << lambda1 << "\n" << endl;
-  //  if(_useElasticNet) {// Addition MIBEN Output
-  //	cerr << "Lambda2: " << lambda2 << "\n" << endl;
-  //  }
-  //  cerr << "Sigma: " << _sigma << "\n" << endl;
-  //  cerr << "Betas:\n" << _betas << "\n" << endl;
-  //}
-  //}
-  
   // Draw new values of the auxiliary penalty parameters:
   ArrayXd tmpDraws(nPreds);
   for(int i = 0; i < nPreds; i++)
@@ -372,8 +347,7 @@ void MyGibbs::updateBetas(MyData &myData)
     tmpMat = transformedTaus.asDiagonal();
   }
   
-  MatrixXd aMatrix;
-  aMatrix = myData.getIVs(_targetIndex).transpose() *
+  MatrixXd aMatrix = myData.getIVs(_targetIndex).transpose() *
     myData.getIVs(_targetIndex) + tmpMat;
   
   VectorXd betaMeans;
@@ -385,31 +359,11 @@ void MyGibbs::updateBetas(MyData &myData)
     betaMeans = aMatrixCholesky.solve(myData.getIVs(_targetIndex).transpose() *
 				      myData.getDV(_targetIndex)); 
     
-    tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);   
+    tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);
     betaCovariances = aMatrixCholesky.solve(tmpMat);
   }
   catch(exception &e) { betaError(e); }
-  //cerr << "\nSomething terrible has occured while updating Beta.";
-  //cerr << "The matrix algebra has broken while attempting to compute ";
-  //cerr << "the moments of Beta's conditional posterior distribtuion.\n\n";
-  //  cerr << "Here's the exception I caught:\n" << e.what() << "\n\n" << endl;
-  //  cerr << "This program will now crash...have a nice day :)\n" << endl;
-  //if(_verboseErrors) {
-  //  cerr << "Oh yeah, the following information may help you ";
-  //  cerr << "track down the origin of this horrible calamity:\n\n" << endl;
-  //  cerr << "Target variable column index: " << _targetIndex << "\n" << endl;
-  //  cerr << "Penalized cross-products matrix:\n" << aMatrix << "\n" << endl;
-  //  cerr << "Beta Means:\n" << betaMeans << "\n" << endl;
-  //  cerr << "Beta Covariance:\n" << betaCovariances << "\n" << endl;
-  //  cerr << "Lambda1: " << _lambdas[0] << "\n" << endl;
-  //  if(_useElasticNet) {// Addition MIBEN Output
-  //	cerr << "Lambda2: " << _lambdas[1] << "\n" << endl;
-  //  }
-  //  cerr << "Sigma: " << _sigma << "\n" << endl;
-  //  cerr << "Taus:\n" << _taus << "\n" << endl;
-  //}
-  //}
-
+  
   // Draw a new value of the intercept term:
   VectorXd newBetas(nPreds + 1);
   newBetas[0] = R::rnorm(myData.getDV(_targetIndex).mean(),
@@ -423,7 +377,7 @@ void MyGibbs::updateBetas(MyData &myData)
   // Add the updated Betas to their Gibbs sample:
   if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
 }// END updateBetas ()
-    
+
 
 void MyGibbs::updateSigma(MyData &myData)
 {

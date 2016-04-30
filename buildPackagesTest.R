@@ -23,13 +23,3 @@ testOut <- miben(rawData = mibrrExampleData,
                  targetVariables = c("y", paste0("x", c(1 : 3))),
                  ignoreVariables = "idNum",
                  returnModelParams = TRUE)
-
-ls(testOut)
-
-tmp <- testOut$params$tau
-
-apply(tmp[[1]], 1, var)
-
-miben
-
-chol(matrix(0, 100, 100))
