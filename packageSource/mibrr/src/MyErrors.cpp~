@@ -1,0 +1,189 @@
+// Title:    Function definitions for the MyErrors Class
+// Author:   Kyle M. Lang
+// Created:  2016-APR-29
+// Modified: 2016-APR-29
+// Purpose:  This class contains the C++ exception handling functions for the
+//           mibrr package.
+
+//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
+//  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//                                                                             //
+//  This file is part of mibrr.                                                //
+//                                                                             //
+//  This program is free software: you can redistribute it and/or modify it    //
+//  under the terms of the GNU Lesser General Public License as published by   //
+//  the Free Software Foundation, either version 3 of the License, or          //
+//  (at you option) any later version.                                         //
+//                                                                             //
+//  This program is distributed in the hope that it will be useful, but        //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY //
+//  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public    //
+//  License for more details.                                                  //
+//                                                                             //
+//  You should have received a copy of the GNU Lesser General Public License   //
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.      //
+//-----------------------------------------------------------------------------//
+
+#include "MyErrors.hpp"
+
+MyErrors::MyErrors() 
+{
+  _verboseErrors = true;
+  _useElasticNet = true;
+}
+
+MyErrors::~MyErrors() 
+{
+}
+
+
+///// ACCESSORS /////
+
+//char MyErrors::getParent() const 
+//{ 
+//  return _parent; 
+//}
+
+bool MyErrors::getVerbosity() const 
+{ 
+  return _verboseErrors; 
+}
+
+bool MyErrors::getElasticNetFlag() const 
+{ 
+  return _useElasticNet; 
+}
+
+
+///// MUTATORS /////
+
+//void MyErrors::setParent(char parent) 
+//{ 
+//  _parent = parent; 
+//}
+
+void MyErrors::setVerbosity(bool verboseErrors) 
+{ 
+  _verboseErrors = verboseErrors; 
+}
+
+void MyErrors::setElasticNetFlag(bool useElasticNet) 
+{ 
+  _useElasticNet = useElasticNet; 
+}
+
+//void MyErrors::doMiben()
+//{
+//  _useElasticNet = true;
+//}
+
+//void MyErrors::doMibl()
+//{
+//  _useElasticNet = false;
+//}
+
+
+///// ERROR HANDLING FUNCTIONS /////
+
+void MyErrors::tauError(int errorCode) const
+{
+  if(errorCode == 1) {
+    Rcpp::Rcerr << "\nSomething terrible has occured while updating Tau, ";
+    Rcpp::Rcerr << "and one of the mean values has wound up non-positive.\n";
+    Rcpp::Rcerr << "This program will now crash...have a nice day :)\n" << endl;
+  }
+  else if (errorCode == 2) {
+    cerr << "\nSomething terrible has occured while updating Tau, ";
+    cerr << "and the scale value has wound up non-positive.\n";
+    cerr << "This program will now crash...have a nice day :)\n" << endl;
+  }
+  if(_verboseErrors) {
+    cerr << "P.S. I have written some useful information ";
+    cerr << "in 'tauErrorLog.txt'." << endl;
+  }
+  Rcpp::stop("Ouch! My tau is broken :(");
+  
+  // TODO: Put in code to write extra error information to text file.
+  
+  //cerr << "Target variable column index: " << _targetIndex << "\n" << endl;
+  //cerr << "Tau Means:\n" << tauMeans << "\n" << endl;
+  //cerr << "Tau Scale: " << tauScale << "\n" << endl;
+  //cerr << "Lambda1: " << lambda1 << "\n" << endl;
+
+  //if(_useElasticNet) {// Addition MIBEN Output
+  //cerr << "Lambda2: " << lambda2 << "\n" << endl;
+  //cerr << "Sigma: " << _sigma << "\n" << endl;
+  //cerr << "Betas:\n" << _betas << "\n" << endl;
+}
+
+
+void MyErrors::betaError(exception &e) const
+{
+  cerr << "\nSomething terrible has occured while updating Beta.";
+  cerr << "The matrix algebra has broken while attempting to compute ";
+  cerr << "the moments of Beta's conditional posterior distribtution.\n\n";
+  cerr << "Here is the exception I caught:\n" << e.what() << "\n\n" << endl;
+  cerr << "This program will now crash...have a nice day :)\n" << endl;
+
+  if(_verboseErrors) {
+    cerr << "P.S. I have written some useful information ";
+    cerr << "in 'betaErrorLog.txt'." << endl;
+  }
+  //cerr << "Target variable column index: " << _targetIndex << "\n" << endl;
+  //cerr << "Penalized cross-products matrix:\n" << aMatrix << "\n" << endl;
+  //cerr << "Beta Means:\n" << betaMeans << "\n" << endl;
+  //cerr << "Beta Covariance:\n" << betaCovariances << "\n" << endl;
+  //cerr << "Lambda1: " << _lambdas[0] << "\n" << endl;
+  //if(_useElasticNet) {// Addition MIBEN Output
+  //cerr << "Lambda2: " << _lambdas[1] << "\n" << endl;
+  //}
+  //cerr << "Sigma: " << _sigma << "\n" << endl;
+  //cerr << "Taus:\n" << _taus << "\n" << endl;
+}
+
+
+void MyErrors::lambdaError(int algCount,
+			   string outPrefix,
+			   string algName) const
+{
+  if(algCount > 3) {
+    if(_verboseErrors) {
+      cerr << "Lambda " << outPrefix << "optimization failed with "; 
+      cerr << algName << "\nNo more optimization algorithms available";
+      cerr << "\nThis program will now crash" << endl;
+    }
+    throw -42;// If there are no more algorithms to try, 
+    // an uncaught exception will crash the program
+  }
+  else {
+    if(_verboseErrors) {
+      cerr << "Lambda " << outPrefix << "optimization failed with ";
+      cerr << algName << "\nRetrying with a different algorithm" << endl;
+    }
+  }
+}
+
+
+void MyErrors::lambdaError(exception &e,
+			   int algCount,
+			   string outPrefix,
+			   string algName) const
+{
+  if(algCount > 3) {
+    if(_verboseErrors) {
+      cerr << e.what();
+      cerr << "Lambda " << outPrefix << "optimization failed with "; 
+      cerr << algName << "\nNo more optimization algorithms available";
+      cerr << "\nThis program will now crash" << endl;
+    }
+    throw -42;// If there are no more algorithms to try, 
+    // an uncaught exception will crash the program
+  }
+  else {
+    if(_verboseErrors) {
+      cerr << e.what();
+      cerr << "Lambda " << outPrefix << "optimization failed with ";
+      cerr << algName << "\nRetrying with a different algorithm" << endl;
+    }
+  }
+}
