@@ -27,7 +27,6 @@
 #ifndef MYGIBBS_H
 #define MYGIBBS_H
 
-//#include "MyParams.hpp"
 #include "MyErrors.hpp"
 #include "MyData.hpp"
 #include <nlopt.hpp>

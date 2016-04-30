@@ -2,8 +2,8 @@
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
 // Modified: 2016-APR-29
-// Purpose:  This class contains the Gibbs sampling-related functions
-//           for the MIBRR package.
+// Purpose:  This class contains the Gibbs sampling-related functions for the
+//           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
 //  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
@@ -234,14 +234,6 @@ void MyGibbs::setupOptimizer(int nEmIters,
   _lambdaWindow = lambdaWindow;
   if(_useElasticNet) _emConvTol = emConvTol;
 }
-
-
-//void MyGibbs::setupOptimizer(int nEmIters,
-//			     int lambdaWindow)
-//{
-//  _nEmIters     = nEmIters;
-//  _lambdaWindow = lambdaWindow;
-//}
 
 
 void MyGibbs::startParameters(VectorXd &betaStarts,
@@ -612,21 +604,6 @@ void MyGibbs::optimizeMibenLambdas(bool preOptimize)
 	lambdaVec[0] = _lambdas[0]; // Reset the lambdas
 	lambdaVec[1] = _lambdas[1];
 	lambdaError(optMethod, outPrefix, algName);
-	//if(optMethod > 3) {
-	//  if(_verboseErrors) {
-	//  cerr << "Lambda " << outPrefix << "optimization failed with "; 
-	//  cerr << algName << "\nNo more optimization algorithms available";
-	//  cerr << "\nThis program will now crash" << endl;
-	//}
-	//throw -42;// If there are no more algorithms to try, 
-	  // an uncaught exception will crash the program
-	//}
-	//else {
-	//  if(_verboseErrors) {
-	//    cerr << "Lambda " << outPrefix << "optimization failed with ";
-	//    cerr << algName << "\nRetrying with a different algorithm" << endl;
-	//  }
-	//}
       }
       else if(myResult > 0) {// Successful convergence!
 	if(_verboseIters) {
@@ -644,24 +621,7 @@ void MyGibbs::optimizeMibenLambdas(bool preOptimize)
       lambdaVec[0] = _lambdas[0];
       lambdaVec[1] = _lambdas[1];// Reset lambdas
       lambdaError(e, optMethod, outPrefix, algName);
-	//if(optMethod > 3) {
-	//if(_verboseErrors) {
-	//cerr << e.what(); 
-	//cerr << "\nLambda " << outPrefix << "optimization failed with "; 
-	//cerr << algName << "\nNo more optimization algorithms available";
-	//cerr << "\nThis program will now crash" << endl;
-	//}
-	//throw -42;// If there are no more algorithms to try, 
-	// an uncaught exception will crash the program
-	//}
-	//else {
-	//if(_verboseErrors) {
-	//cerr << e.what();
-	//cerr << "\nLambda " << outPrefix << "optimization failed with ";
-	//cerr << algName << "\nRetrying with a different algorithm" << endl;
-	//}
-	//}
-	}  
+    }  
     _optIterCount = 0;
   }// END while(!optimized)      
   // Store the updated penalty parameters:
@@ -669,7 +629,6 @@ void MyGibbs::optimizeMibenLambdas(bool preOptimize)
   _lambdas[1] = lambdaVec[1];
   _lambdaHistory.row(_emIterNum) = _lambdas.transpose();
 }// END optimizeMibenLambdas()
-
 
 
 void MyGibbs::updateLambdas()
@@ -684,10 +643,9 @@ void MyGibbs::updateLambdas()
     optimizeMibenLambdas(false); // Optimization    
   }
   else {// MIBL version:
-    int nPreds = _tauSam.cols();
-    
     // For MIBL, optimization is done via the closed-form update rule given by
     // Park and Casella (2008).
+    int nPreds = _tauSam.cols();
     double lambdaDenominator = (_tauSam.colwise().mean()).sum();
     double newLambda = sqrt((2.0 * double(nPreds)) / lambdaDenominator); 
     _lambdas[0] = newLambda;
