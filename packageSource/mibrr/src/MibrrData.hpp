@@ -1,7 +1,7 @@
-// Title:    Header file for MyData Class
+// Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-APR-29
+// Modified: 2016-APR-30
 // Purpose:  This class contains data- and sampling-related functions
 //           used by the MIBRR Gibbs sampler.
 
@@ -24,31 +24,29 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.      //
 //-----------------------------------------------------------------------------//
 
-#ifndef MYDATA_H
-#define MYDATA_H
+#ifndef MIBRRDATA_H
+#define MIBRRDATA_H
 
-#include "MyParams.hpp"
+#include "MibrrDefs.hpp"
 
 using namespace std;
 using namespace Eigen;
 
-class MyData {
-
- public:
-
-  ///// CONSTRUCTORS / DESTRUCTOR /////
+class MibrrData {
   
-  MyData(MatrixXd&);
-
-  MyData(MatrixXd&,
-	 VectorXd&,
-	 VectorXd&,
-	 double);
+public:
+  //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
   
-  ~MyData();
-
-
-  ///// ACCESSORS /////
+  MibrrData(MatrixXd&);
+  
+  MibrrData(MatrixXd&,
+	    VectorXd&,
+	    VectorXd&,
+	    double);
+  
+  ~MibrrData();
+  
+  //////////////////////////////// ACCESSORS ////////////////////////////////////
   
   MatrixXd getIVs(int);
   // @param:  the column-index of the current target variable
@@ -67,7 +65,7 @@ class MyData {
   // @param:  the column-index of the current target variable
   // @return: the full DV vector for the imputation model
 
-  MatrixXd getMyData();
+  MatrixXd getData();
   // @return: the data matrix
 
   ArrayXb getNonresponseVector(int);
@@ -91,10 +89,9 @@ class MyData {
   // @param:  a column index
   // @return: the  scale of the data in the specified column
 
-  
-  ///// MUTATORS /////
+  //////////////////////////////// MUTATORS /////////////////////////////////////
 
-  void setMyData(MatrixXd&);
+  void setData(MatrixXd&);
   // @param: a new data matrix
   
   void setDV(VectorXd&, int);
@@ -128,9 +125,8 @@ class MyData {
   // @effect: fill the missing values in the specified column with the values
   //          in the provided vector
   
-
-  ///// DESCRIPTIVE FUNCTIONS /////
-
+  ////////////////////////// DESCRIPTIVE FUNCTIONS //////////////////////////////
+  
   int nObs() const;
   // @return: the number of observations
 
@@ -142,43 +138,16 @@ class MyData {
   int nPreds() const;
   // @return: the number of independent variables in the imputation model
 
-
- ///// RANDOM VARIATE SAMPLERS /////
-
-  double drawInvGamma(double,
-		      double);
-  // @param1: shape parameter
-  // @param2: scale parameter
-  // @return: a random Inverse Gamma variate
-
+  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
+  
   VectorXd drawMVN(VectorXd&,
 		   MatrixXd&);
   // @param1: mean vector
   // @param2: covariance matrix
-  // @return: a vector of random multivariate normal variates
+  // @return: random multivariate normal variates
   
-  double calcIncGamma(double,
-		      double,
-		      bool);
-  // @param1: the shape parameter of the underlying gamma distribution
-  // @param2: the threshold value cutting off the upper or lower tail
-  // (i.e., the underlying variate whose probability or [1 - probability] 
-  // is being returned)
-  // @param3: a logic switch: true gives lower incomplete gamma, false
-  // gives upper incomplete gamma
-  // @return: value of the incomplete gamma function (i.e., the un-normalized 
-  // area under the upper or lower tail of the Gamma CDF).
-  
-  double drawInvGauss(double,
-		      double);
-  // @param1: the mean parameter (mu)
-  // @param2: the shape parameter (lambda)
-  // @return: a random variate from the inverse Gaussian distribution
- 
-
- private:
-  
-  MatrixXd _myData;
+private:
+  MatrixXd _data;
   ArrayXXb _nonresponseFilter;
   VectorXd _responseCounts;
   VectorXd _dataMeans;

@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-APR-29
+// Modified: 2016-APR-30
 // Purpose:  This code is part of the R package mibrr.
 //           This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
@@ -27,10 +27,9 @@
 //-----------------------------------------------------------------------------//
 
 #include <RcppEigen.h>
-#include "MyParams.hpp"
-#include "MyErrors.hpp"
-#include "MyData.hpp"
-#include "MyGibbs.hpp"
+#include "MibrrDefs.hpp"
+#include "MibrrData.hpp"
+#include "MibrrGibbs.hpp"
 
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd inData,
@@ -58,41 +57,41 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    bool            doMibl)
 {
   // Initialize the various classes needed below:
-  MyData myData(inData, 
-		dataMeans,
-		dataScales,
-		missCode);
-  MyGibbs *myGibbs = new MyGibbs[nTargets];
+  MibrrData mibrrData(inData, 
+		      dataMeans,
+		      dataScales,
+		      missCode);
+  MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Specify some useful constants:
-  int nPreds = myData.nPreds();
-  int nObs = myData.nObs();
+  int nPreds = mibrrData.nPreds();
+  int nObs = mibrrData.nObs();
   int nTotalEmIters = nEmApproxIters + nEmTuneIters;
    
   // Initialize all parameters, setup the Gibbs sampler and the EM Optimization:
-  myData.fillMissing(nTargets);
+  mibrrData.fillMissing(nTargets);
   for(int j = 0; j < nTargets; j++) {
     Eigen::VectorXd betaStartVec = betaStarts.col(j);
     Eigen::ArrayXd tauStartArray = tauStarts.col(j).array();
 
     if(doMibl) {
-      myGibbs[j].doMibl();
+      mibrrGibbs[j].doMibl();
       emConvTol = 0.0; // Set dummy value for EM convergence criterion
     }
     
     // Must call setupOptimizer() before startParameters()!
-    myGibbs[j].setupOptimizer(nTotalEmIters,
-			      lambdaWindow,
-			      emConvTol);
+    mibrrGibbs[j].setupOptimizer(nTotalEmIters,
+				 lambdaWindow,
+				 emConvTol);
     
-    myGibbs[j].startParameters(betaStartVec,
-			       tauStartArray,
-			       sigmaStarts[j],
-			       lambda1Starts[j],
-			       lambda2Starts[j]);
+    mibrrGibbs[j].startParameters(betaStartVec,
+				  tauStartArray,
+				  sigmaStarts[j],
+				  lambda1Starts[j],
+				  lambda2Starts[j]);
     
-    myGibbs[j].setVerbosity(verboseIters, verboseErrors);
-    myGibbs[j].setTargetIndex(j); 
+    mibrrGibbs[j].setVerbosity(verboseIters, verboseErrors);
+    mibrrGibbs[j].setTargetIndex(j); 
   }
   
   // Specify containers for the parameters' starting values:
@@ -145,20 +144,20 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
       
       for(int j = 0; j < nTargets; j++) {// LOOP over target variables
 	bool lastEmApprox = k == nEmApproxIters;
-	if(lastEmApprox) myGibbs[j].setLambdas();
+	if(lastEmApprox) mibrrGibbs[j].setLambdas();
 	
 	bool changeNDraws = 
 	  (i == 0) & ((k == 0) | lastEmApprox | (k == nTotalEmIters));
-	if(changeNDraws) myGibbs[j].setNDraws(nGibbsIters - nBurnIns);
+	if(changeNDraws) mibrrGibbs[j].setNDraws(nGibbsIters - nBurnIns);
 	
 	// Update the Gibbs samples:
-	myGibbs[j].doGibbsIteration(myData);
+	mibrrGibbs[j].doGibbsIteration(mibrrData);
 	
-	if ((i + 1) == nBurnIns) myGibbs[j].startGibbsSampling(myData);
+	if ((i + 1) == nBurnIns) mibrrGibbs[j].startGibbsSampling(mibrrData);
        	
 	if((k < nTotalEmIters) & ((i + 1) == nGibbsIters)) {
-	  myGibbs[j].updateLambdas(); // Optimize the penalty parameters
-	  myGibbs[j].restartParameters(myData);
+	  mibrrGibbs[j].updateLambdas(); // Optimize the penalty parameters
+	  mibrrGibbs[j].restartParameters(mibrrData);
 	}
       }// CLOSE for (int j = 0; j < nTargets, j++)  
     }// CLOSE for (int i = 0; i < nGibbsIters; i++)
@@ -167,11 +166,11 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++) {
     outList[j] = 
-      RList::create(Rcpp::Named("imps"         ) = myGibbs[j].getImpSam(), 
-		    Rcpp::Named("beta"         ) = myGibbs[j].getBetaSam(),
-		    Rcpp::Named("tau"          ) = myGibbs[j].getTauSam(),
-		    Rcpp::Named("sigma"        ) = myGibbs[j].getSigmaSam(),
-		    Rcpp::Named("lambdaHistory") = myGibbs[j].getLambdaHistory()
+      RList::create(Rcpp::Named("imps"      ) = mibrrGibbs[j].getImpSam(), 
+		    Rcpp::Named("beta"      ) = mibrrGibbs[j].getBetaSam(),
+		    Rcpp::Named("tau"       ) = mibrrGibbs[j].getTauSam(),
+		    Rcpp::Named("sigma"     ) = mibrrGibbs[j].getSigmaSam(),
+		    Rcpp::Named("lamHistory") = mibrrGibbs[j].getLambdaHistory()
 		    );    
   }
   return outList;
