@@ -8,6 +8,6 @@ Maintainer: Kyle M. Lang <kyle.lang@ttu.edu>
 Description: This package will implement a sequential regression, multiple imputation method that uses Bayesian regularized regression models as the elementary imputation methods.
 License: LGPL-3
 Depends: mvtnorm
-Suggests: mice, rlecuyer
+Suggests: mice
 Imports: Rcpp (>= 0.11.2), RcppEigen (>= 0.3.2.2.0)
 LinkingTo: Rcpp, RcppEigen

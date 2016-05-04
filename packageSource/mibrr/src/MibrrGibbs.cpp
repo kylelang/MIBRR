@@ -472,7 +472,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   // Draw a new value of the intercept term:
   VectorXd newBetas(nPreds + 1);
   double intMean = mibrrData.getDV(_targetIndex).mean() -
-    mibrrData.getIVs(_targetIndex).colwise().mean() * _betas;
+    mibrrData.getIVs(_targetIndex).colwise().mean() * _betas.tail(nPreds);
   double intSd = sqrt(_sigma / double(nObs));
   newBetas[0] = R::rnorm(intMean, intSd);
   

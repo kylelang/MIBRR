@@ -2,13 +2,12 @@
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
 ### Modified: 2016-MAY-04
-### Purpose:  This code is part of the R package mibrr.
-###           The following functions implements MIBEN or MIBL to create multiple
+### Purpose:  The following functions implements MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
 ###           elementary imputation method.
 ### Notes:    The mibrr function implements the imputation models. The R portions
-###           of mibrr take care of data pre- and  post-processing, while the
+###           of mibrr take care of data pre- and post-processing, while the
 ###           gibbs sampling and the MCEM optimization of the BEN and BL penalty
 ###           parameters are done in C++ (see source in runGibbs.cpp). The
 ###           miben and mibl functions are wrappers that parameterization mibrr
@@ -36,24 +35,25 @@
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doMiben,
                   rawData,
-                  nImps = 100,
-                  targetVariables = NULL,
-                  ignoreVariables = NULL,
-                  nEmApproxIters = 100,
-                  nEmTuneIters = 10,
-                  nEmApproxBurn = 25,
-                  nEmApproxGibbs = 25,
-                  nEmTuneBurn = 100,
-                  nEmTuneGibbs = 200,
-                  nPosteriorBurn = NULL,
-                  nPosteriorThin = 5,
-                  missCode = NULL,
-                  returnConvInfo = TRUE,
+                  nImps             = 100,
+                  targetVariables   = NULL,
+                  ignoreVariables   = NULL,
+                  nEmApproxIters    = 100,
+                  nEmTuneIters      = 10,
+                  nEmApproxBurn     = 25,
+                  nEmApproxGibbs    = 25,
+                  nEmTuneBurn       = 100,
+                  nEmTuneGibbs      = 200,
+                  nPosteriorBurn    = NULL,
+                  nPosteriorThin    = 5,
+                  missCode          = NULL,
+                  returnConvInfo    = TRUE,
                   returnModelParams = FALSE,
-                  verboseIters = TRUE,
-                  verboseErrors = TRUE,
-                  gibbsControl = list(),
-                  optControl = list())
+                  verboseIters      = TRUE,
+                  verboseErrors     = TRUE,
+                  gibbsControl      = list(),
+                  optControl        = list()
+                  )
 {
     ## Populate the control parameters:
     gibbsControlDefaults =
@@ -87,59 +87,31 @@ mibrr <- function(doMiben,
                          defaultList = optControlDefaults)
     names(optControl) <- names(optControlDefaults)
     
-    ## Initialize the RNG stream:
-    if(require(rlecuyer)) {
-        if(gibbsControl$createRngStream) {# Initialized a rlecuyer stream object
-            .lec.SetPackageSeed(rep(gibbsControl$rngSeed, 6))
-            .lec.CreateStream("myStream")
-            oldRng <- .lec.CurrentStream("myStream")
-            currentStreamName <- "myStream"
-        } else {# Use an extant rlecuyer stream object
-            oldRng <- .lec.CurrentStream(gibbsControl$streamName)
-            currentStreamName <- gibbsControl$streamName
-        }
-        useLecuyerRNG <- TRUE
-    } else {# Use R's default Mersenne-Twister
-        set.seed(gibbsControl$rngSeed,
-                 kind = "Mersenne-Twister",
-                 normal.kind = "Inversion")
-        useLecuyerRNG <- FALSE
-        currentStreamName <- NULL
-    }
-    
-    ## Check for target variables:
-    ## When no targets are given, all incomplete variables not listed
-    ## in 'ignoreVariables' are imputed.
+    ## Check for target variables. When no targets are given, all incomplete
+    ## variables not listed in 'ignoreVariables' are imputed.
     if(is.null(targetVariables)) {
         targetCandidates <-
             colnames(rawData)[!colnames(rawData) %in% ignoreVariables]
-        warning(paste0("\nYou didn't specify any target variables,\n",
-                       "so I'm going to impute the missingness of every\n",
-                       "variable in 'rawData' that is not listed in ",
-                       "'ignoreVariables'.\n")
-                )
-        
+        warning("You did not specify any target variables, so I will impute \
+the missing data on\nevery variable in 'rawData' that is not listed in \
+'ignoreVariables'.\n")        
     } else {
         targetCandidates <- targetVariables
     }
     
     ## Make sure 'rawData' contains missing data that we can find:
     if(is.null(missCode)){
-        completeTargets <-
-            colMeans(is.na(rawData[ , targetCandidates])) == 0
+        completeTargets <- colMeans(is.na(rawData[ , targetCandidates])) == 0
         if(all(completeTargets)) {
-            stop(paste0("Your target variables appear ",
-                        "to be fully observed.\n",
-                        "Did you forget to provide ",
-                        "a value for 'missCode'?\n")
-                 )
+            stop("Your target variables appear to be fully observed. Did you \
+forget to provide a\nvalue for 'missCode'?\n")
         }
     } else {
         rMat <- rawData == missCode
         if(!any(rMat, na.rm = TRUE)) {
             stop(paste0("The value you provided for 'missCode' (i.e., ",
                         missCode,
-                        ")\ndoes not appear anywhere in 'rawData'.\n",
+                        ") does not appear anywhere in 'rawData'.\n",
                         "Are you sure that ",
                         missCode,
                         " encodes your missing data?\n")
@@ -148,15 +120,15 @@ mibrr <- function(doMiben,
             rawData[rMat] <- NA
         }
     }
-    
+
     ## Select the final set of target variables:
     targetVars <- targetCandidates[!completeTargets]
     if(any(completeTargets)) {
-        warning(paste0("\nThe potential target variables {",
+        warning(paste0("The potential target variables {",
                        paste(targetCandidates[completeTargets],
                              collapse = ", "),
-                       "} are fully observed,\n",
-                       "so they will not be imputed.\n")
+                       "} are fully observed.\n",
+                       "These items will not be imputed.\n")
                 )
     }
     
@@ -174,7 +146,6 @@ mibrr <- function(doMiben,
             lambda1Starts <- matrix(optControl$lambda1Starts, nTargets, 1)
             options(warn = 0)
         }
-        
         if(is.null(optControl$lambda2Starts)) {
             lambda2Starts <- rep(nPreds / 10, nTargets)
         } else {
@@ -182,13 +153,11 @@ mibrr <- function(doMiben,
             lambda2Starts <- matrix(optControl$lambda2Starts, nTargets, 1)
             options(warn = 0)
         }
-        
         lambdaMat <- cbind(lambda1Starts, lambda2Starts)
     } else {
         if(is.null(optControl$lambdaStarts)) {
             if(optControl$usePCStarts) {
-                ## Important to call this before the NA's
-                ## are replaced by missCode:
+                ## Must call this before the NA's are replaced with missCode:
                 lambdaVec <- getLambdaStarts(inData = centeredData,
                                              nTargets = nTargets,
                                              nPreds = nPreds)
@@ -198,14 +167,12 @@ mibrr <- function(doMiben,
             }
         } else {
             options(warn = -1)
-            lambdaVec <- as.vector(
-                matrix(optControl$lambdaStarts, nTargets, 1)
-            )
+            lambdaVec <- as.vector(matrix(optControl$lambdaStarts, nTargets, 1))
             options(warn = 0)
             lambdaMat <- cbind(lambdaVec, 0)
         }
     }# END if(doMiben)
-
+    
     ## Preprocess the raw data:
     ## 1) Move target variables to the leftmost columns
     ## 2) Temporarily replace missCode entries with NAs
@@ -220,17 +187,15 @@ mibrr <- function(doMiben,
     }
     
     centeredData <- scale(tmpData, scale = FALSE)
-    
     targetMeans <- attr(centeredData, "scaled:center")[1 : nTargets]
     dataScales <- apply(centeredData, 2, FUN = sd, na.rm = TRUE)
-    
+     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     paramStarts <- initializeParams(rawData = centeredData,
                                     inLambda = lambdaMat,
                                     nTargets = nTargets,
-                                    doENET = doMiben)
-    
+                                    doMiben = doMiben)
     betaStarts <- paramStarts$beta
     tauStarts <- paramStarts$tau
     sigmaStarts <- paramStarts$sigma
@@ -241,59 +206,55 @@ mibrr <- function(doMiben,
         if(max(abs(centeredData), na.rm = TRUE) < 1.0) {
             missCode <- -9
         } else {
-            codeMag <-
-                floor(
-                    log10(
-                        max(abs(centeredData), na.rm = TRUE)
-                    )
-                ) + 2
+            codeMag <- floor(log10(max(abs(centeredData), na.rm = TRUE))) + 2
             missCode <- -(10^codeMag - 1)
         }
     }
-    
     centeredData[is.na(centeredData)] <- missCode
     
     gibbsOut <-
-        runGibbs(inData = centeredData,
-                 dataMeans = targetMeans,
-                 dataScales = dataScales,
-                 nTargets = nTargets,
-                 lambda1Starts = lambdaMat[ , 1],
-                 lambda2Starts = lambdaMat[ , 2],
-                 sigmaStarts = sigmaStarts,
-                 tauStarts = tauStarts,
-                 betaStarts = betaStarts,
-                 missCode = missCode,
-                 nEmApproxIters = nEmApproxIters,
-                 nEmTuneIters = nEmTuneIters,
-                 emApprox_nBurnIns = nEmApproxBurn,
-                 emApprox_gibbsSampleSize = nEmApproxGibbs,
-                 emTune_nBurnIns = nEmTuneBurn,
-                 emTune_gibbsSampleSize = nEmTuneGibbs,
-                 posteriorGibbs_nBurnIns =
+        runGibbs(inData                         = centeredData,
+                 dataMeans                      = targetMeans,
+                 dataScales                     = dataScales,
+                 nTargets                       = nTargets,
+                 lambda1Starts                  = lambdaMat[ , 1],
+                 lambda2Starts                  = lambdaMat[ , 2],
+                 sigmaStarts                    = sigmaStarts,
+                 tauStarts                      = tauStarts,
+                 betaStarts                     = betaStarts,
+                 missCode                       = missCode,
+                 nEmApproxIters                 = nEmApproxIters,
+                 nEmTuneIters                   = nEmTuneIters,
+                 emApprox_nBurnIns              = nEmApproxBurn,
+                 emApprox_gibbsSampleSize       = nEmApproxGibbs,
+                 emTune_nBurnIns                = nEmTuneBurn,
+                 emTune_gibbsSampleSize         = nEmTuneGibbs,
+                 posteriorGibbs_nBurnIns        =
                      ifelse(is.null(nPosteriorBurn), -1, nPosteriorBurn),
                  posteriorGibbs_gibbsSampleSize = (nPosteriorThin * nImps),
-                 emConvTol = ifelse(doMiben, optControl$emEpsilon, -1),
-                 lambdaWindow = optControl$smoothingWindow,
-                 verboseIters = verboseIters,
-                 verboseErrors = verboseErrors,
-                 doMibl = !doMiben)
+                 emConvTol                      =
+                     ifelse(doMiben, optControl$emEpsilon, -1),
+                 lambdaWindow                   = optControl$smoothingWindow,
+                 verboseIters                   = verboseIters,
+                 verboseErrors                  = verboseErrors,
+                 doMibl                         = !doMiben)
+
+    names(gibbsOut) <- targetVars
     
-    ## Compute the potential scale reduction factors (R-Hats)
-    ## for the posterior imputation model parameters:
+    ## Compute the potential scale reduction factors (R-Hats) for the posterior
+    ## imputation model parameters:
     rHatList <- lapply(c(1 : nTargets),
-                       FUN = checkGibbsConv,
+                       FUN         = checkGibbsConv,
                        gibbsStates = gibbsOut,
                        returnRHats = TRUE,
                        targetNames = targetVars,
-                       critVal = gibbsControl$convThresh)
+                       critVal     = gibbsControl$convThresh)
     
-    ## Draw the imputations from the convergent
-    ## posterior predictive distribution:
-    outImps <- getImputedData(gibbsState = gibbsOut,
-                              nImps = nImps,
-                              rawData = rawData,
-                              targetVars = targetVars,
+    ## Draw imputations from the convergent posterior predictive distribution:
+    outImps <- getImputedData(gibbsState  = gibbsOut,
+                              nImps       = nImps,
+                              rawData     = rawData,
+                              targetVars  = targetVars,
                               targetMeans = targetMeans)
     
     ## Aggregate and return the requested output:
@@ -313,16 +274,15 @@ mibrr <- function(doMiben,
     if(returnModelParams) {
         betaList <- tauList <- sigmaList <- lamList <- list()
         for(j in 1 : length(gibbsOut)) {
-            betaList[[j]] <- gibbsOut[[j]]$beta
-            tauList[[j]] <- gibbsOut[[j]]$tau
+            betaList[[j]]  <- gibbsOut[[j]]$beta
+            tauList[[j]]   <- gibbsOut[[j]]$tau
             sigmaList[[j]] <- gibbsOut[[j]]$sigma
-            lamList[[j]] <-
-                gibbsOut[[j]]$lambdaHistory[totalEmIters, ]
+            lamList[[j]]   <- gibbsOut[[j]]$lambdaHistory[totalEmIters, ]
         }
         outList$params <- list(
-            beta = betaList,
-            tau = tauList,
-            sigma = sigmaList,
+            beta   = betaList,
+            tau    = tauList,
+            sigma  = sigmaList,
             lambda = lamList)
     }
     outList
@@ -330,109 +290,111 @@ mibrr <- function(doMiben,
 
 
 
-### Specify a wrapper function to implement Multiple
-### Imputation with the Bayesian Elastic Net (MIBEN):
+### Specify a wrapper function to implement Multiple Imputation with the
+### Bayesian Elastic Net (MIBEN):
 miben <- function(rawData,
-                  nImps = 100,
-                  targetVariables = NULL,
-                  ignoreVariables = NULL,
-                  nEmApproxIters = 100,
-                  nEmTuneIters = 10,
-                  nEmApproxBurn = 25,
-                  nEmApproxGibbs = 25,
-                  nEmTuneBurn = 100,
-                  nEmTuneGibbs = 200,
-                  nPosteriorBurn = NULL,
-                  nPosteriorThin = 5,
-                  missCode = NULL,
-                  returnConvInfo = TRUE,
+                  nImps             = 100,
+                  targetVariables   = NULL,
+                  ignoreVariables   = NULL,
+                  nEmApproxIters    = 100,
+                  nEmTuneIters      = 10,
+                  nEmApproxBurn     = 25,
+                  nEmApproxGibbs    = 25,
+                  nEmTuneBurn       = 100,
+                  nEmTuneGibbs      = 200,
+                  nPosteriorBurn    = NULL,
+                  nPosteriorThin    = 5,
+                  missCode          = NULL,
+                  returnConvInfo    = TRUE,
                   returnModelParams = FALSE,
-                  verboseIters = TRUE,
-                  verboseErrors = TRUE,
-                  gibbsControl =
-                      list(createRngStream = TRUE,
-                           streamName = NULL,
-                           convThresh = 1.1,
-                           rngSeed = 235711),
-                  optControl =
-                      list(lambda1Starts = NULL,
-                           lambda2Starts = NULL,
-                           emEpsilon = 1.0e-5,
-                           smoothingWindow = 1)
+                  verboseIters      = TRUE,
+                  verboseErrors     = TRUE,
+                  gibbsControl      = list(
+                      createRngStream = TRUE,
+                      streamName      = NULL,
+                      convThresh      = 1.1,
+                      rngSeed         = 235711
+                  ),
+                  optControl        = list(
+                      lambda1Starts   = NULL,
+                      lambda2Starts   = NULL,
+                      emEpsilon       = 1.0e-5,
+                      smoothingWindow = 1)
                   )
 {
-    mibrr(doMiben = TRUE,
-          rawData = rawData,
-          nImps = nImps,
-          targetVariables = targetVariables,
-          ignoreVariables = ignoreVariables,
-          nEmApproxIters = nEmApproxIters,
-          nEmTuneIters = nEmTuneIters,
-          nEmApproxBurn = nEmApproxBurn,
-          nEmApproxGibbs = nEmApproxGibbs,
-          nEmTuneBurn = nEmTuneBurn,
-          nEmTuneGibbs = nEmTuneGibbs,
-          nPosteriorBurn = nPosteriorBurn,
-          nPosteriorThin = nPosteriorThin,
-          missCode = missCode,
-          returnConvInfo = returnConvInfo,
+    mibrr(doMiben           = TRUE,
+          rawData           = rawData,
+          nImps             = nImps,
+          targetVariables   = targetVariables,
+          ignoreVariables   = ignoreVariables,
+          nEmApproxIters    = nEmApproxIters,
+          nEmTuneIters      = nEmTuneIters,
+          nEmApproxBurn     = nEmApproxBurn,
+          nEmApproxGibbs    = nEmApproxGibbs,
+          nEmTuneBurn       = nEmTuneBurn,
+          nEmTuneGibbs      = nEmTuneGibbs,
+          nPosteriorBurn    = nPosteriorBurn,
+          nPosteriorThin    = nPosteriorThin,
+          missCode          = missCode,
+          returnConvInfo    = returnConvInfo,
           returnModelParams = returnModelParams,
-          verboseIters = verboseIters,
-          verboseErrors = verboseErrors,
-          gibbsControl = gibbsControl,
-          optControl = optControl)
+          verboseIters      = verboseIters,
+          verboseErrors     = verboseErrors,
+          gibbsControl      = gibbsControl,
+          optControl        = optControl)
 }# END miben()
 
 
 
-### Specify a wrapper function to implement Multiple
-### Imputation with the Bayesian Lasso (MIBL):
+### Specify a wrapper function to implement Multiple Imputation with the
+### Bayesian Lasso (MIBL):
 mibl <- function(rawData,
-                 nImps = 100,
-                 targetVariables = NULL,
-                 ignoreVariables = NULL,
-                 nEmApproxIters = 100,
-                 nEmTuneIters = 10,
-                 nEmApproxBurn = 25,
-                 nEmApproxGibbs = 25,
-                 nEmTuneBurn = 100,
-                 nEmTuneGibbs = 200,
-                 nPosteriorBurn = NULL,
-                 nPosteriorThin = 5,
-                 missCode = NULL,
-                 returnConvInfo = TRUE,
+                 nImps             = 100,
+                 targetVariables   = NULL,
+                 ignoreVariables   = NULL,
+                 nEmApproxIters    = 100,
+                 nEmTuneIters      = 10,
+                 nEmApproxBurn     = 25,
+                 nEmApproxGibbs    = 25,
+                 nEmTuneBurn       = 100,
+                 nEmTuneGibbs      = 200,
+                 nPosteriorBurn    = NULL,
+                 nPosteriorThin    = 5,
+                 missCode          = NULL,
+                 returnConvInfo    = TRUE,
                  returnModelParams = FALSE,
-                 verboseIters = TRUE,
-                 verboseErrors = TRUE,
-                 gibbsControl =
-                     list(createRngStream = TRUE,
-                          streamName = NULL,
-                          convThresh = 1.1,
-                          rngSeed = 235711),
-                  optControl =
-                      list(lambdaStarts = NULL,
-                           usePCStarts = FALSE,
-                           smoothingWindow = 1)
+                 verboseIters      = TRUE,
+                 verboseErrors     = TRUE,
+                 gibbsControl      = list(
+                     createRngStream = TRUE,
+                     streamName      = NULL,
+                     convThresh      = 1.1,
+                     rngSeed         = 235711
+                 ),
+                 optControl        = list(
+                     lambdaStarts    = NULL,
+                     usePCStarts     = FALSE,
+                     smoothingWindow = 1)
                  )
 {
-    mibrr(doMiben = FALSE,
-          rawData = rawData,
-          nImps = nImps,
-          targetVariables = targetVariables,
-          ignoreVariables = ignoreVariables,
-          nEmApproxIters = nEmApproxIters,
-          nEmTuneIters = nEmTuneIters,
-          nEmApproxBurn = nEmApproxBurn,
-          nEmApproxGibbs = nEmApproxGibbs,
-          nEmTuneBurn = nEmTuneBurn,
-          nEmTuneGibbs = nEmTuneGibbs,
-          nPosteriorBurn = nPosteriorBurn,
-          nPosteriorThin = nPosteriorThin,
-          missCode = missCode,
-          returnConvInfo = returnConvInfo,
+    mibrr(doMiben           = FALSE,
+          rawData           = rawData,
+          nImps             = nImps,
+          targetVariables   = targetVariables,
+          ignoreVariables   = ignoreVariables,
+          nEmApproxIters    = nEmApproxIters,
+          nEmTuneIters      = nEmTuneIters,
+          nEmApproxBurn     = nEmApproxBurn,
+          nEmApproxGibbs    = nEmApproxGibbs,
+          nEmTuneBurn       = nEmTuneBurn,
+          nEmTuneGibbs      = nEmTuneGibbs,
+          nPosteriorBurn    = nPosteriorBurn,
+          nPosteriorThin    = nPosteriorThin,
+          missCode          = missCode,
+          returnConvInfo    = returnConvInfo,
           returnModelParams = returnModelParams,
-          verboseIters = verboseIters,
-          verboseErrors = verboseErrors,
-          gibbsControl = gibbsControl,
-          optControl = optControl)
+          verboseIters      = verboseIters,
+          verboseErrors     = verboseErrors,
+          gibbsControl      = gibbsControl,
+          optControl        = optControl)
 }# END mibl()

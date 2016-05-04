@@ -53,3 +53,6 @@ vignettes/*.pdf
 
 # Package checking results
 quark.Rcheck
+
+# Testing results:
+testing/results*/
