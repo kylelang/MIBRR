@@ -1,25 +1,26 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2015-FEB-23
+### Modified: 2016-MAY-04
 
-###################### COPYRIGHT & LICENSING INFORMATION ########################
-###    Copyright (C) 2015 Kyle M. Lang <kylelang@ku.edu>                      ###  
-###                                                                           ###
-###    This program is free software: you can redistribute it and/or modify   ###
-###    it under the terms of the GNU General Public License as published by   ###
-###    the Free Software Foundation, either version 3 of the License, or      ###
-###    (at your option) any later version.                                    ###
-###                                                                           ###
-###    This program is distributed in the hope that it will be useful,        ###
-###    but WITHOUT ANY WARRANTY; without even the implied warranty of         ###
-###    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          ###
-###    GNU General Public License for more details.                           ###
-###                                                                           ###
-###    You should have received a copy of the GNU General Public License      ###
-###    along with this program.  If not, see <http://www.gnu.org/licenses/>.  ###
-#################################################################################
-
+##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
+##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
+##                                                                             ##
+##  This file is part of mibrr.                                                ##
+##                                                                             ##
+##  This program is free software: you can redistribute it and/or modify it    ##
+##  under the terms of the GNU Lesser General Public License as published by   ##
+##  the Free Software Foundation, either version 3 of the License, or          ##
+##  (at you option) any later version.                                         ##
+##                                                                             ##
+##  This program is distributed in the hope that it will be useful, but        ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY ##
+##  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public    ##
+##  License for more details.                                                  ##
+##                                                                             ##
+##  You should have received a copy of the GNU Lesser General Public License   ##
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
+##-----------------------------------------------------------------------------##
 
 ## Calculate the potential scale reduction factor (R-Hat)
 calcRHat <- function(simsIn, nChains = 1)
@@ -54,8 +55,11 @@ calcRHat <- function(simsIn, nChains = 1)
 
 ## Sample the imputations from the stationary posterior
 ## predictive distibution of the missing data
-getImputedData <- function(gibbsState, nImps, rawData,
-                           targetVars, targetMeans)
+getImputedData <- function(gibbsState,
+                           nImps,
+                           rawData,
+                           targetVars,
+                           targetMeans)
 {
     nObs <- nrow(rawData)
     frozenLabels <- colnames(rawData)
@@ -75,18 +79,24 @@ getImputedData <- function(gibbsState, nImps, rawData,
     
     impDatList <-
         lapply(c(1 : nImps),
-               FUN = function(x, targetVars, impSams, rawData, inLabs)
+               FUN = function(x,
+                   targetVars,
+                   targetMeans,
+                   impSams,
+                   rawData,
+                   inLabs)
                    {
                        for(j in 1 : length(targetVars)) {
                            myDV <- targetVars[j]
                            naFlag <- is.na(rawData[ , myDV])
                            rawData[naFlag, myDV] <-
-                               impSams[[j]][x, naFlag] + targetMeans[x]
+                               impSams[[j]][x, naFlag] + targetMeans[j]
                        }
                        colnames(rawData) <- inLabs
                        rawData
                    },
                targetVars = targetVars,
+               targetMeans = targetMeans,
                impSams = impSams,
                rawData = rawData,
                inLabs = frozenLabels)

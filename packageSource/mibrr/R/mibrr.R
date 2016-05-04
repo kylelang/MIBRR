@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2015-MAR-03
+### Modified: 2016-MAY-04
 ### Purpose:  This code is part of the R package mibrr.
 ###           The following functions implements MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
@@ -14,23 +14,24 @@
 ###           miben and mibl functions are wrappers that parameterization mibrr
 ###           as needed to run MIBEN or MIBL, respectively.
 
-###################### COPYRIGHT & LICENSING INFORMATION ########################
-###    Copyright (C) 2015 Kyle M. Lang <kylelang@ku.edu>                      ###  
-###                                                                           ###
-###    This program is free software: you can redistribute it and/or modify   ###
-###    it under the terms of the GNU General Public License as published by   ###
-###    the Free Software Foundation, either version 3 of the License, or      ###
-###    (at your option) any later version.                                    ###
-###                                                                           ###
-###    This program is distributed in the hope that it will be useful,        ###
-###    but WITHOUT ANY WARRANTY; without even the implied warranty of         ###
-###    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          ###
-###    GNU General Public License for more details.                           ###
-###                                                                           ###
-###    You should have received a copy of the GNU General Public License      ###
-###    along with this program.  If not, see <http://www.gnu.org/licenses/>.  ###
-#################################################################################
-
+##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
+##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
+##                                                                             ##
+##  This file is part of mibrr.                                                ##
+##                                                                             ##
+##  This program is free software: you can redistribute it and/or modify it    ##
+##  under the terms of the GNU Lesser General Public License as published by   ##
+##  the Free Software Foundation, either version 3 of the License, or          ##
+##  (at you option) any later version.                                         ##
+##                                                                             ##
+##  This program is distributed in the hope that it will be useful, but        ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY ##
+##  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public    ##
+##  License for more details.                                                  ##
+##                                                                             ##
+##  You should have received a copy of the GNU Lesser General Public License   ##
+##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
+##-----------------------------------------------------------------------------##
 
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doMiben,
