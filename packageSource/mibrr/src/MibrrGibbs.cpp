@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-APR-30
+// Modified: 2016-MAY-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -471,8 +471,10 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 
   // Draw a new value of the intercept term:
   VectorXd newBetas(nPreds + 1);
-  newBetas[0] = R::rnorm(mibrrData.getDV(_targetIndex).mean(),
-			 sqrt(_sigma / double(nObs)));
+  double intMean = mibrrData.getDV(_targetIndex).mean() -
+    mibrrData.getIVs(_targetIndex).colwise().mean() * _betas;
+  double intSd = sqrt(_sigma / double(nObs));
+  newBetas[0] = R::rnorm(intMean, intSd);
   
   // Draw new values of the regression slope coefficients:
   newBetas.tail(nPreds) = mibrrData.drawMVN(betaMeans, betaCovariances);
