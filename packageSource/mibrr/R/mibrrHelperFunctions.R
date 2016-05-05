@@ -160,20 +160,15 @@ checkGibbsConv <- function(targetIndex,
     targetName <- targetNames[targetIndex]
     
     ## Compute R-Hat values to check convergence:
-    betaRHats <-
-        apply(gibbsState$beta, 2,
-              FUN = calcRHat, nChains = 1)
-    tauRHats <-
-        apply(gibbsState$tau, 2,
-              FUN = calcRHat, nChains = 1)
-    sigmaRHat <-
-        calcRHat(gibbsState$sigma, nChains = 1)
+    betaRHats <- apply(gibbsState$beta, 2, FUN = calcRHat, nChains = 1)
+    tauRHats  <- apply(gibbsState$tau, 2, FUN = calcRHat, nChains = 1)
+    sigmaRHat <- calcRHat(gibbsState$sigma, nChains = 1)
     
     ## Find nonconvergent Gibbs samples:
     badBetaCount <- sum(betaRHats > critVal)
-    maxBetaRHat <- max(betaRHats)
-    badTauCount <- sum(tauRHats > critVal)
-    maxTauRHat <- max(tauRHats)
+    maxBetaRHat  <- max(betaRHats)
+    badTauCount  <- sum(tauRHats > critVal)
+    maxTauRHat   <- max(tauRHats)
     badSigmaFlag <- sigmaRHat > critVal
 
     ## Return warnings about possible failures of convergence:
@@ -223,24 +218,45 @@ checkGibbsConv <- function(targetIndex,
 ## Initialize the gibbs sampled parameters with draws from the parameters'
 ## respective prior distributions
 initializeParams <- function(rawData,
-                             inLambdas,
                              nTargets,
-                             doMiben = TRUE)
+                             doMiben,
+                             control)
 {    
-    nRows <- nrow(rawData)
-    nObsVec <- colSums(!is.na(rawData))
-    nPreds <- ncol(rawData) - 1
-    dataScales <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
-
+    nRows       <- nrow(rawData)
+    nObsVec     <- colSums(!is.na(rawData))
+    nPreds      <- ncol(rawData) - 1
+    dataScales  <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
     sigmaStarts <- dataScales[1 : nTargets]
-    intStarts <- vector("numeric", nTargets)
-    tauStarts <- slopeStarts <- matrix(NA, nPreds, nTargets)
-    dvStarts <- matrix(NA, nRows, nTargets)
+    intStarts   <- vector("numeric", nTargets)
+    tauStarts   <- slopeStarts <- matrix(NA, nPreds, nTargets)
+    dvStarts    <- matrix(NA, nRows, nTargets)
 
+    ## Populate the starting values for Lambda:
+    if(doMiben) {
+        options(warn = -1)# Suppress warnings about recycling elements
+        lambda1Starts <- matrix(control$lambda1Starts, nTargets, 1)
+        lambda2Starts <- matrix(control$lambda2Starts, nTargets, 1)
+        options(warn = 0)
+        lambdaMat <- cbind(lambda1Starts, lambda2Starts)
+    } else {
+        if(control$usePCStarts) {
+            ## Must call this before the NA's are replaced with missCode:
+            lambdaVec <- getLambdaStarts(inData = centeredData,
+                                         nTargets = nTargets,
+                                         nPreds = nPreds)
+        } else {
+            options(warn = -1)
+            lambdaVec <- as.vector(matrix(control$lambdaStarts, nTargets, 1))
+            options(warn = 0)
+        }
+        lambdaMat <- cbind(lambdaVec, 0)
+    }# END if(doMiben)
+    
+    ## Populate starting values for betas, taus, and sigma:
     for(j in 1 : nTargets) {
         if(doMiben) {
-            lam1 <- inLambdas[j, 1]
-            lam2 <- inLambdas[j, 2]
+            lam1 <- lambdaMat[j, 1]
+            lam2 <- lambdaMat[j, 2]
             
             tauPriorScale <- (8 * lam2 * sigmaStarts[j]) / lam1^2
             
@@ -259,7 +275,7 @@ initializeParams <- function(rawData,
             
             slopeStarts[ , j] <- rmvnorm(1, rep(0, nPreds), slopePriorCov)
         } else {# We're doing MIBL
-            lam <- inLambdas[j]
+            lam <- lambdaMat[j, 1]
             tauStarts[ , j] <- rexp(nPreds, rate = (0.5 * lam^2))
             slopePriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
             slopeStarts[ , j] <- rmvnorm(1, rep(0, nPreds), slopePriorCov)
@@ -273,9 +289,10 @@ initializeParams <- function(rawData,
     
     betaStarts <- rbind(intStarts, slopeStarts)
     
-    list(beta = betaStarts,
-         tau = tauStarts,
-         sigma = sigmaStarts)
+    list(lambda = lambdaMat,
+         beta   = betaStarts,
+         tau    = tauStarts,
+         sigma  = sigmaStarts)
 }# END initializeParams()
 
 
@@ -293,11 +310,100 @@ gibbsMeanFun <- function(gibbsState)
 
 
 ## Make sure that all control parameters are initialized
-padControlList <- function(x, inList, defaultList)
+padControlList <- function()
 {
-    if(is.null(inList[[x]])) {
-        defaultList[[x]]
+    env <- parent.frame()
+    ## Define the default control parameters:
+    if(env$doMiben) {
+        defaults = list(
+            mcemApproxBurn  = env$mcemApproxN,
+            mcemTuneBurn    = env$mcemTuneN,
+            mcemPostBurn    = env$mcemPostN,
+            convThresh      = 1.1,
+            lambda1Starts   = rep(0.5, env$nTargets),
+            lambda2Starts   = rep(env$nPreds / 10, env$nTargets),
+            mcemEpsilon     = 1.0e-5,
+            smoothingWindow = 1
+        )
     } else {
-        inList[[x]]
+        defaults = list(
+            mcemApproxBurn  = env$mcemApproxN,
+            mcemTuneBurn    = env$mcemTuneN,
+            mcemPostBurn    = env$mcemPostN,
+            convThresh      = 1.1,
+            lambdaStarts    = rep(env$nPreds / 10, env$nTargets),
+            usePCStarts     = FALSE,
+            smoothingWindow = 1
+        )
     }
+    ## Pad the user-provided control list with default values:
+    defaults[names(defaults) %in% names(env$control)] <- env$control
+    defaults
+}# END padControlList()
+
+
+## Fill missing data with an appropriate integer code:
+applyMissCode <- function() {
+    env <- parent.frame()
+    ## Construct an integer-valued missing data code that
+    ## does not take legal data values and use it to flag NAs.
+    if(is.null(env$missCode)) {
+        if(max(abs(env$centeredData), na.rm = TRUE) < 1.0) {
+            env$missCode <- -9
+        } else {
+            codeMag <- floor(log10(max(abs(env$centeredData), na.rm = TRUE))) + 2
+            env$missCode <- -(10^codeMag - 1)
+        }
+    }
+    env$centeredData[is.na(env$centeredData)] <- env$missCode
 }
+
+
+## Check the user inputs and isolate a set of target variables:
+checkInputs <- function() {
+    env <- parent.frame()
+    
+    ## Check for target variables. When no targets are given, all incomplete
+    ## variables not listed in 'ignoreVars' are imputed.
+    if(is.null(env$targetVars)) {
+        targetCandidates <-
+            colnames(env$rawData)[!colnames(env$rawData) %in% env$ignoreVars]
+        warning("You did not specify any target variables, so I will impute \
+the missing data on\nevery variable in 'rawData' that is not listed in \
+'ignoreVars'.\n")        
+    } else {
+        targetCandidates <- env$targetVars
+    }
+    
+    ## Make sure 'rawData' contains missing data that we can find:
+    if(is.null(env$missCode)) {
+        completeTargets <- colMeans(is.na(env$rawData[ , targetCandidates])) == 0
+        if(all(completeTargets)) {
+            stop("Your target variables appear to be fully observed. Did you \
+forget to provide a\nvalue for 'missCode'?\n")
+        }
+    } else {
+        rMat <- env$rawData == env$missCode
+        if(!any(rMat, na.rm = TRUE)) {
+            stop(paste0("The value you provided for 'missCode' (i.e., ",
+                        env$missCode,
+                        ") does not appear anywhere in 'rawData'.\n",
+                        "Are you sure that ",
+                        env$missCode,
+                        " encodes your missing data?\n")
+                 )
+        } else {
+            env$rawData[rMat] <- NA
+        }
+    }
+    
+    ## Select the final set of target variables:
+    env$targetVars <- targetCandidates[!completeTargets]
+    if(any(completeTargets)) {
+        warning(paste0("The potential target variables {",
+                       paste(targetCandidates[completeTargets], collapse = ", "),
+                       "} are fully observed.\n",
+                       "These items will not be imputed.\n")
+                )
+    }
+}# END checkInputs()

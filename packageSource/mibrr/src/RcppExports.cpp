@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataMeans, Eigen::VectorXd dataScales, int nTargets, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, double missCode, int nEmApproxIters, int nEmTuneIters, int emApprox_nBurnIns, int emApprox_gibbsSampleSize, int emTune_nBurnIns, int emTune_gibbsSampleSize, int posteriorGibbs_nBurnIns, int posteriorGibbs_gibbsSampleSize, int lambdaWindow, double emConvTol, bool verboseIters, bool verboseErrors, bool doMibl);
-RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataMeansSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP missCodeSEXP, SEXP nEmApproxItersSEXP, SEXP nEmTuneItersSEXP, SEXP emApprox_nBurnInsSEXP, SEXP emApprox_gibbsSampleSizeSEXP, SEXP emTune_nBurnInsSEXP, SEXP emTune_gibbsSampleSizeSEXP, SEXP posteriorGibbs_nBurnInsSEXP, SEXP posteriorGibbs_gibbsSampleSizeSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseItersSEXP, SEXP verboseErrorsSEXP, SEXP doMiblSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataMeans, Eigen::VectorXd dataScales, int nTargets, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, double missCode, int nMcemApproxIters, int nMcemTuneIters, int nMcemApproxBurn, int nMcemApproxGibbs, int nMcemTuneBurn, int nMcemTuneGibbs, int nMcemPostBurn, int nMcemPostGibbs, int lambdaWindow, double emConvTol, bool verboseIters, bool verboseErrors, bool doMibl);
+RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataMeansSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP missCodeSEXP, SEXP nMcemApproxItersSEXP, SEXP nMcemTuneItersSEXP, SEXP nMcemApproxBurnSEXP, SEXP nMcemApproxGibbsSEXP, SEXP nMcemTuneBurnSEXP, SEXP nMcemTuneGibbsSEXP, SEXP nMcemPostBurnSEXP, SEXP nMcemPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseItersSEXP, SEXP verboseErrorsSEXP, SEXP doMiblSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -22,20 +22,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type tauStarts(tauStartsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type betaStarts(betaStartsSEXP);
     Rcpp::traits::input_parameter< double >::type missCode(missCodeSEXP);
-    Rcpp::traits::input_parameter< int >::type nEmApproxIters(nEmApproxItersSEXP);
-    Rcpp::traits::input_parameter< int >::type nEmTuneIters(nEmTuneItersSEXP);
-    Rcpp::traits::input_parameter< int >::type emApprox_nBurnIns(emApprox_nBurnInsSEXP);
-    Rcpp::traits::input_parameter< int >::type emApprox_gibbsSampleSize(emApprox_gibbsSampleSizeSEXP);
-    Rcpp::traits::input_parameter< int >::type emTune_nBurnIns(emTune_nBurnInsSEXP);
-    Rcpp::traits::input_parameter< int >::type emTune_gibbsSampleSize(emTune_gibbsSampleSizeSEXP);
-    Rcpp::traits::input_parameter< int >::type posteriorGibbs_nBurnIns(posteriorGibbs_nBurnInsSEXP);
-    Rcpp::traits::input_parameter< int >::type posteriorGibbs_gibbsSampleSize(posteriorGibbs_gibbsSampleSizeSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemApproxIters(nMcemApproxItersSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemTuneIters(nMcemTuneItersSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemApproxBurn(nMcemApproxBurnSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemApproxGibbs(nMcemApproxGibbsSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemTuneBurn(nMcemTuneBurnSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemTuneGibbs(nMcemTuneGibbsSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemPostBurn(nMcemPostBurnSEXP);
+    Rcpp::traits::input_parameter< int >::type nMcemPostGibbs(nMcemPostGibbsSEXP);
     Rcpp::traits::input_parameter< int >::type lambdaWindow(lambdaWindowSEXP);
     Rcpp::traits::input_parameter< double >::type emConvTol(emConvTolSEXP);
     Rcpp::traits::input_parameter< bool >::type verboseIters(verboseItersSEXP);
     Rcpp::traits::input_parameter< bool >::type verboseErrors(verboseErrorsSEXP);
     Rcpp::traits::input_parameter< bool >::type doMibl(doMiblSEXP);
-    __result = Rcpp::wrap(runGibbs(inData, dataMeans, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nEmApproxIters, nEmTuneIters, emApprox_nBurnIns, emApprox_gibbsSampleSize, emTune_nBurnIns, emTune_gibbsSampleSize, posteriorGibbs_nBurnIns, posteriorGibbs_gibbsSampleSize, lambdaWindow, emConvTol, verboseIters, verboseErrors, doMibl));
+    __result = Rcpp::wrap(runGibbs(inData, dataMeans, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verboseIters, verboseErrors, doMibl));
     return __result;
 END_RCPP
 }

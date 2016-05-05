@@ -1,7 +1,7 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2016-APR-29
+### Modified: 2016-MAY-05
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
@@ -19,13 +19,12 @@ library(mibrr)
 
 data(mibrrExampleData)
 
-testOut <- miben(rawData = mibrrExampleData,
-                 targetVariables = c("y", paste0("x", c(1 : 3))),
-                 ignoreVariables = "idNum",
-                 returnModelParams = TRUE)
+testOut <- miben(rawData      = mibrrExampleData,
+                 targetVars   = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars   = "idNum",
+                 returnParams = TRUE)
 
-
-testOut2 <- mibl(rawData = mibrrExampleData,
-                 targetVariables = c("y", paste0("x", c(1 : 3))),
-                 ignoreVariables = "idNum",
-                 returnModelParams = TRUE)
+testOut2 <- mibl(rawData      = mibrrExampleData,
+                 targetVars   = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars   = "idNum",
+                 returnParams = TRUE)

@@ -108,10 +108,10 @@ doRep <- function(rp, parms) {
     missData <- imposeMissing(inData = dat1, parms = parms)
     
     suppressWarnings(
-        mibenOut <- miben(rawData         = missData,
-                          targetVariables = incompVars,
-                          verboseIters    = FALSE,
-                          verboseErrors   = FALSE)
+        mibenOut <- miben(rawData       = missData,
+                          targetVars    = incompVars,
+                          verboseIters  = FALSE,
+                          verboseErrors = FALSE)
     )
     
     fitList <- lapply(mibenOut$imps, FUN = function(x) lm(testForm, data = x))

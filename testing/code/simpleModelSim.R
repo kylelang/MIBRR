@@ -29,7 +29,7 @@ parms$incompVars <- c("policy", "sysRac", "polAffil", "revDisc")
 parms$marType    <- c("lower", "upper", "tails", "center")
 parms$testForm   <- as.formula("policy ~ polAffil + sysRac")
 parms$dataDir    <- "../data/"
-parms$resDir     <- "../results3/"
+parms$resDir     <- "../results4/"
 
 dat1 <- cleanData2(parms)
 parms$sigma <- cov(dat1)
