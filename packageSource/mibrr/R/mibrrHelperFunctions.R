@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-MAY-04
+### Modified: 2016-MAY-09
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -21,6 +21,29 @@
 ##  You should have received a copy of the GNU Lesser General Public License   ##
 ##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
 ##-----------------------------------------------------------------------------##
+
+
+## Print startup message:
+.onAttach <- function(libname, pkgname) {
+    version <- read.dcf(file = system.file("DESCRIPTION", package = pkgname),
+                        fields = "Version")
+    packageStartupMessage(
+        "Loading: ", paste(pkgname, version), ", Copyright (C) 2016 Kyle M. Lang."
+    )
+    packageStartupMessage(
+        pkgname, " is distributed under Version 3 of the GNU Lesser General Public License"
+    )
+    packageStartupMessage(
+        "(LGPL-3); execute 'mibrrL()' for details. ", pkgname, " comes with ABSOLUTELY NO"
+    )
+    packageStartupMessage(
+        "WARRANTY; execute 'mibrrW()' for details. ", pkgname, " is beta software. Please report"
+    )
+    packageStartupMessage(
+        "any bugs. Thank You."
+    )
+}
+
 
 ## Calculate the potential scale reduction factor (R-Hat)
 calcRHat <- function(simsIn, nChains = 1)
@@ -59,13 +82,13 @@ sampleImps <- function(x, nDraws, nImps)
 ## Fill the missing data with the sampled imputations:
 fillMissing <- function(impNum,
                         targetVars,
-                        targetMeans,
+                                        #targetMeans,
                         impSams,
                         rawData)
 {
     for(j in targetVars) {
         naFlag <- is.na(rawData[ , j])
-        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag] + targetMeans[j]
+        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag]# + targetMeans[j]
     }
     rawData
 }
@@ -75,8 +98,8 @@ fillMissing <- function(impNum,
 getImputedData <- function(gibbsState,
                            nImps,
                            rawData,
-                           targetVars,
-                           targetMeans)
+                           targetVars)#,
+                                        #targetMeans)
 {
     nDraws <- nrow(gibbsState[[1]]$imps)
     
@@ -88,7 +111,7 @@ getImputedData <- function(gibbsState,
     lapply(c(1 : nImps),
            FUN = fillMissing,
            targetVars = targetVars,
-           targetMeans = targetMeans,
+                                        #targetMeans = targetMeans,
            impSams = impSams,
            rawData = rawData)
 }# END getImputedData()
@@ -241,7 +264,7 @@ initializeParams <- function(rawData,
     } else {
         if(control$usePCStarts) {
             ## Must call this before the NA's are replaced with missCode:
-            lambdaVec <- getLambdaStarts(inData = centeredData,
+            lambdaVec <- getLambdaStarts(inData = rawData,
                                          nTargets = nTargets,
                                          nPreds = nPreds)
         } else {
@@ -348,14 +371,14 @@ applyMissCode <- function() {
     ## Construct an integer-valued missing data code that
     ## does not take legal data values and use it to flag NAs.
     if(is.null(env$missCode)) {
-        if(max(abs(env$centeredData), na.rm = TRUE) < 1.0) {
+        if(max(abs(env$rawData), na.rm = TRUE) < 1.0) {
             env$missCode <- -9
         } else {
-            codeMag <- floor(log10(max(abs(env$centeredData), na.rm = TRUE))) + 2
+            codeMag <- floor(log10(max(abs(env$rawData), na.rm = TRUE))) + 2
             env$missCode <- -(10^codeMag - 1)
         }
     }
-    env$centeredData[is.na(env$centeredData)] <- env$missCode
+    env$rawData[is.na(env$rawData)] <- env$missCode
 }
 
 

@@ -33,7 +33,6 @@
 
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd inData,
-		    Eigen::VectorXd dataMeans,
 		    Eigen::VectorXd dataScales,
 		    int             nTargets,  
 		    Eigen::VectorXd lambda1Starts,
@@ -58,7 +57,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 {
   // Initialize the various classes needed below:
   MibrrData mibrrData(inData, 
-		      dataMeans,
+		      //dataMeans,
 		      dataScales,
 		      missCode);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];

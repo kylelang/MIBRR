@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-04
+// Modified: 2016-MAY-09
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -31,18 +31,18 @@
 MibrrData::MibrrData(MatrixXd &newData)
 {
   _data     = newData;
-  _dataMeans  = RowVectorXd( _data.cols() );
+  //_dataMeans  = RowVectorXd( _data.cols() );
   _dataScales = RowVectorXd( _data.cols() );
 }
 
 MibrrData::MibrrData(MatrixXd &newData,
-		     VectorXd &newDataMeans,
+		     //VectorXd &newDataMeans,
 		     VectorXd &newDataScales,
 		     double missingDataCode) 
 {
   _missingDataCode   = missingDataCode;
   _data              = newData;
-  _dataMeans         = newDataMeans;
+  //_dataMeans         = newDataMeans;
   _dataScales        = newDataScales;
   _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
   computeNonresponseFilter();
@@ -133,16 +133,16 @@ MatrixXd MibrrData::getData()
 }
 
 
-VectorXd MibrrData::getDataMeans()
-{
-  return _dataMeans;
-}
+//VectorXd MibrrData::getDataMeans()
+//{
+//  return _dataMeans;
+//}
 
 
-double MibrrData::getDataMeans(int targetIndex)
-{
-  return _dataMeans[targetIndex];
-}
+//double MibrrData::getDataMeans(int targetIndex)
+//{
+//  return _dataMeans[targetIndex];
+//}
 
 
 VectorXd MibrrData::getDataScales()
@@ -201,21 +201,36 @@ void MibrrData::computeNonresponseFilter()
 }
 
 
+void MibrrData::computeDataScales()
+{
+  for(int i = 0; i < _data.cols(); i++) {
+    double tmpMean = _data.col(i).mean();
+    double tmpVar = (_data.col(i).array() - tmpMean).square().mean();
+    _dataScales[i] = sqrt(tmpVar);
+  }
+}
+
+
 void MibrrData::fillMissing(int nTargets)
 {
   int nObs = _data.rows();
   int nVars = _data.cols();
   MatrixXd mvnDraws(nObs, nTargets);
-  
+
+  // Targets are also zero imputed, initially, to compute dvSigma
   for(int i = 0; i < nObs; i++) {
     for(int j = 0; j < nVars; j++) {
       if(_nonresponseFilter(i, j)) _data(i, j) = 0.0;
     }
   }
-
-  // Targets are also zero imputed, initially, to compute dvSigma
+  
   if(nTargets > 1) {
-    VectorXd dvMeans = _dataMeans.head(nTargets);
+    // Compute the mean of non-missing target values:
+    VectorXd dvMeans = _data.leftCols(nTargets).colwise().sum();
+    for(int v = 0; v < nTargets; v++)
+      dvMeans[v] = dvMeans[v] / _responseCounts[v];
+
+    // Compute the target covariances with pairwise deletion
     MatrixXd dvSigma = _data.leftCols(nTargets).transpose() *
       _data.leftCols(nTargets) / double(nObs - 1);
     
@@ -230,9 +245,10 @@ void MibrrData::fillMissing(int nTargets)
     }  
   }
   else {
+    double dvMean = _data.col(0).sum() / _responseCounts[0];
     for(int i = 0; i < nObs; i++) {
       if(_nonresponseFilter(i, 0))
-	_data(i, 0) = R::rnorm(_dataMeans[0], _dataScales[0]);
+	_data(i, 0) = R::rnorm(dvMean, _dataScales[0]);
     }
   }
 }// END fillMissing()

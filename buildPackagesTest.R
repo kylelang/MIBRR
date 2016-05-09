@@ -28,3 +28,9 @@ testOut2 <- mibl(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
                  returnParams = TRUE)
+
+
+?read.dcf
+
+mibrrL()
+mibrrW()

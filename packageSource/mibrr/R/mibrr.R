@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-MAY-05
+### Modified: 2016-MAY-09
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -68,20 +68,24 @@ mibrr <- function(doMiben,
     ## 1) Move target variables to the leftmost columns
     ## 2) Temporarily replace missCode entries with NAs
     ## 3) Mean-center the data
-    tmpData <- data.frame(rawData[ , targetVars],
+    rawData <- data.frame(rawData[ , targetVars],
                           rawData[ , !colnames(rawData) %in%
                                   c(targetVars, ignoreVars)]
                           )
     
-    if(!is.null(missCode)) tmpData[tmpData == missCode] <- NA
-    
-    centeredData <- scale(tmpData, scale = FALSE)
-    targetMeans  <- attr(centeredData, "scaled:center")[1 : nTargets]
-    dataScales   <- apply(centeredData, 2, FUN = sd, na.rm = TRUE)
+    if(!is.null(missCode)) {
+        userMissCode <- TRUE
+        rawData[rawData == missCode] <- NA
+    } else {
+        userMissCode <- FALSE
+    }
+                                        #centeredData <- scale(tmpData, scale = FALSE)
+                                        #targetMeans  <- attr(centeredData, "scaled:center")[1 : nTargets]
+    dataScales   <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
      
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    paramStarts <- initializeParams(rawData  = centeredData,
+    paramStarts <- initializeParams(rawData  = rawData,
                                     nTargets = nTargets,
                                     doMiben  = doMiben,
                                     control  = control)
@@ -95,8 +99,8 @@ mibrr <- function(doMiben,
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData           = centeredData,
-                 dataMeans        = targetMeans,
+        runGibbs(inData           = as.matrix(rawData),
+                                        #dataMeans        = targetMeans,
                  dataScales       = dataScales,
                  nTargets         = nTargets,
                  lambda1Starts    = lambdaMat[ , 1],
@@ -130,13 +134,15 @@ mibrr <- function(doMiben,
                        returnRHats = TRUE,
                        targetNames = targetVars,
                        critVal     = control$convThresh)
+
+    if(!userMissCode) rawData[rawData == missCode] <- NA
     
     ## Draw imputations from the convergent posterior predictive distribution:
     outImps <- getImputedData(gibbsState  = gibbsOut,
                               nImps       = nImps,
                               rawData     = rawData,
-                              targetVars  = targetVars,
-                              targetMeans = targetMeans)
+                              targetVars  = targetVars)#,
+                                        #targetMeans = targetMeans)
     
     ## Aggregate and return the requested output:
     outList <- list()
