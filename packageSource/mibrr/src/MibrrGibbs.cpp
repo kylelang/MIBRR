@@ -450,9 +450,13 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     tmpMat = transformedTaus.asDiagonal();
   }
 
+  Rcpp::Rcout << tmpMat << endl;
+  
   MatrixXd aMatrix = mibrrData.getIVs(_targetIndex).transpose() *
     mibrrData.getIVs(_targetIndex) + tmpMat;
-    
+
+  Rcpp::Rcout << aMatrix << endl;
+  
   VectorXd betaMeans;
   MatrixXd betaCovariances;
   try {
@@ -462,9 +466,15 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     betaMeans =
       aMatrixCholesky.solve(mibrrData.getIVs(_targetIndex).transpose() *
 			    mibrrData.getDV(_targetIndex)); 
-    
+
+    Rcpp::Rcout << betaMeans << endl;
+  
     tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);   
     betaCovariances = aMatrixCholesky.solve(tmpMat);
+
+    Rcpp::Rcout << tmpMat << endl;
+    Rcpp::Rcout << betaCovariances << endl;
+  
   }
   catch(exception &e) { betaError(e); }
   
@@ -562,11 +572,25 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
-{  
+{
+  Rcpp::Rcout << "In doGibbsIteration()" << endl;
+  
   updateTaus(mibrrData);
+  Rcpp::Rcout << "Updated Tau" << endl;
+  Rcpp::Rcout << _taus << endl;
+  Rcpp::Rcout << _betas << endl;
+  Rcpp::Rcout << _sigma << endl;
+  
   updateBetas(mibrrData);
+  Rcpp::Rcout << "Updated Beta" << endl;
+  Rcpp::Rcout << _betas << endl;
+  
   updateSigma(mibrrData);
+  Rcpp::Rcout << "Updated Sigma" << endl;
+  Rcpp::Rcout << _sigma << endl;
+  
   updateImputations(mibrrData);
+  Rcpp::Rcout << "Updated Imps" << endl;
   
   mibrrData.computeDataScales();
   if(_storeGibbsSamples) _drawNum++;  

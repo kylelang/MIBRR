@@ -5,7 +5,14 @@
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
-require(RcppEigen)
+
+install.packages(c("RcppEigen",
+                   "mvtnorm",
+                   "mice",
+                   "rlecuyer"),
+                 repos = "http://rweb.quant.ku.edu/cran")
+
+library(RcppEigen)
 
 system("rm -r packageSource/mibrr/src/nlopt/* \
         rm packageSource/mibrr/src/RcppExports.cpp \
