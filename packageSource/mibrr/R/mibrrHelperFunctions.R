@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-MAY-09
+### Modified: 2016-MAY-10
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -82,13 +82,12 @@ sampleImps <- function(x, nDraws, nImps)
 ## Fill the missing data with the sampled imputations:
 fillMissing <- function(impNum,
                         targetVars,
-                                        #targetMeans,
                         impSams,
                         rawData)
 {
     for(j in targetVars) {
         naFlag <- is.na(rawData[ , j])
-        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag]# + targetMeans[j]
+        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag]
     }
     rawData
 }
@@ -98,8 +97,7 @@ fillMissing <- function(impNum,
 getImputedData <- function(gibbsState,
                            nImps,
                            rawData,
-                           targetVars)#,
-                                        #targetMeans)
+                           targetVars)
 {
     nDraws <- nrow(gibbsState[[1]]$imps)
     
@@ -111,7 +109,6 @@ getImputedData <- function(gibbsState,
     lapply(c(1 : nImps),
            FUN = fillMissing,
            targetVars = targetVars,
-                                        #targetMeans = targetMeans,
            impSams = impSams,
            rawData = rawData)
 }# END getImputedData()
@@ -247,11 +244,10 @@ initializeParams <- function(rawData,
 {    
     nRows       <- nrow(rawData)
     nObsVec     <- colSums(!is.na(rawData))
-    nPreds      <- ncol(rawData) - 1
+    nPreds      <- ncol(rawData)
     dataScales  <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
     sigmaStarts <- dataScales[1 : nTargets]
-    intStarts   <- vector("numeric", nTargets)
-    tauStarts   <- slopeStarts <- matrix(NA, nPreds, nTargets)
+    tauStarts   <- betaStarts <- matrix(NA, nPreds, nTargets)
     dvStarts    <- matrix(NA, nRows, nTargets)
 
     ## Populate the starting values for Lambda:
@@ -291,27 +287,20 @@ initializeParams <- function(rawData,
                 tauStarts[k, j] <- tauDraw
             }
             
-            slopePriorCov <- diag(1 / (
+            betaPriorCov <- diag(1 / (
                 (lam2 / sigmaStarts[j]) *
                     (tauStarts[ , j] / (tauStarts[ , j] - 1.0))
             ))
             
-            slopeStarts[ , j] <- rmvnorm(1, rep(0, nPreds), slopePriorCov)
+            betaStarts[ , j] <- rmvnorm(1, rep(0, nPreds), betaPriorCov)
         } else {# We're doing MIBL
             lam <- lambdaMat[j, 1]
             tauStarts[ , j] <- rexp(nPreds, rate = (0.5 * lam^2))
-            slopePriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
-            slopeStarts[ , j] <- rmvnorm(1, rep(0, nPreds), slopePriorCov)
+            betaPriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
+            betaStarts[ , j] <- rmvnorm(1, rep(0, nPreds), betaPriorCov)
         }
-        
-        ## Intercept starts are drawn from an informative, flat prior with
-        ## bounds = +/- SEM
-        intBound <- dataScales[j] / sqrt(nObsVec[j])
-        intStarts[j] <- runif(1, -intBound, intBound)
     }# CLOSE for(j in 1 : nTargets)
-    
-    betaStarts <- rbind(intStarts, slopeStarts)
-    
+       
     list(lambda = lambdaMat,
          beta   = betaStarts,
          tau    = tauStarts,

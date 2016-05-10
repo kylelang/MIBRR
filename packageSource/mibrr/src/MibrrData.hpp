@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-09
+// Modified: 2016-MAY-10
 // Purpose:  This class contains data- and sampling-related functions
 //           used by the MIBRR Gibbs sampler.
 
@@ -40,7 +40,6 @@ public:
   MibrrData(MatrixXd&);
   
   MibrrData(MatrixXd&,
-	    //VectorXd&,
 	    VectorXd&,
 	    double);
   
@@ -75,13 +74,6 @@ public:
   ArrayXXb getNonresponseFilter();
   // @return: the nonresponse filter matrix
 
-  //VectorXd getDataMeans();
-  // @return: the column-wise means of the data
-  
-  //double getDataMeans(int);
-  // @param:  a column index
-  // @return: the column mean for the specified column index
-  
   VectorXd getDataScales();
   // @return: the column-wise scales of the data
   
@@ -153,7 +145,6 @@ private:
   MatrixXd _data;
   ArrayXXb _nonresponseFilter;
   VectorXd _responseCounts;
-  //VectorXd _dataMeans;
   VectorXd _dataScales;
   double   _missingDataCode;
 };

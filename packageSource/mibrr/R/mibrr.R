@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-MAY-09
+### Modified: 2016-MAY-10
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -58,7 +58,7 @@ mibrr <- function(doMiben,
     
     ## Define some useful constants and counters:
     nTargets <- length(targetVars)
-    nPreds   <- ncol(rawData) - length(ignoreVars) - 1
+    nPreds   <- ncol(rawData) - length(ignoreVars)
     nObs     <- nrow(rawData)
     
     ## Ensure a correct list of control parameters:
@@ -79,8 +79,6 @@ mibrr <- function(doMiben,
     } else {
         userMissCode <- FALSE
     }
-                                        #centeredData <- scale(tmpData, scale = FALSE)
-                                        #targetMeans  <- attr(centeredData, "scaled:center")[1 : nTargets]
     dataScales   <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
      
     ## Initialize starting values for the Gibbs sampled parameters.
@@ -100,7 +98,6 @@ mibrr <- function(doMiben,
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
         runGibbs(inData           = as.matrix(rawData),
-                                        #dataMeans        = targetMeans,
                  dataScales       = dataScales,
                  nTargets         = nTargets,
                  lambda1Starts    = lambdaMat[ , 1],
@@ -141,8 +138,7 @@ mibrr <- function(doMiben,
     outImps <- getImputedData(gibbsState  = gibbsOut,
                               nImps       = nImps,
                               rawData     = rawData,
-                              targetVars  = targetVars)#,
-                                        #targetMeans = targetMeans)
+                              targetVars  = targetVars)
     
     ## Aggregate and return the requested output:
     outList <- list()

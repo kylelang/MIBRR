@@ -19,6 +19,9 @@ library(mibrr)
 
 data(mibrrExampleData)
 
+debug(miben)
+undebug(miben)
+
 testOut <- miben(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",

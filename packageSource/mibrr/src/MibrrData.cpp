@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-09
+// Modified: 2016-MAY-10
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -31,18 +31,15 @@
 MibrrData::MibrrData(MatrixXd &newData)
 {
   _data     = newData;
-  //_dataMeans  = RowVectorXd( _data.cols() );
   _dataScales = RowVectorXd( _data.cols() );
 }
 
 MibrrData::MibrrData(MatrixXd &newData,
-		     //VectorXd &newDataMeans,
 		     VectorXd &newDataScales,
 		     double missingDataCode) 
 {
   _missingDataCode   = missingDataCode;
   _data              = newData;
-  //_dataMeans         = newDataMeans;
   _dataScales        = newDataScales;
   _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
   computeNonresponseFilter();
@@ -55,24 +52,31 @@ MibrrData::~MibrrData()
 ///////////////////////////////// ACCESSORS /////////////////////////////////////
 
 MatrixXd MibrrData::getIVs(int targetIndex)
-{ 
+{
   int nObs = _data.rows();
   int nVars = _data.cols();
   int newRowIndex = 0;
-  MatrixXd outMat = MatrixXd::Zero(_responseCounts[targetIndex], nVars - 1);
-  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
+  MatrixXd outMat = MatrixXd::Zero(_responseCounts[targetIndex], nVars);
+  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
   
+  // outMat is the same width as _data and tmpMat. outMat includes a leading
+  // constant column and excludes the current target variable:
+  outMat.col(0) = MatrixXd::Ones(_responseCounts[targetIndex], 1);
+  
+  // All variables other than current target are used as predictors:
   for(int i = 0; i < nObs; i++) {
-    if(_nonresponseFilter(i, targetIndex) == false) {
-      outMat.block(newRowIndex, 0, 1, targetIndex) =
-	tmpMat.block(i, 0, 1, targetIndex);
+    if(_nonresponseFilter(i, targetIndex) == false) {     
+      if(targetIndex > 0) 
+	outMat.block(newRowIndex, 1, 1, targetIndex) =
+	  tmpMat.block(i, 0, 1, targetIndex);
       
-      outMat.block(newRowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
-	tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
-      
+      outMat.block(newRowIndex, targetIndex + 1, 1, nVars - targetIndex - 1) = 
+	tmpMat.block(i, targetIndex + 1, 1, nVars - targetIndex - 1);
+
       newRowIndex++;
     }
   }
+  
   return outMat;
 }
 
@@ -81,13 +85,14 @@ MatrixXd MibrrData::getFullIVs(int targetIndex)
 { 
   int nObs = _data.rows();
   int nVars = _data.cols();
-  MatrixXd outMat = MatrixXd::Zero(nObs, nVars - 1);
+  MatrixXd outMat = MatrixXd::Zero(nObs, nVars);
   MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
-  
-  outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
+
+  outMat.col(0) = MatrixXd::Ones(nObs, 1);
+  outMat.middleCols(1, targetIndex) = tmpMat.leftCols(targetIndex);
       
-  outMat.rightCols(nVars - (targetIndex + 1)) =
-    tmpMat.rightCols(nVars - (targetIndex + 1));
+  outMat.rightCols(nVars - targetIndex - 1) =
+    tmpMat.rightCols(nVars - targetIndex - 1);
   
   return outMat;
 }
@@ -131,18 +136,6 @@ MatrixXd MibrrData::getData()
 {
   return _data;
 }
-
-
-//VectorXd MibrrData::getDataMeans()
-//{
-//  return _dataMeans;
-//}
-
-
-//double MibrrData::getDataMeans(int targetIndex)
-//{
-//  return _dataMeans[targetIndex];
-//}
 
 
 VectorXd MibrrData::getDataScales()
@@ -300,7 +293,7 @@ int MibrrData::nResponses(int targetIndex)
 
 int MibrrData::nPreds() const 
 { 
-  return _data.cols() - 1; 
+  return _data.cols(); 
 }
 
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
