@@ -82,12 +82,13 @@ sampleImps <- function(x, nDraws, nImps)
 ## Fill the missing data with the sampled imputations:
 fillMissing <- function(impNum,
                         targetVars,
+                        targetMeans,
                         impSams,
                         rawData)
 {
     for(j in targetVars) {
         naFlag <- is.na(rawData[ , j])
-        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag]
+        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag] + targetMeans[j]
     }
     rawData
 }
@@ -97,7 +98,8 @@ fillMissing <- function(impNum,
 getImputedData <- function(gibbsState,
                            nImps,
                            rawData,
-                           targetVars)
+                           targetVars,
+                           targetMeans)
 {
     nDraws <- nrow(gibbsState[[1]]$imps)
     
@@ -109,6 +111,7 @@ getImputedData <- function(gibbsState,
     lapply(c(1 : nImps),
            FUN = fillMissing,
            targetVars = targetVars,
+           targetMeans = targetMeans,
            impSams = impSams,
            rawData = rawData)
 }# END getImputedData()

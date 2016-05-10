@@ -79,11 +79,13 @@ mibrr <- function(doMiben,
     } else {
         userMissCode <- FALSE
     }
+    centeredData <- scale(rawData, scale = FALSE)
+    dataMeans    <- attr(centeredData, "scaled:center")
     dataScales   <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
      
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    paramStarts <- initializeParams(rawData  = rawData,
+    paramStarts <- initializeParams(rawData  = centeredData, #rawData,
                                     nTargets = nTargets,
                                     doMiben  = doMiben,
                                     control  = control)
@@ -97,7 +99,7 @@ mibrr <- function(doMiben,
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData           = as.matrix(rawData),
+        runGibbs(inData           = as.matrix(centeredData), #rawData),
                  dataScales       = dataScales,
                  nTargets         = nTargets,
                  lambda1Starts    = lambdaMat[ , 1],
@@ -137,7 +139,8 @@ mibrr <- function(doMiben,
     ## Draw imputations from the convergent posterior predictive distribution:
     outImps <- getImputedData(gibbsState  = gibbsOut,
                               nImps       = nImps,
-                              rawData     = rawData,
+                              rawData     = centeredData, #rawData,
+                              targetMeans = dataMeans[targetVars],
                               targetVars  = targetVars)
     
     ## Aggregate and return the requested output:
