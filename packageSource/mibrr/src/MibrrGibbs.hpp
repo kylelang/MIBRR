@@ -89,10 +89,14 @@ public:
   bool getElasticNetFlag() const;
   // @return: current value of the _useElasticNet switch
 
-  bool getRegInterceptFlag() const;
+  bool getRegIntercept() const;
   // @return: current value of the flag denoting if the intercept will be
   //          regularized
-    
+
+  bool getDoImputation() const;
+  // @return: current value of the flag denoting if missing data are to be
+  //          imputed
+  
   /////////////////////////////// MUTATORS //////////////////////////////////////
   
    void setBetas(VectorXd&);
@@ -180,15 +184,18 @@ public:
   void setElasticNetFlag(bool);
   // @param: new value of the _useElasticNet flag
 
-  void doMiben();
+  void doBen();
   // @effect: set the imputation model to the Bayesian elastic net 
   
-  void doMibl();
+  void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
 
-  void setRegInterceptFlag(bool);
+  void setRegIntercept(bool);
   // @param: new value of the flag denoting if the intercept will be regularized
-    
+
+  void setDoImputation(bool);
+  // @param: new value of the flag denoting if missing data are to be imputed
+  
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
   
   double drawInvGamma(double,
@@ -302,6 +309,7 @@ private:
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _regIntercept;
+  bool     _doImputation;
   string   _optPrefix;
   string   _algName;
   int      _optMethod;

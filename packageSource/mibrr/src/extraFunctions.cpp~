@@ -53,9 +53,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    double          emConvTol,
 		    bool            verboseIters,
 		    bool            verboseErrors,
-		    bool            doBen,
-		    bool            regIntercept,
-		    bool            doImputation)
+		    bool            doMibl,
+		    bool            regIntercept)
 {
   // Initialize the various classes needed below:
   MibrrData mibrrData(inData, 
@@ -74,8 +73,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
     Eigen::VectorXd betaStartVec = betaStarts.col(j);
     Eigen::ArrayXd tauStartArray = tauStarts.col(j).array();
 
-    if(!doBen) {
-      mibrrGibbs[j].doBl();
+    if(doMibl) {
+      mibrrGibbs[j].doMibl();
       emConvTol = 0.0; // Set dummy value for EM convergence criterion
     }
     
@@ -92,8 +91,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
     
     mibrrGibbs[j].setVerbosity(verboseIters, verboseErrors);
     mibrrGibbs[j].setTargetIndex(j);
-    mibrrGibbs[j].setRegIntercept(regIntercept);
-    mibrrGibbs[j].setDoImputation(doImputation);
+    mibrrGibbs[j].setRegInterceptFlag(regIntercept);
   }
   
   // Specify containers for the parameters' starting values:

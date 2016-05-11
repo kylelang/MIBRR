@@ -43,6 +43,7 @@ MibrrGibbs::MibrrGibbs()
   _verboseIters      = true;
   _useElasticNet     = true;
   _regIntercept      = false;
+  _doImputation      = true;
 }
 
 
@@ -150,9 +151,14 @@ bool MibrrGibbs::getElasticNetFlag() const
   return _useElasticNet; 
 }
 
-bool MibrrGibbs::getRegInterceptFlag() const 
+bool MibrrGibbs::getRegIntercept() const 
 { 
   return _regIntercept; 
+}
+
+bool MibrrGibbs::getDoImputation() const 
+{ 
+  return _doImputation; 
 }
 
 //////////////////////////////// MUTATORS ///////////////////////////////////////
@@ -315,20 +321,25 @@ void MibrrGibbs::setElasticNetFlag(bool useElasticNet)
 }
 
 
-void MibrrGibbs::doMiben()
+void MibrrGibbs::doBen()
 {
   _useElasticNet = true;
 }
 
 
-void MibrrGibbs::doMibl()
+void MibrrGibbs::doBl()
 {
   _useElasticNet = false;
 }
 
-void MibrrGibbs::setRegInterceptFlag(bool regIntercept) 
+void MibrrGibbs::setRegIntercept(bool regIntercept) 
 { 
   _regIntercept = regIntercept; 
+}
+
+void MibrrGibbs::setDoImputation(bool doImputation) 
+{ 
+  _doImputation = doImputation; 
 }
 
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
@@ -588,7 +599,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
   updateTaus(mibrrData); 
   updateBetas(mibrrData);
   updateSigma(mibrrData);  
-  updateImputations(mibrrData);
+  if(_doImputation) updateImputations(mibrrData);
   
   mibrrData.computeDataScales();
   if(_storeGibbsSamples) _drawNum++;  

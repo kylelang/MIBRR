@@ -33,7 +33,8 @@
 ##-----------------------------------------------------------------------------##
 
 ## Specify the main computational function of the mibrr package:
-mibrr <- function(doMiben,
+mibrr <- function(doBen,
+                  doImp,
                   rawData,
                   nImps,
                   targetVars,
@@ -73,11 +74,13 @@ mibrr <- function(doMiben,
                                   c(targetVars, ignoreVars)]
                           )
     
-    if(!is.null(missCode)) {
-        userMissCode <- TRUE
-        rawData[rawData == missCode] <- NA
-    } else {
-        userMissCode <- FALSE
+    if(doImp) {
+        if(!is.null(missCode)) {
+            userMissCode <- TRUE
+            rawData[rawData == missCode] <- NA
+        } else {
+            userMissCode <- FALSE
+        }
     }
     centeredData <- scale(rawData, scale = FALSE)
     dataMeans    <- attr(centeredData, "scaled:center")
@@ -87,7 +90,7 @@ mibrr <- function(doMiben,
     ## Important to call this before the NAs are replaced with missCode.
     paramStarts <- initializeParams(rawData  = centeredData, #rawData,
                                     nTargets = nTargets,
-                                    doMiben  = doMiben,
+                                    doBen  = doBen,
                                     control  = control)
     lambdaMat   <- paramStarts$lambda
     betaStarts  <- paramStarts$beta
@@ -95,7 +98,7 @@ mibrr <- function(doMiben,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill the missing data with an integer code:
-    applyMissCode(dataName = "centeredData")
+    if(doImp) applyMissCode(dataName = "centeredData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
@@ -117,15 +120,16 @@ mibrr <- function(doMiben,
                  nMcemPostBurn    = ifelse(is.null(control$mcemPostBurn), -1,
                      control$mcemPostBurn),
                  nMcemPostGibbs   = mcemPostN,
-                 emConvTol        = ifelse(doMiben, control$mcemEpsilon, -1),
+                 emConvTol        = ifelse(doBen, control$mcemEpsilon, -1),
                  lambdaWindow     = control$smoothingWindow,
                  verboseIters     = verboseIters,
                  verboseErrors    = verboseErrors,
-                 doMibl           = !doMiben,
-                 regIntercept     = control$regIntercept)
+                 doBen            = doBen,
+                 regIntercept     = control$regIntercept,
+                 doImputation     = doImp)
 
     names(gibbsOut) <- targetVars
-    if(!userMissCode) centeredData[centeredData == missCode] <- NA
+    if(!userMissCode & doImp) centeredData[centeredData == missCode] <- NA
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -137,15 +141,17 @@ mibrr <- function(doMiben,
                        critVal     = control$convThresh)
     
     ## Draw imputations from the convergent posterior predictive distribution:
-    outImps <- getImputedData(gibbsState  = gibbsOut,
-                              nImps       = nImps,
-                              rawData     = as.data.frame(centeredData), #rawData,
-                              targetMeans = dataMeans[targetVars],
-                              targetVars  = targetVars)
+    if(doImp) {
+        outImps <- getImputedData(gibbsState  = gibbsOut,
+                                  nImps       = nImps,
+                                  rawData     = as.data.frame(centeredData),
+                                  targetMeans = dataMeans[targetVars],
+                                  targetVars  = targetVars)
+    }
     
     ## Aggregate and return the requested output:
     outList <- list()
-    outList$imps <- outImps
+    if(doImp) outList$imps <- outImps
     
     if(returnConvInfo) {
         outList$rHats <- rHatList
@@ -196,7 +202,7 @@ miben <- function(rawData,
                   control         = list()
                   )
 {
-    mibrr(doMiben         = TRUE,
+    mibrr(doBen           = TRUE,
           rawData         = rawData,
           nImps           = nImps,
           targetVars      = targetVars,
@@ -236,7 +242,7 @@ mibl <- function(rawData,
                  control         = list()
                  )
 {
-    mibrr(doMiben         = FALSE,
+    mibrr(doBen           = FALSE,
           rawData         = rawData,
           nImps           = nImps,
           targetVars      = targetVars,
@@ -254,3 +260,75 @@ mibl <- function(rawData,
           seed            = seed,
           control         = control)
 }# END mibl()
+
+
+### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
+ben <- function(rawData,
+                y               = NULL,
+                X               = NULL,
+                mcemApproxIters = 100,
+                mcemTuneIters   = 10,
+                mcemApproxN     = 25,
+                mcemTuneN       = 250,
+                mcemPostN       = 500,
+                returnConvInfo  = TRUE,
+                returnParams    = FALSE,
+                verboseIters    = TRUE,
+                verboseErrors   = TRUE,
+                seed            = NULL,
+                control         = list()
+                )
+{
+    mibrr(doBen           = TRUE,
+          doImp           = FALSE,
+          rawData         = rawData,
+          targetVars      = y,
+          ignoreVars      = setdiff(colnames(rawData), c(y, X)),
+          mcemApproxIters = mcemApproxIters,
+          mcemTuneIters   = mcemTuneIters,
+          mcemApproxN     = mcemApproxN,
+          mcemTuneN       = mcemTuneN,
+          mcemPostN       = mcemPostN,
+          returnConvInfo  = returnConvInfo,
+          returnParams    = returnParams,
+          verboseIters    = verboseIters,
+          verboseErrors   = verboseErrors,
+          seed            = seed,
+          control         = control)
+}# END ben()
+
+
+### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
+bl <- function(rawData,
+               y               = NULL,
+               X               = NULL,
+               mcemApproxIters = 100,
+               mcemTuneIters   = 10,
+               mcemApproxN     = 25,
+               mcemTuneN       = 250,
+               mcemPostN       = 500,
+               returnConvInfo  = TRUE,
+               returnParams    = FALSE,
+               verboseIters    = TRUE,
+               verboseErrors   = TRUE,
+               seed            = NULL,
+               control         = list()
+               )
+{
+    mibrr(doBen           = FALSE,
+          doImp           = FALSE,
+          rawData         = rawData,
+          targetVars      = y,
+          ignoreVars      = setdiff(colnames(rawData), c(y, X)),
+          mcemApproxIters = mcemApproxIters,
+          mcemTuneIters   = mcemTuneIters,
+          mcemApproxN     = mcemApproxN,
+          mcemTuneN       = mcemTuneN,
+          mcemPostN       = mcemPostN,
+          returnConvInfo  = returnConvInfo,
+          returnParams    = returnParams,
+          verboseIters    = verboseIters,
+          verboseErrors   = verboseErrors,
+          seed            = seed,
+          control         = control)
+}# END bl()

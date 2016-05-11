@@ -1,4 +1,13 @@
 useDynLib(mibrr)
 import(RcppEigen)
 importFrom(Rcpp, evalCpp)
-export(mibl, miben, mibrrW, mibrrL)
+export(mibl,
+       miben,
+       mibrrW,
+       mibrrL,
+       drawInvGamma,
+       drawMVN,
+       calcIncGamma,
+       drawInvGauss,
+       ben,
+       bl)
