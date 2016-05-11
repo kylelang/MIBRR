@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-10
+// Modified: 2016-MAY-11
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -53,13 +53,11 @@ MibrrData::~MibrrData()
 
 MatrixXd MibrrData::getIVs(int targetIndex)
 {
-  Rcpp::Rcout << "In getIVs()" << endl;
-  
   int nObs = _data.rows();
   int nVars = _data.cols();
   int newRowIndex = 0;
   MatrixXd outMat = MatrixXd::Zero(_responseCounts[targetIndex], nVars);
-  MatrixXd tmpMat = _data; // * _dataScales.asDiagonal().inverse();
+  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
   
   // outMat is the same width as _data and tmpMat. outMat includes a leading
   // constant column and excludes the current target variable:
@@ -78,8 +76,6 @@ MatrixXd MibrrData::getIVs(int targetIndex)
       newRowIndex++;
     }
   }
-
-  Rcpp::Rcout << outMat << endl;
   
   return outMat;
 }
@@ -90,7 +86,7 @@ MatrixXd MibrrData::getFullIVs(int targetIndex)
   int nObs = _data.rows();
   int nVars = _data.cols();
   MatrixXd outMat = MatrixXd::Zero(nObs, nVars);
-  MatrixXd tmpMat = _data; // * _dataScales.asDiagonal().inverse(); 
+  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
 
   outMat.col(0) = MatrixXd::Ones(nObs, 1);
   outMat.middleCols(1, targetIndex) = tmpMat.leftCols(targetIndex);

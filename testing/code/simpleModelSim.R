@@ -18,6 +18,18 @@ library(mice)
 library(parallel)
 source("simpleSimFunctions.R")
 
+
+
+X <- as.matrix(dat1[ , c("sysRac", "indRac", "merit")])
+
+aMat <- crossprod(X)
+
+test1 <- aMat * 3
+test2 <- aMat %*% diag(rep(3, 3))
+
+test1 - test2
+
+
 nReps <- 200
 cSize <- 8
 

@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-MAY-10
+### Modified: 2016-MAY-11
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -338,7 +338,8 @@ padControlList <- function()
             lambda1Starts   = rep(0.5, env$nTargets),
             lambda2Starts   = rep(env$nPreds / 10, env$nTargets),
             mcemEpsilon     = 1.0e-5,
-            smoothingWindow = 1
+            smoothingWindow = 1,
+            regIntercept    = FALSE
         )
     } else {
         defaults = list(
@@ -348,7 +349,8 @@ padControlList <- function()
             convThresh      = 1.1,
             lambdaStarts    = rep(env$nPreds / 10, env$nTargets),
             usePCStarts     = FALSE,
-            smoothingWindow = 1
+            smoothingWindow = 1,
+            regIntercept    = FALSE
         )
     }
     ## Pad the user-provided control list with default values:
@@ -358,19 +360,19 @@ padControlList <- function()
 
 
 ## Fill missing data with an appropriate integer code:
-applyMissCode <- function() {
+applyMissCode <- function(dataName) {
     env <- parent.frame()
     ## Construct an integer-valued missing data code that
     ## does not take legal data values and use it to flag NAs.
     if(is.null(env$missCode)) {
-        if(max(abs(env$rawData), na.rm = TRUE) < 1.0) {
+        if(max(abs(env[[dataName]]), na.rm = TRUE) < 1.0) {
             env$missCode <- -9
         } else {
-            codeMag <- floor(log10(max(abs(env$rawData), na.rm = TRUE))) + 2
+            codeMag <- floor(log10(max(abs(env[[dataName]]), na.rm = TRUE))) + 2
             env$missCode <- -(10^codeMag - 1)
         }
     }
-    env$rawData[is.na(env$rawData)] <- env$missCode
+    env[[dataName]][is.na(env[[dataName]])] <- env$missCode
 }
 
 

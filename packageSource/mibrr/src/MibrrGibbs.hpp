@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-APR-30
+// Modified: 2016-MAY-11
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -88,7 +88,11 @@ public:
 
   bool getElasticNetFlag() const;
   // @return: current value of the _useElasticNet switch
-  
+
+  bool getRegInterceptFlag() const;
+  // @return: current value of the flag denoting if the intercept will be
+  //          regularized
+    
   /////////////////////////////// MUTATORS //////////////////////////////////////
   
    void setBetas(VectorXd&);
@@ -182,6 +186,9 @@ public:
   void doMibl();
   // @effect: set the imputation model to the Bayesian LASSO 
 
+  void setRegInterceptFlag(bool);
+  // @param: new value of the flag denoting if the intercept will be regularized
+    
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
   
   double drawInvGamma(double,
@@ -294,6 +301,7 @@ private:
   bool     _verboseIters;
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
+  bool     _regIntercept;
   string   _optPrefix;
   string   _algName;
   int      _optMethod;

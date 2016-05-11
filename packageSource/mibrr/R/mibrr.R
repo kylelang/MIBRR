@@ -95,7 +95,7 @@ mibrr <- function(doMiben,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill the missing data with an integer code:
-    applyMissCode()
+    applyMissCode(dataName = "centeredData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
@@ -121,9 +121,11 @@ mibrr <- function(doMiben,
                  lambdaWindow     = control$smoothingWindow,
                  verboseIters     = verboseIters,
                  verboseErrors    = verboseErrors,
-                 doMibl           = !doMiben)
+                 doMibl           = !doMiben,
+                 regIntercept     = control$regIntercept)
 
     names(gibbsOut) <- targetVars
+    if(!userMissCode) centeredData[centeredData == missCode] <- NA
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -133,13 +135,11 @@ mibrr <- function(doMiben,
                        returnRHats = TRUE,
                        targetNames = targetVars,
                        critVal     = control$convThresh)
-
-    if(!userMissCode) rawData[rawData == missCode] <- NA
     
     ## Draw imputations from the convergent posterior predictive distribution:
     outImps <- getImputedData(gibbsState  = gibbsOut,
                               nImps       = nImps,
-                              rawData     = centeredData, #rawData,
+                              rawData     = as.data.frame(centeredData), #rawData,
                               targetMeans = dataMeans[targetVars],
                               targetVars  = targetVars)
     

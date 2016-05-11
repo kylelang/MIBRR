@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-10
+// Modified: 2016-MAY-11
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -42,6 +42,7 @@ MibrrGibbs::MibrrGibbs()
   _verboseErrors     = true;
   _verboseIters      = true;
   _useElasticNet     = true;
+  _regIntercept      = false;
 }
 
 
@@ -147,6 +148,11 @@ bool MibrrGibbs::getIterVerbosity() const
 bool MibrrGibbs::getElasticNetFlag() const 
 { 
   return _useElasticNet; 
+}
+
+bool MibrrGibbs::getRegInterceptFlag() const 
+{ 
+  return _regIntercept; 
 }
 
 //////////////////////////////// MUTATORS ///////////////////////////////////////
@@ -320,6 +326,11 @@ void MibrrGibbs::doMibl()
   _useElasticNet = false;
 }
 
+void MibrrGibbs::setRegInterceptFlag(bool regIntercept) 
+{ 
+  _regIntercept = regIntercept; 
+}
+
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
 
 double MibrrGibbs::drawInvGamma(double shape, 
@@ -391,7 +402,7 @@ void MibrrGibbs::updateTaus(MibrrData &mibrrData)
 {
   double lambda1 = _lambdas[0];
   double lambda2 = _lambdas[1];
-  int nPreds = mibrrData.nPreds(); 
+  int nPreds = mibrrData.nPreds();
   ArrayXd tauMeans;
   double tauScale = -1.0;// -1 to ensure an exception if try() fails
   
@@ -443,20 +454,18 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   if(_useElasticNet) {// MIBEN Version
     double lambda2 = _lambdas[1];
     VectorXd transformedTaus = _taus / (_taus - 1.0);
-    tmpMat = lambda2 * transformedTaus.asDiagonal();    
+    tmpMat = lambda2 * transformedTaus.asDiagonal();
+    if(!_regIntercept) tmpMat(0, 0) = 0.0;
   }
   else {// MIBL Version
     VectorXd transformedTaus = 1.0 / _taus;
     tmpMat = transformedTaus.asDiagonal();
+    if(!_regIntercept) tmpMat(0, 0) = 0.0;
   }
 
-  Rcpp::Rcout << tmpMat << endl;
-  
   MatrixXd aMatrix = mibrrData.getIVs(_targetIndex).transpose() *
     mibrrData.getIVs(_targetIndex) + tmpMat;
-
-  Rcpp::Rcout << aMatrix << endl;
-  
+ 
   VectorXd betaMeans;
   MatrixXd betaCovariances;
   try {
@@ -467,14 +476,8 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
       aMatrixCholesky.solve(mibrrData.getIVs(_targetIndex).transpose() *
 			    mibrrData.getDV(_targetIndex)); 
 
-    Rcpp::Rcout << betaMeans << endl;
-  
     tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);   
-    betaCovariances = aMatrixCholesky.solve(tmpMat);
-
-    Rcpp::Rcout << tmpMat << endl;
-    Rcpp::Rcout << betaCovariances << endl;
-  
+    betaCovariances = aMatrixCholesky.solve(tmpMat);  
   }
   catch(exception &e) { betaError(e); }
   
@@ -506,12 +509,19 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
      mibrrData.getIVs(_targetIndex) * _betas);
   
   if(_useElasticNet) {// MIBEN Version
-    double scaleSum = (_taus / (_taus - 1.0) * _betas.array().square()).sum();
+    ArrayXd transformedTaus = _taus / (_taus - 1.0);
+    if(!_regIntercept) transformedTaus[0] = 1.0;
+    
+    double scaleSum = (transformedTaus * _betas.array().square()).sum();
     
     double sigmaShape = (double(nObs) / 2.0) + double(nPreds);
-    double sigmaScale = 0.5 * (sse + lambda2 * scaleSum +
-			       (pow(lambda1, 2) / (4.0 * lambda2)) * _taus.sum()
-			       );
+
+    ArrayXd tmpTaus = _taus;
+    if(!_regIntercept) tmpTaus[0] = 0.0;
+    
+    double sigmaScale =
+      0.5 * (sse + lambda2 * scaleSum + (pow(lambda1, 2) / (4.0 * lambda2)) *
+	     tmpTaus.sum());
     
     bool isDrawValid = false;
     double testDraw;
@@ -528,6 +538,8 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
   }
   else {// MIBL Version
     VectorXd transformedTaus = 1.0 / _taus;
+    if(!_regIntercept) transformedTaus[0] = 1.0;
+    
     MatrixXd tmpMat = transformedTaus.asDiagonal();
     
     double penaltyTerm = _betas.transpose() * tmpMat * _betas;
@@ -573,24 +585,10 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
-  Rcpp::Rcout << "In doGibbsIteration()" << endl;
-  
-  updateTaus(mibrrData);
-  Rcpp::Rcout << "Updated Tau" << endl;
-  Rcpp::Rcout << _taus << endl;
-  Rcpp::Rcout << _betas << endl;
-  Rcpp::Rcout << _sigma << endl;
-  
+  updateTaus(mibrrData); 
   updateBetas(mibrrData);
-  Rcpp::Rcout << "Updated Beta" << endl;
-  Rcpp::Rcout << _betas << endl;
-  
-  updateSigma(mibrrData);
-  Rcpp::Rcout << "Updated Sigma" << endl;
-  Rcpp::Rcout << _sigma << endl;
-  
+  updateSigma(mibrrData);  
   updateImputations(mibrrData);
-  Rcpp::Rcout << "Updated Imps" << endl;
   
   mibrrData.computeDataScales();
   if(_storeGibbsSamples) _drawNum++;  

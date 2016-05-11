@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-MAY-10
+// Modified: 2016-MAY-11
 // Purpose:  This code is part of the R package mibrr.
 //           This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
@@ -53,7 +53,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    double          emConvTol,
 		    bool            verboseIters,
 		    bool            verboseErrors,
-		    bool            doMibl)
+		    bool            doMibl,
+		    bool            regIntercept)
 {
   // Initialize the various classes needed below:
   MibrrData mibrrData(inData, 
@@ -89,7 +90,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 				  lambda2Starts[j]);
     
     mibrrGibbs[j].setVerbosity(verboseIters, verboseErrors);
-    mibrrGibbs[j].setTargetIndex(j); 
+    mibrrGibbs[j].setTargetIndex(j);
+    mibrrGibbs[j].setRegInterceptFlag(regIntercept);
   }
   
   // Specify containers for the parameters' starting values:

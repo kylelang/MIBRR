@@ -6,10 +6,7 @@
 
 rm(list = ls(all = TRUE))
 
-install.packages(c("RcppEigen",
-                   "mvtnorm",
-                   "mice",
-                   "rlecuyer"),
+install.packages(c("mitools"),
                  repos = "http://rweb.quant.ku.edu/cran")
 
 library(RcppEigen)
@@ -22,6 +19,7 @@ system("cp -r ~/data/software/miscPackages/nlopt-2.4.2/* packageSource/mibrr/src
 Rcpp::compileAttributes("packageSource/mibrr")
 install.packages("packageSource/mibrr", repos = NULL, type = "source")
 
+library(mitools)
 library(mibrr)
 
 data(mibrrExampleData)
@@ -34,13 +32,17 @@ testOut <- miben(rawData      = mibrrExampleData,
                  ignoreVars   = "idNum",
                  returnParams = TRUE)
 
+fitOut <- lapply(testOut$imps,
+                 FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
+                 )
+MIcombine(fitOut)
+
 testOut2 <- mibl(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
                  returnParams = TRUE)
 
-
-?read.dcf
-
-mibrrL()
-mibrrW()
+fitOut2 <- lapply(testOut$imps,
+                 FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
+                 )
+MIcombine(fitOut2)
