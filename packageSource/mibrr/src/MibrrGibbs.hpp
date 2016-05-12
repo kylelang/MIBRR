@@ -80,11 +80,8 @@ public:
   int getNEmIters() const;
   // @return: number of MCEM iterations requested
 
-  bool getErrorVerbosity() const;
-  // @return: flag indicating if errors are currently verbose
-
-  bool getIterVerbosity() const;
-  // @return: flag indicating if iterations are currently verbose
+  bool getVerbosity() const;
+  // @return: flag indicating if printed output is currently verbose
 
   bool getElasticNetFlag() const;
   // @return: current value of the _useElasticNet switch
@@ -171,16 +168,9 @@ public:
   void setNEmIters(int);
   // @param: new value for the number of MCEM iterations
 
-  void setVerbosity(bool, bool);
-  // @param1: should verbose errors be reported?
-  // @param2: should verbose iteration history be reported?
-  
-  void setErrorVerbosity(bool);
-  // @param: new verbosity flag for errors
-
-  void setIterVerbosity(bool);
-  // @param: new verbosity flag for iterations
-
+  void setVerbosity(bool);
+  // @param1: should verbose output be printed?
+    
   void setElasticNetFlag(bool);
   // @param: new value of the _useElasticNet flag
 
@@ -304,8 +294,7 @@ private:
   int      _emIterNum;
   int      _optIterCount;
   int      _lambdaWindow;
-  bool     _verboseErrors;
-  bool     _verboseIters;
+  bool     _verbose;
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _regIntercept;

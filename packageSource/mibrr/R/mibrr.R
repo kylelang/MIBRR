@@ -47,8 +47,7 @@ mibrr <- function(doBen,
                   missCode,
                   returnConvInfo,
                   returnParams,
-                  verboseIters,
-                  verboseErrors,
+                  verbose,
                   seed,
                   control)
 {
@@ -73,7 +72,7 @@ mibrr <- function(doBen,
                           rawData[ , !colnames(rawData) %in%
                                   c(targetVars, ignoreVars)]
                           )
-    
+
     if(doImp) {
         if(!is.null(missCode)) {
             userMissCode <- TRUE
@@ -82,6 +81,7 @@ mibrr <- function(doBen,
             userMissCode <- FALSE
         }
     }
+    
     centeredData <- scale(rawData, scale = FALSE)
     dataMeans    <- attr(centeredData, "scaled:center")
     dataScales   <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
@@ -98,11 +98,11 @@ mibrr <- function(doBen,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill the missing data with an integer code:
-    if(doImp) applyMissCode(dataName = "centeredData")
+    applyMissCode(dataName = "centeredData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData           = as.matrix(centeredData), #rawData),
+        runGibbs(inData           = as.matrix(centeredData),
                  dataScales       = dataScales,
                  nTargets         = nTargets,
                  lambda1Starts    = lambdaMat[ , 1],
@@ -122,14 +122,14 @@ mibrr <- function(doBen,
                  nMcemPostGibbs   = mcemPostN,
                  emConvTol        = ifelse(doBen, control$mcemEpsilon, -1),
                  lambdaWindow     = control$smoothingWindow,
-                 verboseIters     = verboseIters,
-                 verboseErrors    = verboseErrors,
+                 verbose          = verbose,
                  doBen            = doBen,
                  regIntercept     = control$regIntercept,
                  doImputation     = doImp)
 
     names(gibbsOut) <- targetVars
-    if(!userMissCode & doImp) centeredData[centeredData == missCode] <- NA
+    if(doImp)
+        if(!userMissCode) centeredData[centeredData == missCode] <- NA
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -196,8 +196,7 @@ miben <- function(rawData,
                   missCode        = NULL,
                   returnConvInfo  = TRUE,
                   returnParams    = FALSE,
-                  verboseIters    = TRUE,
-                  verboseErrors   = TRUE,
+                  verbose         = TRUE,
                   seed            = NULL,
                   control         = list()
                   )
@@ -215,8 +214,7 @@ miben <- function(rawData,
           missCode        = missCode,
           returnConvInfo  = returnConvInfo,
           returnParams    = returnParams,
-          verboseIters    = verboseIters,
-          verboseErrors   = verboseErrors,
+          verbose         = verbose,
           seed            = seed,
           control         = control)
 }# END miben()
@@ -236,8 +234,7 @@ mibl <- function(rawData,
                  missCode        = NULL,
                  returnConvInfo  = TRUE,
                  returnParams    = FALSE,
-                 verboseIters    = TRUE,
-                 verboseErrors   = TRUE,
+                 verbose         = TRUE,
                  seed            = NULL,
                  control         = list()
                  )
@@ -255,8 +252,7 @@ mibl <- function(rawData,
           missCode        = missCode,
           returnConvInfo  = returnConvInfo,
           returnParams    = returnParams,
-          verboseIters    = verboseIters,
-          verboseErrors   = verboseErrors,
+          verbose         = verbose,
           seed            = seed,
           control         = control)
 }# END mibl()
@@ -272,9 +268,7 @@ ben <- function(rawData,
                 mcemTuneN       = 250,
                 mcemPostN       = 500,
                 returnConvInfo  = TRUE,
-                returnParams    = FALSE,
-                verboseIters    = TRUE,
-                verboseErrors   = TRUE,
+                verbose         = TRUE,
                 seed            = NULL,
                 control         = list()
                 )
@@ -289,10 +283,10 @@ ben <- function(rawData,
           mcemApproxN     = mcemApproxN,
           mcemTuneN       = mcemTuneN,
           mcemPostN       = mcemPostN,
+          missCode        = NULL,
           returnConvInfo  = returnConvInfo,
-          returnParams    = returnParams,
-          verboseIters    = verboseIters,
-          verboseErrors   = verboseErrors,
+          returnParams    = TRUE,
+          verbose         = verbose,
           seed            = seed,
           control         = control)
 }# END ben()
@@ -308,9 +302,7 @@ bl <- function(rawData,
                mcemTuneN       = 250,
                mcemPostN       = 500,
                returnConvInfo  = TRUE,
-               returnParams    = FALSE,
-               verboseIters    = TRUE,
-               verboseErrors   = TRUE,
+               verbose         = TRUE,
                seed            = NULL,
                control         = list()
                )
@@ -325,10 +317,10 @@ bl <- function(rawData,
           mcemApproxN     = mcemApproxN,
           mcemTuneN       = mcemTuneN,
           mcemPostN       = mcemPostN,
+          missCode        = NULL,
           returnConvInfo  = returnConvInfo,
-          returnParams    = returnParams,
-          verboseIters    = verboseIters,
-          verboseErrors   = verboseErrors,
+          returnParams    = TRUE,
+          verbose         = verbose,
           seed            = seed,
           control         = control)
 }# END bl()

@@ -242,7 +242,7 @@ checkGibbsConv <- function(targetIndex,
 ## respective prior distributions
 initializeParams <- function(rawData,
                              nTargets,
-                             doMiben,
+                             doBen,
                              control)
 {    
     nRows       <- nrow(rawData)
@@ -254,7 +254,7 @@ initializeParams <- function(rawData,
     dvStarts    <- matrix(NA, nRows, nTargets)
 
     ## Populate the starting values for Lambda:
-    if(doMiben) {
+    if(doBen) {
         options(warn = -1)# Suppress warnings about recycling elements
         lambda1Starts <- matrix(control$lambda1Starts, nTargets, 1)
         lambda2Starts <- matrix(control$lambda2Starts, nTargets, 1)
@@ -272,11 +272,11 @@ initializeParams <- function(rawData,
             options(warn = 0)
         }
         lambdaMat <- cbind(lambdaVec, 0)
-    }# END if(doMiben)
+    }# END if(doBen)
     
     ## Populate starting values for betas, taus, and sigma:
     for(j in 1 : nTargets) {
-        if(doMiben) {
+        if(doBen) {
             lam1 <- lambdaMat[j, 1]
             lam2 <- lambdaMat[j, 2]
             
@@ -329,7 +329,7 @@ padControlList <- function()
 {
     env <- parent.frame()
     ## Define the default control parameters:
-    if(env$doMiben) {
+    if(env$doBen) {
         defaults = list(
             mcemApproxBurn  = env$mcemApproxN,
             mcemTuneBurn    = env$mcemTuneN,
@@ -383,44 +383,101 @@ checkInputs <- function() {
     ## Check for target variables. When no targets are given, all incomplete
     ## variables not listed in 'ignoreVars' are imputed.
     if(is.null(env$targetVars)) {
-        targetCandidates <-
-            colnames(env$rawData)[!colnames(env$rawData) %in% env$ignoreVars]
-        warning("You did not specify any target variables, so I will impute \
+        if(env$doImp) {
+            targetCandidates <-
+                colnames(env$rawData)[!colnames(env$rawData) %in% env$ignoreVars]
+            warning("You did not specify any target variables, so I will impute \
 the missing data on\nevery variable in 'rawData' that is not listed in \
 'ignoreVars'.\n")        
+        } else {
+            stop("Please specify a DV.")
+        }
     } else {
         targetCandidates <- env$targetVars
     }
-    
+        
     ## Make sure 'rawData' contains missing data that we can find:
-    if(is.null(env$missCode)) {
-        completeTargets <- colMeans(is.na(env$rawData[ , targetCandidates])) == 0
-        if(all(completeTargets)) {
-            stop("Your target variables appear to be fully observed. Did you \
-forget to provide a\nvalue for 'missCode'?\n")
-        }
-    } else {
-        rMat <- env$rawData == env$missCode
-        if(!any(rMat, na.rm = TRUE)) {
-            stop(paste0("The value you provided for 'missCode' (i.e., ",
-                        env$missCode,
-                        ") does not appear anywhere in 'rawData'.\n",
-                        "Are you sure that ",
-                        env$missCode,
-                        " encodes your missing data?\n")
-                 )
+    if(env$doImp) {
+        if(is.null(env$missCode)) {
+            if(length(targetCandidates) > 1) {
+                completeTargets <-
+                    colMeans(is.na(env$rawData[ , targetCandidates])) == 0
+            } else {
+                completeTargets <-
+                    mean(is.na(env$rawData[ , targetCandidates])) == 0
+            }
+            if(all(completeTargets)) {
+                stop("Your target variables appear to be fully observed. Did \
+you forget to provide a\nvalue for 'missCode'?\n")
+            }
         } else {
-            env$rawData[rMat] <- NA
+            rMat <- env$rawData == env$missCode
+            if(!any(rMat, na.rm = TRUE)) {
+                stop(paste0("The value you provided for 'missCode' (i.e., ",
+                            env$missCode,
+                            ") does not appear anywhere in 'rawData'.\n",
+                            "Are you sure that ",
+                            env$missCode,
+                            " encodes your missing data?\n")
+                     )
+            } else {
+                env$rawData[rMat] <- NA
+            }
         }
     }
     
     ## Select the final set of target variables:
-    env$targetVars <- targetCandidates[!completeTargets]
-    if(any(completeTargets)) {
-        warning(paste0("The potential target variables {",
-                       paste(targetCandidates[completeTargets], collapse = ", "),
-                       "} are fully observed.\n",
-                       "These items will not be imputed.\n")
-                )
+    if(env$doImp) {
+        env$targetVars <- targetCandidates[!completeTargets]
+        if(any(completeTargets)) {
+            warning(paste0("The potential target variables {",
+                           paste(targetCandidates[completeTargets],
+                                 collapse = ", "),
+                           "} are fully observed.\n",
+                           "These items will not be imputed.\n")
+                    )
+        }
     }
 }# END checkInputs()
+
+
+predictMibrr <- function(object,
+                         newData,
+                         nDraws = 1,
+                         targetNum = 1)
+{
+    index <- sample(c(1 : length(object$params$sigma[[targetNum]])), nDraws)
+    beta  <- object$params$beta[[targetNum]][index, ]
+    sigma <- object$params$sigma[[targetNum]][index]
+    
+    out <- matrix(NA, nrow(newData), nDraws)
+    for(j in 1 : nDraws)
+        out[ , j] <-
+            cbind(1, newData) %*% matrix(beta[j, ]) + rnorm(1, 0, sqrt(sigma[j]))
+    out
+}
+
+
+simulateData <- function(nObs,
+                         nPreds,
+                         r2,
+                         collin,
+                         betaRange,
+                         meanRange)
+{
+    sigma <- matrix(collin, nPreds, nPreds)
+    diag(sigma) <- 1.0
+    
+    beta <- matrix(runif(nPreds, betaRange[1], betaRange[2]))
+    
+    X <- rmvnorm(nObs, runif(nPreds, meanRange[1], meanRange[2]), sigma)
+    
+    eta <- X %*% beta
+    sigmaY <- (var(eta) / r2) - var(eta)
+    y <- eta + rnorm(nObs, 0, sqrt(sigmaY))
+    
+    outDat <- data.frame(y, X)
+    colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
+
+    outDat
+}

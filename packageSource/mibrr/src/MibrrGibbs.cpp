@@ -39,8 +39,7 @@ MibrrGibbs::MibrrGibbs()
   _emIterNum         = 0;
   _optIterCount      = 0;
   _storeGibbsSamples = false;
-  _verboseErrors     = true;
-  _verboseIters      = true;
+  _verbose           = true;
   _useElasticNet     = true;
   _regIntercept      = false;
   _doImputation      = true;
@@ -133,16 +132,9 @@ void MibrrGibbs::setNEmIters(int nEmIters)
   _nEmIters = nEmIters;
 }
 
-
-bool MibrrGibbs::getErrorVerbosity() const 
+bool MibrrGibbs::getVerbosity() const 
 { 
-  return _verboseErrors; 
-}
-
-
-bool MibrrGibbs::getIterVerbosity() const 
-{ 
-  return _verboseIters; 
+  return _verbose; 
 }
 
 
@@ -295,23 +287,9 @@ void MibrrGibbs::restartParameters(MibrrData &mibrrData)
 }
 
 
-void MibrrGibbs::setVerbosity(bool verboseErrors,
-			      bool verboseIters) 
+void MibrrGibbs::setVerbosity(bool verbose) 
 { 
-  _verboseErrors = verboseErrors;
-  _verboseIters  = verboseIters;
-}
-
-
-void MibrrGibbs::setErrorVerbosity(bool verboseErrors) 
-{ 
-  _verboseErrors = verboseErrors; 
-}
-
-
-void MibrrGibbs::setIterVerbosity(bool verboseIters)
-{ 
-  _verboseIters = verboseIters; 
+  _verbose = verbose;
 }
 
 
@@ -332,10 +310,12 @@ void MibrrGibbs::doBl()
   _useElasticNet = false;
 }
 
+
 void MibrrGibbs::setRegIntercept(bool regIntercept) 
 { 
   _regIntercept = regIntercept; 
 }
+
 
 void MibrrGibbs::setDoImputation(bool doImputation) 
 { 
@@ -744,7 +724,7 @@ void MibrrGibbs::optimizeMibenLambdas(bool preOptimize)
 	lambdaError();
       }
       else if(myResult > 0) {// Successful convergence!
-	if(_verboseIters) {
+	if(_verbose) {
 	  cout << "Lambdas " << _optPrefix << "optimized with " << _algName;
 	  cout << " in " << _optIterCount << " iterations" << endl;
 	}	
@@ -825,7 +805,7 @@ message, I've printed the that exception I caught.\nBeta luck next time ;)");
 void MibrrGibbs::lambdaError() const
 {
   if(_optMethod > 3) {
-    if(_verboseErrors) {
+    if(_verbose) {
       Rcpp::Rcerr << "Lambda " << _optPrefix << "optimization failed with "; 
       Rcpp::Rcerr << _algName << ".\nNo further optimization algorithms ";
       Rcpp::Rcerr << "are available." << endl;
@@ -833,7 +813,7 @@ void MibrrGibbs::lambdaError() const
     Rcpp::stop("Lambda cannot be optimized.");
   }
   else {
-    if(_verboseErrors) {
+    if(_verbose) {
       Rcpp::Rcout << "Lambda " << _optPrefix << "optimization failed with ";
       Rcpp::Rcout << _algName << "\nRetrying with a different algorithm" << endl;
     }
@@ -844,7 +824,7 @@ void MibrrGibbs::lambdaError() const
 void MibrrGibbs::lambdaError(exception &e) const
 {
   if(_optMethod > 3) {
-    if(_verboseErrors) {
+    if(_verbose) {
       Rcpp::Rcerr << e.what();
       Rcpp::Rcerr << "Lambda " << _optPrefix << "optimization failed with "; 
       Rcpp::Rcerr << _algName << ", and returned the preceding exception.\nNo";
@@ -853,7 +833,7 @@ void MibrrGibbs::lambdaError(exception &e) const
     Rcpp::stop("Lambda cannot be optimized.");
   }
   else {
-    if(_verboseErrors) {
+    if(_verbose) {
       cerr << e.what();
       Rcpp::Rcout << "Lambda " << _optPrefix << "optimization failed with ";
       Rcpp::Rcout << _algName << ", and returned the preceding exception.\n";

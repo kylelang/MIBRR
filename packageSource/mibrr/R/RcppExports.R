@@ -17,7 +17,7 @@ drawInvGauss <- function(n, mu, lambda) {
     .Call('mibrr_drawInvGauss', PACKAGE = 'mibrr', n, mu, lambda)
 }
 
-runGibbs <- function(inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verboseIters, verboseErrors, doBen, regIntercept, doImputation) {
-    .Call('mibrr_runGibbs', PACKAGE = 'mibrr', inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verboseIters, verboseErrors, doBen, regIntercept, doImputation)
+runGibbs <- function(inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verbose, doBen, regIntercept, doImputation) {
+    .Call('mibrr_runGibbs', PACKAGE = 'mibrr', inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verbose, doBen, regIntercept, doImputation)
 }
 

@@ -59,8 +59,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataScales, int nTargets, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, double missCode, int nMcemApproxIters, int nMcemTuneIters, int nMcemApproxBurn, int nMcemApproxGibbs, int nMcemTuneBurn, int nMcemTuneGibbs, int nMcemPostBurn, int nMcemPostGibbs, int lambdaWindow, double emConvTol, bool verboseIters, bool verboseErrors, bool doBen, bool regIntercept, bool doImputation);
-RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP missCodeSEXP, SEXP nMcemApproxItersSEXP, SEXP nMcemTuneItersSEXP, SEXP nMcemApproxBurnSEXP, SEXP nMcemApproxGibbsSEXP, SEXP nMcemTuneBurnSEXP, SEXP nMcemTuneGibbsSEXP, SEXP nMcemPostBurnSEXP, SEXP nMcemPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseItersSEXP, SEXP verboseErrorsSEXP, SEXP doBenSEXP, SEXP regInterceptSEXP, SEXP doImputationSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataScales, int nTargets, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, double missCode, int nMcemApproxIters, int nMcemTuneIters, int nMcemApproxBurn, int nMcemApproxGibbs, int nMcemTuneBurn, int nMcemTuneGibbs, int nMcemPostBurn, int nMcemPostGibbs, int lambdaWindow, double emConvTol, bool verbose, bool doBen, bool regIntercept, bool doImputation);
+RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP missCodeSEXP, SEXP nMcemApproxItersSEXP, SEXP nMcemTuneItersSEXP, SEXP nMcemApproxBurnSEXP, SEXP nMcemApproxGibbsSEXP, SEXP nMcemTuneBurnSEXP, SEXP nMcemTuneGibbsSEXP, SEXP nMcemPostBurnSEXP, SEXP nMcemPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseSEXP, SEXP doBenSEXP, SEXP regInterceptSEXP, SEXP doImputationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
@@ -83,12 +83,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type nMcemPostGibbs(nMcemPostGibbsSEXP);
     Rcpp::traits::input_parameter< int >::type lambdaWindow(lambdaWindowSEXP);
     Rcpp::traits::input_parameter< double >::type emConvTol(emConvTolSEXP);
-    Rcpp::traits::input_parameter< bool >::type verboseIters(verboseItersSEXP);
-    Rcpp::traits::input_parameter< bool >::type verboseErrors(verboseErrorsSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< bool >::type doBen(doBenSEXP);
     Rcpp::traits::input_parameter< bool >::type regIntercept(regInterceptSEXP);
     Rcpp::traits::input_parameter< bool >::type doImputation(doImputationSEXP);
-    __result = Rcpp::wrap(runGibbs(inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verboseIters, verboseErrors, doBen, regIntercept, doImputation));
+    __result = Rcpp::wrap(runGibbs(inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nMcemApproxIters, nMcemTuneIters, nMcemApproxBurn, nMcemApproxGibbs, nMcemTuneBurn, nMcemTuneGibbs, nMcemPostBurn, nMcemPostGibbs, lambdaWindow, emConvTol, verbose, doBen, regIntercept, doImputation));
     return __result;
 END_RCPP
 }

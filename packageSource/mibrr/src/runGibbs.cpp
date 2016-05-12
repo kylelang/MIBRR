@@ -51,8 +51,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    int             nMcemPostGibbs,
 		    int             lambdaWindow,
 		    double          emConvTol,
-		    bool            verboseIters,
-		    bool            verboseErrors,
+		    bool            verbose,
 		    bool            doBen,
 		    bool            regIntercept,
 		    bool            doImputation)
@@ -90,7 +89,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 				  lambda1Starts[j],
 				  lambda2Starts[j]);
     
-    mibrrGibbs[j].setVerbosity(verboseIters, verboseErrors);
+    mibrrGibbs[j].setVerbosity(verbose);
     mibrrGibbs[j].setTargetIndex(j);
     mibrrGibbs[j].setRegIntercept(regIntercept);
     mibrrGibbs[j].setDoImputation(doImputation);
@@ -120,7 +119,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
       nBurnIns = nPosteriorBurnIns;
     }
     
-    if(verboseIters) {
+    if(verbose) {
       if(k < nMcemApproxIters) {
 	Rcpp::Rcout << "\nDoing MCEM approximation iteration " << emIterNum;
 	Rcpp::Rcout << " of " << nMcemApproxIters << "\n" << endl;
@@ -136,7 +135,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
     }
     
     for(int i = 0; i < nGibbsIters; i++) {// LOOP over Gibbs iterations
-      if(verboseIters & (i % (nGibbsIters / 10) == 0)) {
+      if(verbose & (i % (nGibbsIters / 10) == 0)) {
 	int iterOut = i + 1;
 	Rcpp::Rcout << "Doing Gibbs iteration " << (i + 1);
 	Rcpp::Rcout << " of " << nGibbsIters << endl;
