@@ -37,11 +37,13 @@ class MibrrData {
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
   
-  MibrrData(MatrixXd&);
+  //MibrrData(MatrixXd&);
   
-  MibrrData(MatrixXd&,
-	    VectorXd&,
-	    double);
+  //MibrrData(MatrixXd&,
+  //	    VectorXd&,
+  //	    double);
+
+  MibrrData();
   
   ~MibrrData();
   
@@ -141,7 +143,7 @@ public:
   // @param2: covariance matrix
   // @return: random multivariate normal variates
   
-private:
+protected:
   MatrixXd _data;
   ArrayXXb _nonresponseFilter;
   VectorXd _responseCounts;

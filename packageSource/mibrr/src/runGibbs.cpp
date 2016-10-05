@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-MAY-11
+// Modified: 2016-MAY-13
 // Purpose:  This code is part of the R package mibrr.
 //           This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
@@ -28,8 +28,8 @@
 
 #include <RcppEigen.h>
 #include "MibrrDefs.hpp"
-#include "MibrrData.hpp"
-#include "MibrrGibbs.hpp"
+#include "MibrrData2.hpp"
+#include "MibrrGibbs2.hpp"
 
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd inData,
@@ -54,13 +54,16 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    bool            verbose,
 		    bool            doBen,
 		    bool            regIntercept,
-		    bool            doImputation)
+		    bool            doImputation,
+		    bool            adaptScales,
+		    bool            useClassic,
+		    bool            simpleIntercept)
 {
   // Initialize the various classes needed below:
-  MibrrData mibrrData(inData, 
-		      dataScales,
-		      missCode);
-  MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
+  MibrrData2 mibrrData(inData, 
+		       dataScales,
+		       missCode);
+  MibrrGibbs2 *mibrrGibbs = new MibrrGibbs2[nTargets];
   
   // Specify some useful constants:
   int nPreds = mibrrData.nPreds();
@@ -93,6 +96,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
     mibrrGibbs[j].setTargetIndex(j);
     mibrrGibbs[j].setRegIntercept(regIntercept);
     mibrrGibbs[j].setDoImputation(doImputation);
+    mibrrGibbs[j].setAdaptScales(adaptScales);
+    if(useClassic) mibrrGibbs[j].setSimpleIntercept(simpleIntercept);
   }
   
   // Specify containers for the parameters' starting values:
@@ -152,12 +157,19 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 	if(changeNDraws) mibrrGibbs[j].setNDraws(nGibbsIters - nBurnIns);
 	
 	// Update the Gibbs samples:
-	mibrrGibbs[j].doGibbsIteration(mibrrData);
+	if(useClassic)
+	  mibrrGibbs[j].doGibbsIteration2(mibrrData);
+	else
+	  mibrrGibbs[j].doGibbsIteration(mibrrData);
 	
 	if ((i + 1) == nBurnIns) mibrrGibbs[j].startGibbsSampling(mibrrData);
        	
 	if((k < nTotalEmIters) & ((i + 1) == nGibbsIters)) {
-	  mibrrGibbs[j].updateLambdas(); // Optimize the penalty parameters
+	  if(useClassic)
+	    mibrrGibbs[j].updateLambdas2(); // Optimize the penalty parameters
+	  else
+	    mibrrGibbs[j].updateLambdas();
+	  
 	  mibrrGibbs[j].restartParameters(mibrrData);
 	}
       }// CLOSE for (int j = 0; j < nTargets, j++)  

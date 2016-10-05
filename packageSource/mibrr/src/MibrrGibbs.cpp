@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-11
+// Modified: 2016-MAY-13
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -322,6 +322,13 @@ void MibrrGibbs::setDoImputation(bool doImputation)
   _doImputation = doImputation; 
 }
 
+
+void MibrrGibbs::setAdaptScales(bool adaptScales)
+{
+  _adaptScales = adaptScales;
+}
+
+
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
 
 double MibrrGibbs::drawInvGamma(double shape, 
@@ -581,7 +588,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
   updateSigma(mibrrData);  
   if(_doImputation) updateImputations(mibrrData);
   
-  mibrrData.computeDataScales();
+  if(_adaptScales) mibrrData.computeDataScales();
   if(_storeGibbsSamples) _drawNum++;  
 }// END doGibbsIteration ()
 

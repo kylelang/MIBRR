@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-MAY-11
+### Modified: 2016-MAY-13
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -339,7 +339,12 @@ padControlList <- function()
             lambda2Starts   = rep(env$nPreds / 10, env$nTargets),
             mcemEpsilon     = 1.0e-5,
             smoothingWindow = 1,
-            regIntercept    = FALSE
+            regIntercept    = FALSE,
+            center          = TRUE,
+            scale           = TRUE,
+            adaptScales     = TRUE,
+            useClassic      = FALSE,
+            simpleIntercept = FALSE
         )
     } else {
         defaults = list(
@@ -350,7 +355,12 @@ padControlList <- function()
             lambdaStarts    = rep(env$nPreds / 10, env$nTargets),
             usePCStarts     = FALSE,
             smoothingWindow = 1,
-            regIntercept    = FALSE
+            regIntercept    = FALSE,
+            center          = TRUE,
+            scale           = TRUE,
+            adaptScales     = TRUE,
+            useClassic      = FALSE,
+            simpleIntercept = FALSE
         )
     }
     ## Pad the user-provided control list with default values:
@@ -441,10 +451,23 @@ you forget to provide a\nvalue for 'missCode'?\n")
 }# END checkInputs()
 
 
+
 predictMibrr <- function(object,
                          newData,
-                         nDraws = 1,
                          targetNum = 1)
+{
+    beta  <- matrix(colMeans(object$params$beta[[targetNum]]))
+    sigma <- mean(object$params$sigma[[targetNum]])
+    
+    cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
+}
+
+
+
+predictMibrr2 <- function(object,
+                          newData,
+                          nDraws = 1,
+                          targetNum = 1)
 {
     index <- sample(c(1 : length(object$params$sigma[[targetNum]])), nDraws)
     beta  <- object$params$beta[[targetNum]][index, ]
@@ -462,21 +485,25 @@ simulateData <- function(nObs,
                          nPreds,
                          r2,
                          collin,
-                         betaRange,
-                         meanRange)
+                         beta,
+                         means,
+                         scales)
 {
-    sigma <- matrix(collin, nPreds, nPreds)
-    diag(sigma) <- 1.0
+    w1 <- matrix(scales, nPreds, nPreds)
+    w2 <- matrix(scales, nPreds, nPreds, byrow = TRUE)
     
-    beta <- matrix(runif(nPreds, betaRange[1], betaRange[2]))
+    maxCov <- w1*w2
     
-    X <- rmvnorm(nObs, runif(nPreds, meanRange[1], meanRange[2]), sigma)
+    sigma <- maxCov * collin
+    diag(sigma) <- scales^2
     
+    X <- cbind(1, rmvnorm(nObs, means, sigma))
+
     eta <- X %*% beta
     sigmaY <- (var(eta) / r2) - var(eta)
     y <- eta + rnorm(nObs, 0, sqrt(sigmaY))
     
-    outDat <- data.frame(y, X)
+    outDat <- data.frame(y, X[ , -1])
     colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
 
     outDat

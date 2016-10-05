@@ -10,4 +10,7 @@ export(mibl,
        calcIncGamma,
        drawInvGauss,
        ben,
-       bl)
+       bl,
+       simulateData,
+       predictMibrr,
+       predictMibrr2)

@@ -28,21 +28,25 @@
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
   
-MibrrData::MibrrData(MatrixXd &newData)
-{
-  _data     = newData;
-  _dataScales = RowVectorXd( _data.cols() );
-}
+//MibrrData::MibrrData(MatrixXd &newData)
+//{
+//  _data     = newData;
+//  _dataScales = RowVectorXd( _data.cols() );
+//}
 
-MibrrData::MibrrData(MatrixXd &newData,
-		     VectorXd &newDataScales,
-		     double missingDataCode) 
+//MibrrData::MibrrData(MatrixXd &newData,
+//		     VectorXd &newDataScales,
+//		     double missingDataCode) 
+//{
+//  _missingDataCode   = missingDataCode;
+//  _data              = newData;
+//  _dataScales        = newDataScales;
+//  _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
+//  computeNonresponseFilter();
+//}
+
+MibrrData::MibrrData()
 {
-  _missingDataCode   = missingDataCode;
-  _data              = newData;
-  _dataScales        = newDataScales;
-  _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
-  computeNonresponseFilter();
 }
 
 MibrrData::~MibrrData() 

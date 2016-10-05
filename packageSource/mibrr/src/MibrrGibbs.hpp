@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-11
+// Modified: 2016-MAY-13
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -27,7 +27,7 @@
 #ifndef MIBRRGIBBS_H
 #define MIBRRGIBBS_H
 
-#include "MibrrData.hpp"
+#include "MibrrData2.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -185,7 +185,10 @@ public:
 
   void setDoImputation(bool);
   // @param: new value of the flag denoting if missing data are to be imputed
-  
+
+  void setAdaptScales(bool);
+  // @param: should the variable scales be updated at each Gibbs iteration?
+
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
   
   double drawInvGamma(double,
@@ -276,7 +279,7 @@ public:
   // @param1: exception thrown by nlopt
   // @effect: dispatch an appropriate error message to stderr
   
-private:
+protected:
   VectorXd _betas;
   ArrayXd  _taus;
   double   _sigma;
@@ -299,6 +302,7 @@ private:
   bool     _storeGibbsSamples;
   bool     _regIntercept;
   bool     _doImputation;
+  bool     _adaptScales;
   string   _optPrefix;
   string   _algName;
   int      _optMethod;

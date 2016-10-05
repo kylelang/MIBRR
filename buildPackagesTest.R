@@ -6,7 +6,7 @@
 
 rm(list = ls(all = TRUE))
 
-install.packages("statmod",
+install.packages(c("statmod", "MCMCpack"),
                  repos = "http://rweb.quant.ku.edu/cran")
 
 library(RcppEigen)
@@ -78,6 +78,8 @@ data(mibrrExampleData)
 debug(miben)
 undebug(miben)
 
+miben
+
 testOut <- miben(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
@@ -100,60 +102,132 @@ MIcombine(fitOut2)
 
 
 ## Test BEN and BL:
-dat1 <- complete(mice(mibrrExampleData, m = 1, maxit = 100), 1)
+library(mibrr)
 
-nObs <- 125
-nPreds <- 100
-r2 <- 0.5
-collin <- 0.3
-betaRange <- c(0.2, 0.6)
-meanRange <- c(0, 1)
+alpha <- 0.5
+nPreds <- 75
 
-dat1 <- simulateData(nObs = nObs,
-                     nPreds = nPreds,
-                     r2 = r2,
-                     collin = collin,
-                     betaRange = betaRange,
-                     meanRange = meanRange)
+parms <- list()
+parms$nObs <- 100
+parms$nPreds <- nPreds
+parms$r2 <- 0.2
+parms$collin <- 0.3
+                                        #parms$beta <- matrix(
+                                        #    c(alpha, runif(nPreds / 2, 0.3, 0.6), rep(0, nPreds / 2))
+                                        #)
+parms$beta <- matrix(c(alpha, runif(nPreds, 0.3, 0.6)))
+parms$means <- runif(nPreds, 0, 1)
+parms$scales <- rep(1, nPreds)
+parms$center <- FALSE
+parms$scale <- FALSE
+parms$useClassic <- FALSE
+parms$simpleInt <- FALSE
+parms$verbose <- FALSE
+parms$postN <- 5000
 
-testOut <- ben(rawData = dat1,
-               y       = "y",
-               X       = paste0("x", c(1 : nPreds))
-               )
+testFun(1, parms)
 
-testOut2 <- bl(rawData = dat1,
-               y       = "y",
-               X       = paste0("x", c(1 : nPreds))
-               )
+rp <- 1
 
-lmOut <- lm(as.matrix(dat1[ , 1]) ~ as.matrix(dat1[ , -1]))
+testFun <- function(rp, parms) {
+    nObs   <- parms$nObs
+    nPreds <- parms$nPreds
+    r2     <- parms$r2
+    collin <- parms$collin
+    beta   <- parms$beta
+    means  <- parms$means
+    scales <- parms$scales
 
-nTests <- 10
-mseMat <- matrix(NA, nTests, 3)
-for(i in 1 : nTests) {
-    testDat <- simulateData(nObs = nObs,
-                            nPreds = nPreds,
-                            r2 = r2,
-                            collin = collin,
-                            betaRange = betaRange,
-                            meanRange = meanRange)
+    dat1 <- simulateData(nObs   = nObs,
+                         nPreds = nPreds,
+                         r2     = r2,
+                         collin = collin,
+                         beta   = beta,
+                         means  = means,
+                         scales = scales)
     
-    predOut1 <- predictMibrr(object  = testOut,
-                             newData = as.matrix(testDat[ , -1]),
-                             nDraws  = 500)
+    testOut <- ben(rawData         = dat1,
+                   y               = "y",
+                   X               = paste0("x", c(1 : nPreds)),
+                   mcemApproxIters = 200,
+                   mcemApproxN     = 50,
+                   mcemPostN       = parms$postN,
+                   verbose         = parms$verbose,
+                   control         =
+                       list(center          = parms$center,
+                            scale           = parms$scale,
+                            adaptScales     = FALSE,
+                            regIntercept    = FALSE,
+                            useClassic      = parms$useClassic,
+                            simpleIntercept = parms$simpleInt)
+                   )
     
-    predOut2 <- predictMibrr(object  = testOut2,
-                             newData = as.matrix(testDat[ , -1]),
-                             nDraws  = 500)
-    
-    predOut3 <- predict.lm(lmOut, newdata = testDat[ , -1])
-    
-    mseMat[i, 1] <- mean((rowMeans(predOut1) - dat1$y)^2)
-    mseMat[i, 2] <- mean((rowMeans(predOut2) - dat1$y)^2)
-    mseMat[i, 3] <- mean((predOut3 - dat1$y)^2)
-}
+    testOut2 <- bl(rawData         = dat1,
+                   y               = "y",
+                   X               = paste0("x", c(1 : nPreds)),
+                   mcemApproxIters = 200,
+                   mcemApproxN     = 50,
+                   mcemPostN       = parms$postN,
+                   verbose         = parms$verbose,
+                   control         =
+                       list(center          = parms$center,
+                            scale           = parms$scale,
+                            adaptScales     = FALSE,
+                            regIntercept    = FALSE,
+                            useClassic      = parms$useClassic,
+                            simpleIntercept = parms$simpleInt)
+                   )
 
-colMeans(mseMat)
+    testForm <- as.formula(paste0("y ~ ", paste0("x", c(1 : nPreds), collapse = " + ")))
+    lmOut <- lm(testForm, data = dat1)
+    
+    nTests <- 100
+    mseMat <- matrix(NA, nTests, 3)
+    for(i in 1 : nTests) {
+        testDat <- simulateData(nObs   = nObs,
+                                nPreds = nPreds,
+                                r2     = r2,
+                                collin = collin,
+                                beta   = beta,
+                                means  = means,
+                                scales = scales)
+
+
+        predOut1 <- predictMibrr(object  = testOut,
+                                 newData = as.matrix(testDat[ , -1])
+                                 )
+        
+        predOut2 <- predictMibrr(object  = testOut2,
+                                 newData = as.matrix(testDat[ , -1])
+                                 )
+
+        predOut3 <- predict(lmOut, newdata = testDat[ , -1])
+       
+        mseMat[i, 1] <- mean((predOut1 - dat1$y)^2)
+        mseMat[i, 2] <- mean((predOut2 - dat1$y)^2)
+        mseMat[i, 3] <- mean((predOut3 - dat1$y)^2)
+    }
+    
+    outMat <- rbind(colMeans(mseMat), apply(mseMat, 2, var))
+    colnames(outMat) <- c("MIBEN", "MIBL", "MLR")
+    rownames(outMat) <- c("MSE", "var(MSE)")
+    outMat
+}# END testFun()
+
+library(parallel)
+nReps <- 10
+mseList <- mclapply(c(1 : nReps),
+                    FUN = testFun,
+                    parms = parms,
+                    mc.cores = 4)
+
+mseList
+
+?predict.lm
+
+
+testFun(2, parms)
+?predict.lm
 
 dens0 <- density(dat3$y)
 dens1 <- density(rowMeans(predOut1))
@@ -167,3 +241,6 @@ lines(dens1, col = "red")
 lines(dens2, col = "blue")
 lines(dens3, col = "green")
 
+ls(testOut)
+
+plot(testOut2$lambdaHistory[[1]][ , 1], type = "l")

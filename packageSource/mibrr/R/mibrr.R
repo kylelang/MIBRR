@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-MAY-10
+### Modified: 2016-OCT-05
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -81,16 +81,26 @@ mibrr <- function(doBen,
             userMissCode <- FALSE
         }
     }
+
+    if(control$center) {
+        dataMeans <- colMeans(rawData, na.rm = TRUE)
+        transData <- data.frame(scale(rawData, scale = FALSE))
+    } else {
+        dataMeans <- rep(0, ncol(rawData))
+        transData <- rawData
+    }
     
-    centeredData <- scale(rawData, scale = FALSE)
-    dataMeans    <- attr(centeredData, "scaled:center")
-    dataScales   <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
-     
+    if(control$scale) {
+        dataScales   <- apply(transData, 2, FUN = sd, na.rm = TRUE)
+    } else {
+        dataScales <- rep(1.0, ncol(transData))
+    }
+    
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    paramStarts <- initializeParams(rawData  = centeredData, #rawData,
+    paramStarts <- initializeParams(rawData  = transData, 
                                     nTargets = nTargets,
-                                    doBen  = doBen,
+                                    doBen    = doBen,
                                     control  = control)
     lambdaMat   <- paramStarts$lambda
     betaStarts  <- paramStarts$beta
@@ -98,11 +108,11 @@ mibrr <- function(doBen,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill the missing data with an integer code:
-    applyMissCode(dataName = "centeredData")
+    applyMissCode(dataName = "transData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData           = as.matrix(centeredData),
+        runGibbs(inData           = as.matrix(transData),
                  dataScales       = dataScales,
                  nTargets         = nTargets,
                  lambda1Starts    = lambdaMat[ , 1],
@@ -125,11 +135,14 @@ mibrr <- function(doBen,
                  verbose          = verbose,
                  doBen            = doBen,
                  regIntercept     = control$regIntercept,
-                 doImputation     = doImp)
+                 doImputation     = doImp,
+                 adaptScales      = control$adaptScales,
+                 useClassic       = control$useClassic,
+                 simpleIntercept  = control$simpleIntercept)
 
     names(gibbsOut) <- targetVars
     if(doImp)
-        if(!userMissCode) centeredData[centeredData == missCode] <- NA
+        if(!userMissCode) transData[transData == missCode] <- NA
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -144,7 +157,7 @@ mibrr <- function(doBen,
     if(doImp) {
         outImps <- getImputedData(gibbsState  = gibbsOut,
                                   nImps       = nImps,
-                                  rawData     = as.data.frame(centeredData),
+                                  rawData     = transData,
                                   targetMeans = dataMeans[targetVars],
                                   targetVars  = targetVars)
     }
@@ -202,6 +215,7 @@ miben <- function(rawData,
                   )
 {
     mibrr(doBen           = TRUE,
+          doImp           = TRUE,
           rawData         = rawData,
           nImps           = nImps,
           targetVars      = targetVars,
@@ -240,6 +254,7 @@ mibl <- function(rawData,
                  )
 {
     mibrr(doBen           = FALSE,
+          doImp           = TRUE,
           rawData         = rawData,
           nImps           = nImps,
           targetVars      = targetVars,
