@@ -4,3 +4,5 @@
 - Version 1 of the class definitions offers the option to regularize the intercepts
 
 - Maybe the problems with installing on the cluster are because the TTU cluster runs CentOS???
+
+- The most recent branch is "moreControl"
