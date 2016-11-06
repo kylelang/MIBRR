@@ -1,9 +1,8 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-MAY-13
-// Purpose:  This code is part of the R package mibrr.
-//           This function will do the Gibbs sampling for Multiple Imputation
+// Modified: 2016-NOV-05
+// Purpose:  This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
 //           the Bayesian LASSO (MIBL).
 
@@ -28,8 +27,8 @@
 
 #include <RcppEigen.h>
 #include "MibrrDefs.hpp"
-#include "MibrrData2.hpp"
-#include "MibrrGibbs2.hpp"
+#include "MibrrData.hpp"
+#include "MibrrGibbs.hpp"
 
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd inData,
@@ -41,50 +40,45 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    Eigen::MatrixXd tauStarts,
 		    Eigen::MatrixXd betaStarts,
 		    double          missCode,
-		    int             nMcemApproxIters,
-		    int             nMcemTuneIters,
-		    int             nMcemApproxBurn,
-		    int             nMcemApproxGibbs,
-		    int             nMcemTuneBurn,		   
-		    int             nMcemTuneGibbs,
-		    int             nMcemPostBurn,
-		    int             nMcemPostGibbs,
+		    int             nApproxIters,
+		    int             nTuneIters,
+		    int             nApproxBurn,
+		    int             nApproxGibbs,
+		    int             nTuneBurn,		   
+		    int             nTuneGibbs,
+		    int             nPostBurn,
+		    int             nPostGibbs,
 		    int             lambdaWindow,
 		    double          emConvTol,
 		    bool            verbose,
-		    bool            doBen,
-		    bool            regIntercept,
+		    bool            doBl,
 		    bool            doImputation,
 		    bool            adaptScales,
-		    bool            useClassic,
-		    bool            simpleIntercept)
+		    bool            simpleIntercept,
+		    bool            twoPhaseOpt)
 {
   // Initialize the various classes needed below:
-  MibrrData2 mibrrData(inData, 
-		       dataScales,
-		       missCode);
-  MibrrGibbs2 *mibrrGibbs = new MibrrGibbs2[nTargets];
+  MibrrData  mibrrData(inData, dataScales, missCode);
+  MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Specify some useful constants:
-  int nPreds = mibrrData.nPreds();
-  int nObs = mibrrData.nObs();
-  int nTotalEmIters = nMcemApproxIters + nMcemTuneIters;
+  int nPreds   = mibrrData.nPreds();
+  int nObs     = mibrrData.nObs();
+  int nEmIters = nApproxIters + nTuneIters;
    
   // Initialize all parameters, setup the Gibbs sampler and the EM Optimization:
   mibrrData.fillMissing(nTargets);
   for(int j = 0; j < nTargets; j++) {
-    Eigen::VectorXd betaStartVec = betaStarts.col(j);
-    Eigen::ArrayXd tauStartArray = tauStarts.col(j).array();
+    Eigen::VectorXd betaStartVec  = betaStarts.col(j);
+    Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
 
-    if(!doBen) {
+    if(doBl) {
       mibrrGibbs[j].doBl();
       emConvTol = 0.0; // Set dummy value for EM convergence criterion
     }
     
     // Must call setupOptimizer() before startParameters()!
-    mibrrGibbs[j].setupOptimizer(nTotalEmIters,
-				 lambdaWindow,
-				 emConvTol);
+    mibrrGibbs[j].setupOptimizer(nEmIters, lambdaWindow, emConvTol, twoPhaseOpt);
     
     mibrrGibbs[j].startParameters(betaStartVec,
 				  tauStartArray,
@@ -92,50 +86,47 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 				  lambda1Starts[j],
 				  lambda2Starts[j]);
     
-    mibrrGibbs[j].setVerbosity(verbose);
     mibrrGibbs[j].setTargetIndex(j);
-    mibrrGibbs[j].setRegIntercept(regIntercept);
-    mibrrGibbs[j].setDoImputation(doImputation);
-    mibrrGibbs[j].setAdaptScales(adaptScales);
-    if(useClassic) mibrrGibbs[j].setSimpleIntercept(simpleIntercept);
+    if(!verbose)        mibrrGibbs[j].beQuiet(); 
+    if(!doImputation)   mibrrGibbs[j].doPrediction();
+    if(simpleIntercept) mibrrGibbs[j].useSimpleInt();
   }
   
   // Specify containers for the parameters' starting values:
   Eigen::MatrixXd dvStartMat = MatrixXd(nObs, nTargets);
 
-  for (int k = 0; k < (nTotalEmIters + 1); k++) {// LOOP over MCEM iterations
+  for (int k = 0; k < (nEmIters + 1); k++) {// LOOP over MCEM iterations
     int emIterNum = k + 1;
-    int nGibbsIters, nBurnIns, nPosteriorBurnIns;
-    if(k < nMcemApproxIters) {
+    int nGibbsIters, nBurnIns, nPostBurnIns;
+    if(k < nApproxIters) {
       // Small gibbs samples for EM burn in
-      nGibbsIters = nMcemApproxGibbs + nMcemApproxBurn;
-      nBurnIns = nMcemApproxBurn;
+      nGibbsIters = nApproxGibbs + nApproxBurn;
+      nBurnIns    = nApproxBurn;
     } 
-    else if((k >= nMcemApproxIters) & (k < nTotalEmIters)) {
+    else if((k >= nApproxIters) & (k < nEmIters)) {
       // Large gibbs samples for EM tuning phase
-      nGibbsIters = nMcemTuneGibbs + nMcemTuneBurn;
-      nBurnIns = nMcemTuneBurn;
+      nGibbsIters = nTuneGibbs + nTuneBurn;
+      nBurnIns    = nTuneBurn;
     } 
     else {
       // Large final gibbs sample from the convergent model
-      nPosteriorBurnIns = 
-	nMcemPostBurn < 0 ? nMcemTuneBurn : nMcemPostBurn;
-      nGibbsIters = nPosteriorBurnIns + nMcemPostGibbs;
-      nBurnIns = nPosteriorBurnIns;
+      nPostBurnIns = nPostBurn < 0 ? nTuneBurn : nPostBurn;
+      nGibbsIters  = nPostBurnIns + nPostGibbs;
+      nBurnIns     = nPostBurnIns;
     }
     
     if(verbose) {
-      if(k < nMcemApproxIters) {
+      if(k < nApproxIters) {
 	Rcpp::Rcout << "\nDoing MCEM approximation iteration " << emIterNum;
-	Rcpp::Rcout << " of " << nMcemApproxIters << "\n" << endl;
+	Rcpp::Rcout << " of " << nApproxIters << "\n" << endl;
       } 
-      else if(k == nTotalEmIters) {
+      else if(k == nEmIters) {
 	Rcpp::Rcout << "\nSampling from the stationary posterior\n" << endl;
       }
       else {
 	Rcpp::Rcout << "\nDoing MCEM tuning iteration ";
-	Rcpp::Rcout << emIterNum - nMcemApproxIters;
-	Rcpp::Rcout << " of " << nMcemTuneIters << "\n" << endl;
+	Rcpp::Rcout << emIterNum - nApproxIters;
+	Rcpp::Rcout << " of " << nTuneIters << "\n" << endl;
       }
     }
     
@@ -149,32 +140,28 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
       }
       
       for(int j = 0; j < nTargets; j++) {// LOOP over target variables
-	bool lastEmApprox = k == nMcemApproxIters;
+	bool lastEmApprox = k == nApproxIters;
 	if(lastEmApprox) mibrrGibbs[j].setLambdas();
 	
-	bool changeNDraws = 
-	  (i == 0) & ((k == 0) | lastEmApprox | (k == nTotalEmIters));
+	bool changeNDraws =
+	  (i == 0) & ((k == 0) | lastEmApprox | (k == nEmIters));
 	if(changeNDraws) mibrrGibbs[j].setNDraws(nGibbsIters - nBurnIns);
 	
 	// Update the Gibbs samples:
-	if(useClassic)
-	  mibrrGibbs[j].doGibbsIteration2(mibrrData);
-	else
-	  mibrrGibbs[j].doGibbsIteration(mibrrData);
+	mibrrGibbs[j].doGibbsIteration(mibrrData);
 	
 	if ((i + 1) == nBurnIns) mibrrGibbs[j].startGibbsSampling(mibrrData);
        	
-	if((k < nTotalEmIters) & ((i + 1) == nGibbsIters)) {
-	  if(useClassic)
-	    mibrrGibbs[j].updateLambdas2(); // Optimize the penalty parameters
-	  else
-	    mibrrGibbs[j].updateLambdas();
-	  
-	  mibrrGibbs[j].restartParameters(mibrrData);
+	if((k < nEmIters) & ((i + 1) == nGibbsIters)) {
+	  mibrrGibbs[j].updateLambdas();              // Optimize the lambdas
+	  mibrrGibbs[j].restartParameters(mibrrData); // Reset the Gibbs sampler
 	}
-      }// CLOSE for (int j = 0; j < nTargets, j++)  
+      }// CLOSE for (int j = 0; j < nTargets, j++)
+
+      if(adaptScales) mibrrData.computeDataScales();
+      
     }// CLOSE for (int i = 0; i < nGibbsIters; i++)
-  }// END for(int k = 0; k < nTotalEmIters; k++)
+  }// END for(int k = 0; k < nEmIters; k++)
   
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++) {

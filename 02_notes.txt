@@ -5,4 +5,14 @@
 
 - Maybe the problems with installing on the cluster are because the TTU cluster runs CentOS???
 
+*** 2016-NOV-05 ***
 - The most recent branch is "moreControl"
+
+- MibrrData2 returns predictor matrices that do not include a constant columns
+
+- MibbrGibbs2 treats the intercept and slope components seperatly
+
+- MibrrGibbs absorbs the intercept into the predictor matrix and avoid regularizing by setting _tau[0, 0] = 0
+
+
+

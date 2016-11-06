@@ -1,9 +1,9 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-10
-// Purpose:  This class contains data- and sampling-related functions
-//           used by the MIBRR Gibbs sampler.
+// Modified: 2016-NOV-05
+// Purpose:  This class contains data- and sampling-related functions used by the
+//           MIBRR Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
 //  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
@@ -37,69 +37,75 @@ class MibrrData {
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
   
-  //MibrrData(MatrixXd&);
+  MibrrData(const MatrixXd&);
+  // @param: data matrix
   
-  //MibrrData(MatrixXd&,
-  //	    VectorXd&,
-  //	    double);
-
+  MibrrData(const MatrixXd&, const VectorXd&, const double);
+  // @param1: data matrix
+  // @param2: data scales
+  // @param3: missing data code
+  
   MibrrData();
+  // @effect: initialize MibrrData without any data to allow access to the
+  //          drawMVN() member function
   
   ~MibrrData();
+
   
   //////////////////////////////// ACCESSORS ////////////////////////////////////
+
   
-  MatrixXd getIVs(int);
+  MatrixXd getIVs(int) const;
   // @param:  the column-index of the current target variable
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
   
-  MatrixXd getFullIVs(int);
+  MatrixXd getFullIVs(int) const;
   // @param:  the column-index of the current target variable
   // @return: the full IVs matrix for the imputation model
 
-  VectorXd getDV(int);
+  VectorXd getDV(int) const;
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
-  VectorXd getFullDV(int);
+  VectorXd getFullDV(int) const;
   // @param:  the column-index of the current target variable
   // @return: the full DV vector for the imputation model
 
-  MatrixXd getData();
-  // @return: the data matrix
-
-  ArrayXb getNonresponseVector(int);
+  ArrayXb getNonresponseVector(int) const;
   // @param:  the column-index of the current target variable  
   // @return: the appropriate nonresponse indicator vector
 
-  ArrayXXb getNonresponseFilter();
-  // @return: the nonresponse filter matrix
-
-  VectorXd getDataScales();
-  // @return: the column-wise scales of the data
-  
-  double getDataScales(int);
+  double getDataScales(int) const;
   // @param:  a column index
   // @return: the  scale of the data in the specified column
+  
+  ArrayXXb getNonresponseFilter() const;
+  // @return: the nonresponse filter matrix
+  
+  MatrixXd getData() const;
+  // @return: the data matrix
+  
+  VectorXd getDataScales() const;
+  // @return: the column-wise scales of the data
 
+  
   //////////////////////////////// MUTATORS /////////////////////////////////////
 
-  void setData(MatrixXd&);
+  
+  void setData(const MatrixXd&);
   // @param: a new data matrix
   
-  void setDV(VectorXd&, int);
+  void setDV(const VectorXd&, const int);
   //@param1: a new DV
   //@param2: index of the DV to replace
 
-  void setElement(double newElement,
-		  int rowIndex,
-	          int colIndex);
+  void setElement(const double, const int, const int);
   // @param1: a new data element
   // @param2: the row index of the element to replace
   // @param3: the column index of the element to replace
 
-  void setMissingDataCode(double);
+  void setMissingDataCode(const double);
   // @param: a new missing data code
 
   void computeNonresponseFilter();
@@ -108,45 +114,48 @@ public:
   void computeDataScales();
   // @effect: update the value of _dataScales based on imputed data
   
-  void fillMissing(int);
+  void fillMissing(const int);
   // @param:  the number of variables to be imputed
   // @effect: initially fill the missing values with (poor) imputaitons
   
-  void fillMissing(MatrixXd&);
+  void fillMissing(const MatrixXd&);
   // @param:  a matrix of new values to fill in missing target data
   // @effect: fill the missing values with the contents of the supplied matrix
   
-  void fillMissing(VectorXd&, int);
+  void fillMissing(const VectorXd&, const int);
   // @param1: a vector containing new imputations
   // @param2: the column index of the variable to fill
   // @effect: fill the missing values in the specified column with the values
   //          in the provided vector
+
   
   ////////////////////////// DESCRIPTIVE FUNCTIONS //////////////////////////////
+
   
   int nObs() const;
   // @return: the number of observations
 
-  int nResponses(int);
+  int nPreds() const;
+  // @return: the number of independent variables in the imputation model
+
+  int nResponses(int) const;
   // @param:  the index for the target variable
   // @return: the number of responses (i.e., non-missing values)
   // for the target variable
 
-  int nPreds() const;
-  // @return: the number of independent variables in the imputation model
-
-  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
   
-  VectorXd drawMVN(VectorXd&,
-		   MatrixXd&);
+  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
+
+  
+  VectorXd drawMVN(VectorXd&, MatrixXd&) const;
   // @param1: mean vector
   // @param2: covariance matrix
   // @return: random multivariate normal variates
   
-protected:
+private:
   MatrixXd _data;
   ArrayXXb _nonresponseFilter;
-  VectorXd _responseCounts;
+  VectorXd _respCounts;
   VectorXd _dataScales;
   double   _missingDataCode;
 };

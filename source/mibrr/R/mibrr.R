@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-OCT-05
+### Modified: 2016-NOV-05
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -11,7 +11,9 @@
 ###           gibbs sampling and the MCEM optimization of the BEN and BL penalty
 ###           parameters are done in C++ (see source in runGibbs.cpp). The
 ###           miben and mibl functions are wrappers that parameterization mibrr
-###           as needed to run MIBEN or MIBL, respectively.
+###           as needed to run MIBEN or MIBL, respectively. The ben and bl
+###           functions simply fit the Bayesian elastic net and Bayesian LASSO
+###           models without any missing data imputation.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -32,18 +34,16 @@
 ##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
 ##-----------------------------------------------------------------------------##
 
+
 ## Specify the main computational function of the mibrr package:
-mibrr <- function(doBen,
+mibrr <- function(doBl,
                   doImp,
                   rawData,
                   nImps,
                   targetVars,
                   ignoreVars,
-                  mcemApproxIters,
-                  mcemTuneIters,
-                  mcemApproxN,
-                  mcemTuneN,
-                  mcemPostN,
+                  iterations,
+                  sampleSizes,
                   missCode,
                   returnConvInfo,
                   returnParams,
@@ -58,49 +58,46 @@ mibrr <- function(doBen,
     
     ## Define some useful constants and counters:
     nTargets <- length(targetVars)
-    nPreds   <- ncol(rawData) - length(ignoreVars)
+    nPreds   <- ncol(rawData) - length(ignoreVars) - 1
     nObs     <- nrow(rawData)
     
     ## Ensure a correct list of control parameters:
     control <- padControlList()
     
     ## Preprocess the raw data:
-    ## 1) Move target variables to the leftmost columns
-    ## 2) Temporarily replace missCode entries with NAs
-    ## 3) Mean-center the data
+
+    ## 1) Save the original variable names:
+    rawNames <- colnames(rawData)
+
+    ## 2) Set aside the ignored variables:
+    ignoredColumns <- rawData[ , ignoreVars]
+    
+    ## 3) Move target variables to the leftmost columns
     rawData <- data.frame(rawData[ , targetVars],
                           rawData[ , !colnames(rawData) %in%
                                   c(targetVars, ignoreVars)]
                           )
 
-    if(doImp) {
-        if(!is.null(missCode)) {
-            userMissCode <- TRUE
-            rawData[rawData == missCode] <- NA
-        } else {
-            userMissCode <- FALSE
-        }
+    ## 4) Temporarily replace missCode entries with NAs
+    if(!is.null(missCode)) {
+        userMissCode <- TRUE
+        rawData[rawData == missCode] <- NA
+    } else {
+        userMissCode <- FALSE
     }
 
-    if(control$center) {
-        dataMeans <- colMeans(rawData, na.rm = TRUE)
-        transData <- data.frame(scale(rawData, scale = FALSE))
-    } else {
-        dataMeans <- rep(0, ncol(rawData))
-        transData <- rawData
-    }
+    ## 5) Fill any missing data on the covariates:
+    covNames <- setdiff(colnames(rawData), targetVars)
+    if(any(is.na(rawData[ , covNames]))) imputeCovs()
     
-    if(control$scale) {
-        dataScales   <- apply(transData, 2, FUN = sd, na.rm = TRUE)
-    } else {
-        dataScales <- rep(1.0, ncol(transData))
-    }
+    ## 6) Mean-center the data        
+    scaleData()
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    paramStarts <- initializeParams(rawData  = transData, 
+    paramStarts <- initializeParams(rawData  = rawData, 
                                     nTargets = nTargets,
-                                    doBen    = doBen,
+                                    doBl     = doBl,
                                     control  = control)
     lambdaMat   <- paramStarts$lambda
     betaStarts  <- paramStarts$beta
@@ -108,41 +105,42 @@ mibrr <- function(doBen,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill the missing data with an integer code:
-    applyMissCode(dataName = "transData")
+    applyMissCode(dataName = "rawData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData           = as.matrix(transData),
-                 dataScales       = dataScales,
-                 nTargets         = nTargets,
-                 lambda1Starts    = lambdaMat[ , 1],
-                 lambda2Starts    = lambdaMat[ , 2],
-                 sigmaStarts      = sigmaStarts,
-                 tauStarts        = tauStarts,
-                 betaStarts       = betaStarts,
-                 missCode         = missCode,
-                 nMcemApproxIters = mcemApproxIters,
-                 nMcemTuneIters   = mcemTuneIters,
-                 nMcemApproxBurn  = control$mcemApproxBurn,
-                 nMcemApproxGibbs = mcemApproxN,
-                 nMcemTuneBurn    = control$mcemTuneBurn,
-                 nMcemTuneGibbs   = mcemTuneN,
-                 nMcemPostBurn    = ifelse(is.null(control$mcemPostBurn), -1,
-                     control$mcemPostBurn),
-                 nMcemPostGibbs   = mcemPostN,
-                 emConvTol        = ifelse(doBen, control$mcemEpsilon, -1),
-                 lambdaWindow     = control$smoothingWindow,
-                 verbose          = verbose,
-                 doBen            = doBen,
-                 regIntercept     = control$regIntercept,
-                 doImputation     = doImp,
-                 adaptScales      = control$adaptScales,
-                 useClassic       = control$useClassic,
-                 simpleIntercept  = control$simpleIntercept)
-
+        runGibbs(inData          = as.matrix(rawData),
+                 dataScales      = dataScales,
+                 nTargets        = nTargets,
+                 lambda1Starts   = lambdaMat[ , 1], 
+                 lambda2Starts   = lambdaMat[ , 2],     # Ignored for BL
+                 sigmaStarts     = sigmaStarts,
+                 tauStarts       = tauStarts,
+                 betaStarts      = betaStarts,
+                 missCode        = missCode,
+                 nApproxIters    = iterations[1],
+                 nTuneIters      = iterations[2],
+                 nApproxBurn     = control$approxBurn,
+                 nApproxGibbs    = sampleSizes[1],
+                 nTuneBurn       = control$tuneBurn,
+                 nTuneGibbs      = sampleSizes[2],
+                 nPostBurn       = control$postBurn,
+                 nPostGibbs      = sampleSizes[3],
+                 emConvTol       = control$mcemEpsilon, # Ignored for BL
+                 lambdaWindow    = control$smoothingWindow,
+                 verbose         = verbose,
+                 doBl            = doBl,
+                 doImputation    = doImp,
+                 adaptScales     = control$adaptScales,
+                 simpleIntercept = control$simpleIntercept,
+                 twoPhaseOpt     = control$twoPhaseOpt) # Ignored for BL
+    
     names(gibbsOut) <- targetVars
     if(doImp)
-        if(!userMissCode) transData[transData == missCode] <- NA
+        if(!userMissCode) rawData[rawData == missCode] <- NA
+
+    ## Uncenter the data:
+    scaleData(revert = TRUE)
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -157,7 +155,7 @@ mibrr <- function(doBen,
     if(doImp) {
         outImps <- getImputedData(gibbsState  = gibbsOut,
                                   nImps       = nImps,
-                                  rawData     = transData,
+                                  rawData     = rawData,
                                   targetMeans = dataMeans[targetVars],
                                   targetVars  = targetVars)
     }
@@ -168,21 +166,21 @@ mibrr <- function(doBen,
     
     if(returnConvInfo) {
         outList$rHats <- rHatList
-        lamHistList <- list()
+        lamHistList   <- list()
         for(j in 1 : length(gibbsOut)) {
             lamHistList[[j]] <- gibbsOut[[j]]$lambdaHistory
         }
         outList$lambdaHistory <- lamHistList
     }
     
-    totalMcemIters <- mcemApproxIters + mcemTuneIters
+    totalIters <- sum(iterations)
     if(returnParams) {
         betaList <- tauList <- sigmaList <- lamList <- list()
         for(j in 1 : length(gibbsOut)) {
             betaList[[j]]  <- gibbsOut[[j]]$beta
             tauList[[j]]   <- gibbsOut[[j]]$tau
             sigmaList[[j]] <- gibbsOut[[j]]$sigma
-            lamList[[j]]   <- gibbsOut[[j]]$lambdaHistory[totalMcemIters, ]
+            lamList[[j]]   <- gibbsOut[[j]]$lambdaHistory[totalIters, ]
         }
         outList$params <- list(
             beta   = betaList,
@@ -198,144 +196,120 @@ mibrr <- function(doBen,
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
 miben <- function(rawData,
-                  nImps           = 100,
-                  targetVars      = NULL,
-                  ignoreVars      = NULL,
-                  mcemApproxIters = 100,
-                  mcemTuneIters   = 10,
-                  mcemApproxN     = 25,
-                  mcemTuneN       = 250,
-                  mcemPostN       = 500,
-                  missCode        = NULL,
-                  returnConvInfo  = TRUE,
-                  returnParams    = FALSE,
-                  verbose         = TRUE,
-                  seed            = NULL,
-                  control         = list()
+                  nImps          = 100,
+                  targetVars     = NULL,
+                  ignoreVars     = NULL,
+                  iterations     = c(100, 10),
+                  sampleSizes    = c(25, 250, 500),
+                  missCode       = NULL,
+                  returnConvInfo = TRUE,
+                  returnParams   = FALSE,
+                  verbose        = TRUE,
+                  seed           = NULL,
+                  control        = list()
                   )
 {
-    mibrr(doBen           = TRUE,
-          doImp           = TRUE,
-          rawData         = rawData,
-          nImps           = nImps,
-          targetVars      = targetVars,
-          ignoreVars      = ignoreVars,
-          mcemApproxIters = mcemApproxIters,
-          mcemTuneIters   = mcemTuneIters,
-          mcemApproxN     = mcemApproxN,
-          mcemTuneN       = mcemTuneN,
-          mcemPostN       = mcemPostN,
-          missCode        = missCode,
-          returnConvInfo  = returnConvInfo,
-          returnParams    = returnParams,
-          verbose         = verbose,
-          seed            = seed,
-          control         = control)
+    mibrr(doBl           = FALSE,
+          doImp          = TRUE,
+          rawData        = rawData,
+          nImps          = nImps,
+          targetVars     = targetVars,
+          ignoreVars     = ignoreVars,
+          iterations     = iterations,
+          sampleSizes    = sampleSizes,
+          missCode       = missCode,
+          returnConvInfo = returnConvInfo,
+          returnParams   = returnParams,
+          verbose        = verbose,
+          seed           = seed,
+          control        = control)
 }# END miben()
 
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Lasso (MIBL):
 mibl <- function(rawData,
-                 nImps           = 100,
-                 targetVars      = NULL,
-                 ignoreVars      = NULL,
-                 mcemApproxIters = 100,
-                 mcemTuneIters   = 10,
-                 mcemApproxN     = 25,
-                 mcemTuneN       = 250,
-                 mcemPostN       = 500,
-                 missCode        = NULL,
-                 returnConvInfo  = TRUE,
-                 returnParams    = FALSE,
-                 verbose         = TRUE,
-                 seed            = NULL,
-                 control         = list()
+                 nImps          = 100,
+                 targetVars     = NULL,
+                 ignoreVars     = NULL,
+                 iterations     = c(100, 10),
+                 sampleSizes    = c(25, 250, 500),
+                 missCode       = NULL,
+                 returnConvInfo = TRUE,
+                 returnParams   = FALSE,
+                 verbose        = TRUE,
+                 seed           = NULL,
+                 control        = list()
                  )
 {
-    mibrr(doBen           = FALSE,
-          doImp           = TRUE,
-          rawData         = rawData,
-          nImps           = nImps,
-          targetVars      = targetVars,
-          ignoreVars      = ignoreVars,
-          mcemApproxIters = mcemApproxIters,
-          mcemTuneIters   = mcemTuneIters,
-          mcemApproxN     = mcemApproxN,
-          mcemTuneN       = mcemTuneN,
-          mcemPostN       = mcemPostN,
-          missCode        = missCode,
-          returnConvInfo  = returnConvInfo,
-          returnParams    = returnParams,
-          verbose         = verbose,
-          seed            = seed,
-          control         = control)
+    mibrr(doBl           = TRUE,
+          doImp          = TRUE,
+          rawData        = rawData,
+          nImps          = nImps,
+          targetVars     = targetVars,
+          ignoreVars     = ignoreVars,
+          iterations     = iterations,
+          sampleSizes    = sampleSizes,
+          missCode       = missCode,
+          returnConvInfo = returnConvInfo,
+          returnParams   = returnParams,
+          verbose        = verbose,
+          seed           = seed,
+          control        = control)
 }# END mibl()
 
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
 ben <- function(rawData,
-                y               = NULL,
-                X               = NULL,
-                mcemApproxIters = 100,
-                mcemTuneIters   = 10,
-                mcemApproxN     = 25,
-                mcemTuneN       = 250,
-                mcemPostN       = 500,
-                returnConvInfo  = TRUE,
-                verbose         = TRUE,
-                seed            = NULL,
-                control         = list()
+                y              = NULL,
+                X              = NULL,
+                iterations     = c(100, 10),
+                sampleSizes    = c(25, 250, 500),
+                returnConvInfo = TRUE,
+                verbose        = TRUE,
+                seed           = NULL,
+                control        = list()
                 )
 {
-    mibrr(doBen           = TRUE,
-          doImp           = FALSE,
-          rawData         = rawData,
-          targetVars      = y,
-          ignoreVars      = setdiff(colnames(rawData), c(y, X)),
-          mcemApproxIters = mcemApproxIters,
-          mcemTuneIters   = mcemTuneIters,
-          mcemApproxN     = mcemApproxN,
-          mcemTuneN       = mcemTuneN,
-          mcemPostN       = mcemPostN,
-          missCode        = NULL,
-          returnConvInfo  = returnConvInfo,
-          returnParams    = TRUE,
-          verbose         = verbose,
-          seed            = seed,
-          control         = control)
+    mibrr(doBl           = FALSE,
+          doImp          = FALSE,
+          rawData        = rawData,
+          targetVars     = y,
+          ignoreVars     = setdiff(colnames(rawData), c(y, X)),
+          iterations     = iterations,
+          sampleSizes    = sampleSizes,
+          missCode       = NULL,
+          returnConvInfo = returnConvInfo,
+          returnParams   = TRUE,
+          verbose        = verbose,
+          seed           = seed,
+          control        = control)
 }# END ben()
 
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
 bl <- function(rawData,
-               y               = NULL,
-               X               = NULL,
-               mcemApproxIters = 100,
-               mcemTuneIters   = 10,
-               mcemApproxN     = 25,
-               mcemTuneN       = 250,
-               mcemPostN       = 500,
-               returnConvInfo  = TRUE,
-               verbose         = TRUE,
-               seed            = NULL,
-               control         = list()
+               y              = NULL,
+               X              = NULL,
+               iterations     = c(100, 10),
+               sampleSizes    = c(25, 250, 500),
+               returnConvInfo = TRUE,
+               verbose        = TRUE,
+               seed           = NULL,
+               control        = list()
                )
 {
-    mibrr(doBen           = FALSE,
-          doImp           = FALSE,
-          rawData         = rawData,
-          targetVars      = y,
-          ignoreVars      = setdiff(colnames(rawData), c(y, X)),
-          mcemApproxIters = mcemApproxIters,
-          mcemTuneIters   = mcemTuneIters,
-          mcemApproxN     = mcemApproxN,
-          mcemTuneN       = mcemTuneN,
-          mcemPostN       = mcemPostN,
-          missCode        = NULL,
-          returnConvInfo  = returnConvInfo,
-          returnParams    = TRUE,
-          verbose         = verbose,
-          seed            = seed,
-          control         = control)
+    mibrr(doBl           = TRUE,
+          doImp          = FALSE,
+          rawData        = rawData,
+          targetVars     = y,
+          ignoreVars     = setdiff(colnames(rawData), c(y, X)),
+          iterations     = iterations,
+          sampleSizes    = sampleSizes,
+          missCode       = NULL,
+          returnConvInfo = returnConvInfo,
+          returnParams   = TRUE,
+          verbose        = verbose,
+          seed           = seed,
+          control        = control)
 }# END bl()

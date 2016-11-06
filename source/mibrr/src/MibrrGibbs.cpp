@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-13
+// Modified: 2016-NOV-05
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -41,66 +41,32 @@ MibrrGibbs::MibrrGibbs()
   _storeGibbsSamples = false;
   _verbose           = true;
   _useElasticNet     = true;
-  _regIntercept      = false;
   _doImputation      = true;
+  _twoPhaseOpt       = true;
 }
 
 
-MibrrGibbs::~MibrrGibbs() 
-{
-}
+MibrrGibbs::~MibrrGibbs() {}
 
 //////////////////////////////// ACCESSORS //////////////////////////////////////
 
-VectorXd MibrrGibbs::getBetas() const 
-{ 
-  return _betas; 
-}
+VectorXd MibrrGibbs::getBetas()           const { return _betas;                }
+ArrayXd  MibrrGibbs::getTaus()            const { return _taus;                 }
+double   MibrrGibbs::getSigma()           const { return _sigma;                }
+MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;              }
+ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;               }
+VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;             }
+MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;               }
+MatrixXd MibrrGibbs::getLambdaHistory()   const { return _lambdaHistory;        }
+int      MibrrGibbs::getNDraws()          const { return _nDraws;               }
+int      MibrrGibbs::getNEmIters()        const { return _nEmIters;             }
+bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
+bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
+bool     MibrrGibbs::getDoImputation()    const { return _doImputation;         }
+bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;      }
+//bool     MibrrGibbs::getTwoPhaseOpt()     const { return _twoPhaseOpt;          }
 
-
-ArrayXd MibrrGibbs::getTaus() const 
-{ 
-  return _taus; 
-}
-
-
-double MibrrGibbs::getSigma() const 
-{ 
-  return _sigma; 
-}
-
-
-MatrixXd MibrrGibbs::getBetaSam() const 
-{ 
-  return _betaSam; 
-}
-
-
-ArrayXXd MibrrGibbs::getTauSam() const 
-{ 
-  return _tauSam; 
-}
-
-
-VectorXd MibrrGibbs::getSigmaSam() const 
-{ 
-  return _sigmaSam; 
-}
-
-
-MatrixXd MibrrGibbs::getImpSam() const
-{
-  return _impSam;
-}
-
-
-MatrixXd MibrrGibbs::getLambdaHistory() const
-{
-  return _lambdaHistory;
-}
-
-
-VectorXd MibrrGibbs::getLambdas() const 
+VectorXd MibrrGibbs::getLambdas() const
 { 
   VectorXd outLam;
   if(_useElasticNet) outLam = _lambdas;
@@ -109,78 +75,30 @@ VectorXd MibrrGibbs::getLambdas() const
 }
 
 
-double MibrrGibbs::getLambdas(int lambdaNumber) const 
+double MibrrGibbs::getLambdas(int index) const 
 { 
-  return _lambdas[lambdaNumber - 1]; 
+  return _lambdas[index - 1]; 
 }
 
-
-int MibrrGibbs::getNDraws() const
-{
-  return _nDraws;
-}
-
-
-int MibrrGibbs::getNEmIters() const
-{
-  return _nEmIters;
-}
-
-
-void MibrrGibbs::setNEmIters(int nEmIters) 
-{
-  _nEmIters = nEmIters;
-}
-
-bool MibrrGibbs::getVerbosity() const 
-{ 
-  return _verbose; 
-}
-
-
-bool MibrrGibbs::getElasticNetFlag() const 
-{ 
-  return _useElasticNet; 
-}
-
-bool MibrrGibbs::getRegIntercept() const 
-{ 
-  return _regIntercept; 
-}
-
-bool MibrrGibbs::getDoImputation() const 
-{ 
-  return _doImputation; 
-}
 
 //////////////////////////////// MUTATORS ///////////////////////////////////////
 
-void MibrrGibbs::setBetas(VectorXd &betas) 
-{
-  _betas = betas;
-}
+
+void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas = betas;            }
+void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus = taus;              }
+void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;            }
+void MibrrGibbs::setNEmIters   (int nEmIters)      { _nEmIters = nEmIters;      }
+void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;      }
+void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;          }
+void MibrrGibbs::beQuiet       ()                  { _verbose = false;          }
+void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
+void MibrrGibbs::doPrediction  ()                  { _doImputation = false;     }
+void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
+//void MibrrGibbs::doSimpleOpt   ()                  { _twoPhaseOpt = false;      }
+void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
 
 
-void MibrrGibbs::setTaus(ArrayXd &taus) 
-{
-  _taus = taus;
-}
-
-
-void MibrrGibbs::setSigma(double sigma) 
-{
-  _sigma = sigma;
-}
-
-
-void MibrrGibbs::setLambdas(VectorXd& lambdas) 
-{  
-  _lambdas = lambdas;
-}
-
-
-void MibrrGibbs::setLambdas(double lambda1, 
-			    double lambda2) 
+void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
 {
   _lambdas[0] = lambda1;
   _lambdas[1] = lambda2;
@@ -196,27 +114,21 @@ void MibrrGibbs::setLambdas(double lambda)
 
 void MibrrGibbs::setLambdas() 
 {  
-  int startRow = _emIterNum - _lambdaWindow;
-  int nCols = _useElasticNet ? 2 : 1;
+  int      startRow      = _emIterNum - _lambdaWindow;
+  int      nCols         = _useElasticNet ? 2 : 1;
   VectorXd pooledLambdas = 
     _lambdaHistory.block(startRow, 0, _lambdaWindow, nCols).colwise().mean();
 
   if(_useElasticNet) _lambdas = pooledLambdas.transpose();
-  else _lambdas[0] = pooledLambdas[0];
-}
-
-
-void MibrrGibbs::setTargetIndex(int targetIndex) 
-{
-  _targetIndex = targetIndex;
+  else               _lambdas[0] = pooledLambdas[0];
 }
 
 
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
-				 ArrayXd &tauStarts,
-				 double sigmaStart,
-				 double lambda1Start,
-				 double lambda2Start)
+				 ArrayXd  &tauStarts,
+				 double   sigmaStart,
+				 double   lambda1Start,
+				 double   lambda2Start)
 {
   _betas         = betaStarts;
   _taus          = tauStarts;
@@ -229,8 +141,8 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 
 
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
-				 ArrayXd &tauStarts,
-				 double sigmaStart,
+				 ArrayXd  &tauStarts,
+				 double   sigmaStart,
 				 VectorXd &lambdaStartVec)
 {
   _betas         = betaStarts;
@@ -242,25 +154,21 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 }
 
 
-void MibrrGibbs::setupOptimizer(int nEmIters,
-				int lambdaWindow,
-				double emConvTol)
+void MibrrGibbs::setupOptimizer(int    nEmIters,
+				int    lambdaWindow,
+				double emConvTol,
+				bool   twoPhaseOpt)
 {
-  _emConvTol = emConvTol;
-  _nEmIters = nEmIters;
+  _emConvTol    = emConvTol;
+  _nEmIters     = nEmIters;
   _lambdaWindow = lambdaWindow;
+  _twoPhaseOpt  = twoPhaseOpt;
 }
 
 
-void MibrrGibbs::setNDraws(int nDraws) 
+void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 {
-  _nDraws = nDraws;
-}
-
-
-void MibrrGibbs::startGibbsSampling(MibrrData &mibrrData)
-{
-  int nObs = mibrrData.nObs();
+  int nObs           = mibrrData.nObs();
   _storeGibbsSamples = true;
   
   _betaSam  = MatrixXd(_nDraws, _betas.size());
@@ -270,16 +178,10 @@ void MibrrGibbs::startGibbsSampling(MibrrData &mibrrData)
 }
 
 
-void MibrrGibbs::stopGibbsSampling()
-{
-  _storeGibbsSamples = false;
-}
-
-
 void MibrrGibbs::restartParameters(MibrrData &mibrrData)
 {
   _betas = _betaSam.bottomRows(_betaSam.rows() - 1).colwise().mean().transpose();
-  _taus = _tauSam.bottomRows(_tauSam.rows() - 1).colwise().mean().transpose();
+  _taus  = _tauSam.bottomRows(_tauSam.rows() - 1).colwise().mean().transpose();
   _sigma = _sigmaSam.tail(_sigmaSam.size() - 1).mean();
   
   VectorXd meanImps = _impSam.bottomRows(_impSam.rows() - 1).colwise().mean();
@@ -287,96 +189,52 @@ void MibrrGibbs::restartParameters(MibrrData &mibrrData)
 }
 
 
-void MibrrGibbs::setVerbosity(bool verbose) 
-{ 
-  _verbose = verbose;
-}
-
-
-void MibrrGibbs::setElasticNetFlag(bool useElasticNet) 
-{ 
-  _useElasticNet = useElasticNet; 
-}
-
-
-void MibrrGibbs::doBen()
-{
-  _useElasticNet = true;
-}
-
-
-void MibrrGibbs::doBl()
-{
-  _useElasticNet = false;
-}
-
-
-void MibrrGibbs::setRegIntercept(bool regIntercept) 
-{ 
-  _regIntercept = regIntercept; 
-}
-
-
-void MibrrGibbs::setDoImputation(bool doImputation) 
-{ 
-  _doImputation = doImputation; 
-}
-
-
-void MibrrGibbs::setAdaptScales(bool adaptScales)
-{
-  _adaptScales = adaptScales;
-}
-
-
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
 
-double MibrrGibbs::drawInvGamma(double shape, 
-				double scale)
+
+double MibrrGibbs::drawInvGamma(double shape, double scale) const
 {
   return 1.0 / R::rgamma(shape, 1.0 / scale);
 }//END drawInvGamma()
 
 
-VectorXd MibrrGibbs::drawMVN(VectorXd &meanVec, 
-			     MatrixXd &covMat)
-{
-  int nVars = meanVec.size();
-  MatrixXd covCholesky;
-  VectorXd normDraws(nVars);
-  
-  covCholesky = covMat.llt().matrixL();
-  for(int i = 0; i < nVars; i++) normDraws[i] = norm_rand();
-  VectorXd testVec = covCholesky * normDraws;
-  
-  return meanVec + (covCholesky * normDraws);
-}// END drawMVN()
+//VectorXd MibrrGibbs::drawMVN(const VectorXd &meanVec, const MatrixXd &covMat)
+//{
+//  int      nVars = meanVec.size();
+//  MatrixXd covCholesky;
+//  VectorXd normDraws(nVars);
+//  
+//  covCholesky = covMat.llt().matrixL();
+//  for(int i = 0; i < nVars; i++) normDraws[i] = norm_rand();
+//  VectorXd testVec = covCholesky * normDraws;
+//  
+//  return meanVec + (covCholesky * normDraws);
+//}// END drawMVN()
 
 
-double MibrrGibbs::calcIncGamma(double shape, 
-				double cutVal,
-				bool lowerTail)
+double MibrrGibbs::calcIncGamma(const double shape, 
+				const double cutVal,
+				const bool   lowerTail)
 {
-  double scale = 1.0;
-  int lower = (int)lowerTail;
-  int logTran = 0; // Don't want log transform
+  double scale   = 1.0;
+  int    lower   = (int)lowerTail;
+  int    logTran = 0; // Don't want log transform
   
   return R::pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
 }// END calcIncGamma()
 
 
-double MibrrGibbs::drawInvGauss(double mu, 
-				double lambda)
+double MibrrGibbs::drawInvGauss(const double mu, const double lambda)
 { 
-  double b = 0.5 * mu / lambda;
-  double a = mu * b;
-  double c = 4.0 * mu * lambda;
-  double d = pow(mu, 2);
+  double b      = 0.5 * mu / lambda;
+  double a      = mu * b;
+  double c      = 4.0 * mu * lambda;
+  double d      = pow(mu, 2);
   double outVal = 0.0;
 
   while(outVal <= 0.0) {
     double tmpDraw = norm_rand();
-    double v = pow(tmpDraw, 2); // Chi-Squared with df = 1
+    double         v = pow(tmpDraw, 2); // Chi-Squared with df = 1
     if (mu <= 0.0) {
       throw invalid_argument("The Inverse Gaussian's mean is non-positive.\n");  
     }
@@ -394,37 +252,47 @@ double MibrrGibbs::drawInvGauss(double mu,
   return outVal;
 }// END drawInvGauss()
 
+
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
-void MibrrGibbs::updateTaus(MibrrData &mibrrData)
+
+void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {
-  double lambda1 = _lambdas[0];
-  double lambda2 = _lambdas[1];
-  int nPreds = mibrrData.nPreds();
+  int     nPreds   = mibrrData.nPreds();
+  double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
-  double tauScale = -1.0;// -1 to ensure an exception if try() fails
   
   try {
     if(_useElasticNet) {// Miben Version
-      ArrayXd tauMeansNumerator = ArrayXd::Constant(nPreds, lambda1);
+      ArrayXd tauMeansNumerator = ArrayXd::Constant(nPreds, _lambdas[0]);
       
       tauMeans = tauMeansNumerator.sqrt() /
-	(2.0 * lambda2 * _betas.tail(nPreds).array().abs());
+	(2.0 * _lambdas[1] * _betas.tail(nPreds).array().abs());
       
-      tauScale = lambda1 / (4.0 * lambda2 * _sigma); 
+      tauScale = _lambdas[0] / (4.0 * _lambdas[1] * _sigma);
+
+      ///// DEBUG ////////////////////////////////
+      //cout << "\nLambdas:\n" << endl;
+      //cout << _lambdas[0] << " " << _lambdas[1] << endl;
+      //cout << "\nTau Means:\n" << endl;
+      //cout << tauMeans << endl;
+      //cout << "\nTau Scale:\n" << endl;
+      //cout << tauScale << endl;
+      //cout << "\n" << endl;
+      /////////////////////////////////////////////
     }
     else {// MIBL Version
-      double tauMeansNumerator = pow(lambda1, 2) * _sigma;
+      double tauMeansNumerator = pow(_lambdas[0], 2) * _sigma;
       
       tauMeans =
 	(tauMeansNumerator / _betas.tail(nPreds).array().square()).sqrt();
       
-      tauScale = pow(lambda1, 2);
+      tauScale = pow(_lambdas[0], 2);
     }
     if((tauMeans <= 0.0).any()) throw 1;
-    if(tauScale <= 0.0) throw 2;
+    if(tauScale <= 0.0)         throw 2;
   }
-  catch (int e) { tauError(e); }
+  catch(int e) { tauError(e); }
   
   // Draw new values of the auxiliary penalty parameters:
   ArrayXd tmpDraws(nPreds);
@@ -435,35 +303,51 @@ void MibrrGibbs::updateTaus(MibrrData &mibrrData)
   if(_useElasticNet) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
   else               newTaus = 1.0 / tmpDraws;              // MIBL Version
   
-  _taus = newTaus;// Store the updated Taus
+  _taus = newTaus; // Store the updated Taus
+
+  ///// DEBUG ////////////////////////////////////
+  //cout << "\nTaus:\n" << endl;
+  //cout << _taus << endl;
+  //cout << "\n" << endl;
+  //
+  //cout << "\nBetas:\n" << endl;
+  //cout << _betas << endl;
+  //cout << "\n" << endl;
+  //
+  //cout << "\nSigma:\n" << endl;
+  //cout << _sigma << endl;
+  //cout << "\n" << endl;
+  //////////////////////////////////////////////////
+
+
   
   // Add the updated Taus to their Gibbs sample:
   if(_storeGibbsSamples) _tauSam.row(_drawNum) = newTaus.transpose();
-}// END updateTaus ()
+}// END updateTaus()
 
 
-void MibrrGibbs::updateBetas(MibrrData &mibrrData)
+
+void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 {
-  int nPreds = mibrrData.nPreds();
-  int nObs = mibrrData.nResponses(_targetIndex);
+  int             nPreds = mibrrData.nPreds();
+  int             nObs   = mibrrData.nResponses(_targetIndex);
+  MatrixXd        tmpMat;
   LDLT <MatrixXd> aMatrixCholesky;
-  MatrixXd tmpMat;
   
   if(_useElasticNet) {// MIBEN Version
-    double lambda2 = _lambdas[1];
     VectorXd transformedTaus = _taus / (_taus - 1.0);
-    tmpMat = lambda2 * transformedTaus.asDiagonal();
-    if(!_regIntercept) tmpMat(0, 0) = 0.0;
+    tmpMat = _lambdas[1] * transformedTaus.asDiagonal();    
   }
   else {// MIBL Version
     VectorXd transformedTaus = 1.0 / _taus;
     tmpMat = transformedTaus.asDiagonal();
-    if(!_regIntercept) tmpMat(0, 0) = 0.0;
   }
-
-  MatrixXd aMatrix = mibrrData.getIVs(_targetIndex).transpose() *
-    mibrrData.getIVs(_targetIndex) + tmpMat;
- 
+  
+  MatrixXd aMatrix;
+  aMatrix =
+    mibrrData.getIVs(_targetIndex).transpose() * mibrrData.getIVs(_targetIndex) +
+    tmpMat;
+  
   VectorXd betaMeans;
   MatrixXd betaCovariances;
   try {
@@ -473,75 +357,77 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     betaMeans =
       aMatrixCholesky.solve(mibrrData.getIVs(_targetIndex).transpose() *
 			    mibrrData.getDV(_targetIndex)); 
-
+    
     tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);   
-    betaCovariances = aMatrixCholesky.solve(tmpMat);  
+    betaCovariances = aMatrixCholesky.solve(tmpMat);
   }
   catch(exception &e) { betaError(e); }
+
+  // Draw a new value of the intercept term:
+  double intSd = sqrt(_sigma / double(nObs));
+  double intMean;
+  if(_simpleIntercept)
+    intMean = mibrrData.getDV(_targetIndex).mean();
+  else
+    intMean = mibrrData.getDV(_targetIndex).mean() -
+      mibrrData.getIVs(_targetIndex).colwise().mean() * _betas.tail(nPreds);
   
-  VectorXd newBetas(nPreds);
+  VectorXd newBetas(nPreds + 1);  
+  newBetas[0] = R::rnorm(intMean, intSd);
   
-  // Draw new values of the regression coefficients:
-  newBetas = mibrrData.drawMVN(betaMeans, betaCovariances);
+  // Draw new values of the regression slope coefficients:
+  newBetas.tail(nPreds) = mibrrData.drawMVN(betaMeans, betaCovariances);
   
-  _betas = newBetas;// Store the updated Betas
+  _betas = newBetas; // Store the updated Betas
   
   // Add the updated Betas to their Gibbs sample:
   if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
-}// END updateBetas ()
+}// END updateBetas()
     
 
-void MibrrGibbs::updateSigma(MibrrData &mibrrData)
-{
-  int nPreds = mibrrData.nPreds();
-  int nObs = mibrrData.nResponses(_targetIndex);
-  double lambda1 = _lambdas[0];
-  double lambda2 = _lambdas[1];
-  double newSigma;
 
+void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
+{
+  double   newSigma;
+  int      nPreds        = mibrrData.nPreds();
+  int      nObs          = mibrrData.nResponses(_targetIndex);
+  VectorXd tmpBiasVector = VectorXd::Ones(nObs);
+  
   // Compute the regularized residual sum of squares:
   double sse =
-    (mibrrData.getDV(_targetIndex) -
-     mibrrData.getIVs(_targetIndex) * _betas).transpose() *
-    (mibrrData.getDV(_targetIndex) -
-     mibrrData.getIVs(_targetIndex) * _betas);
+    (mibrrData.getDV(_targetIndex) - _betas[0] * tmpBiasVector -
+     mibrrData.getIVs(_targetIndex) * _betas.tail(nPreds)).transpose() *
+    (mibrrData.getDV(_targetIndex) - _betas[0] * tmpBiasVector -
+     mibrrData.getIVs(_targetIndex) * _betas.tail(nPreds));
   
   if(_useElasticNet) {// MIBEN Version
-    ArrayXd transformedTaus = _taus / (_taus - 1.0);
-    if(!_regIntercept) transformedTaus[0] = 1.0;
-    
-    double scaleSum = (transformedTaus * _betas.array().square()).sum();
+    double scaleSum =
+      (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
     
     double sigmaShape = (double(nObs) / 2.0) + double(nPreds);
-
-    ArrayXd tmpTaus = _taus;
-    if(!_regIntercept) tmpTaus[0] = 0.0;
-    
     double sigmaScale =
-      0.5 * (sse + lambda2 * scaleSum + (pow(lambda1, 2) / (4.0 * lambda2)) *
-	     tmpTaus.sum());
+      0.5 * (sse + _lambdas[1] * scaleSum +
+	     (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
     
-    bool isDrawValid = false;
+    bool   isDrawValid = false;
     double testDraw;
     while(!isDrawValid) {// Rejection sampling to draw a Sigma variate
-      testDraw = drawInvGamma(sigmaShape, sigmaScale);
-      double thresholdDraw = unif_rand();
-      double uiGammaShape = pow(lambda1, 2) / (8.0 * testDraw * lambda2);
-      double uiGammaDraw = calcIncGamma(0.5, uiGammaShape, false);
-      isDrawValid = log(thresholdDraw) <= (double(nPreds) * log(tgamma(0.5))) -
-	(double(nPreds) * log(uiGammaDraw));
+      testDraw         = drawInvGamma(sigmaShape, sigmaScale);
+      double threshold = unif_rand();
+      double igShape   = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
+      double igDraw    = calcIncGamma(0.5, igShape, false);
+      isDrawValid      = log(threshold) <=
+	(double(nPreds) * log(tgamma(0.5))) - (double(nPreds) * log(igDraw));
       Rcpp::checkUserInterrupt();
     };
     newSigma = testDraw;
   }
   else {// MIBL Version
     VectorXd transformedTaus = 1.0 / _taus;
-    if(!_regIntercept) transformedTaus[0] = 1.0;
-    
     MatrixXd tmpMat = transformedTaus.asDiagonal();
     
-    double penaltyTerm = _betas.transpose() * tmpMat * _betas;
-    
+    double penaltyTerm =
+      _betas.tail(nPreds).transpose() * tmpMat * _betas.tail(nPreds);
     double sigmaShape = 0.5 * ((double(nObs) - 1.0) + double(nPreds));
     double sigmaScale = 0.5 * (sse + penaltyTerm);
     
@@ -549,27 +435,29 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     newSigma = drawInvGamma(sigmaShape, sigmaScale);
   }
   
-  _sigma = newSigma;// Store the updated Sigma
+  _sigma = newSigma; // Store the updated Sigma
   
   // Add the updated sigma to its Gibbs sample:
   if(_storeGibbsSamples) _sigmaSam[_drawNum] = newSigma;
-}// END updateSigma ()
+}// END updateSigma()
+
 
 
 void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 {
-  int nObs = mibrrData.nObs();
-  int nPreds = mibrrData.nPreds();
-  ArrayXb nonresponseVector = mibrrData.getNonresponseVector(_targetIndex);
-  double tmpSd = sqrt(_sigma);
+  int      nObs              = mibrrData.nObs();
+  int      nPreds            = mibrrData.nPreds();
+  ArrayXb  nonresponseVector = mibrrData.getNonresponseVector(_targetIndex);
+  VectorXd tmpBiasVector     = VectorXd::Ones(nObs);
   VectorXd errorVector(nObs);
   
   // Draw the residual error terms for the imputation model:
-  for(int i = 0; i < nObs; i++) errorVector[i] = R::rnorm(0.0, tmpSd);
+  for(int i = 0; i < nObs; i++) errorVector[i] = R::rnorm(0.0, sqrt(_sigma));
   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
-  VectorXd tmpImps = mibrrData.getFullIVs(_targetIndex) * _betas + errorVector;
+  VectorXd tmpImps = _betas[0] * tmpBiasVector +
+    mibrrData.getFullIVs(_targetIndex) * _betas.tail(nPreds) + errorVector;
   
   // Replace the missing data in the target variable with the imputations:
   for(int i = 0; i < nObs; i++)
@@ -578,156 +466,165 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   
   // Add the updated imputations to their Gibbs sample:
   if(_storeGibbsSamples) _impSam.row(_drawNum) = tmpImps.transpose();
-}// END updateImputations ()
+}// END updateImputations()
+
 
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
-{
-  updateTaus(mibrrData); 
-  updateBetas(mibrrData);
-  updateSigma(mibrrData);  
-  if(_doImputation) updateImputations(mibrrData);
+{  
+  updateTaus       (mibrrData);
+  updateBetas      (mibrrData);
+  updateSigma      (mibrrData);
+  updateImputations(mibrrData);
   
-  if(_adaptScales) mibrrData.computeDataScales();
-  if(_storeGibbsSamples) _drawNum++;  
-}// END doGibbsIteration ()
+  if(_storeGibbsSamples) _drawNum++;
+}// END doGibbsIteration()
 
-///////////////////////// MCEM OPTIMIZATION FUNCTIONS ///////////////////////////
 
-double MibrrGibbs::eNetLambdaObjective(const std::vector<double> &lambdaVec,
-				   std::vector<double> &gradVec,
-				   void *extraOptData)
+
+double MibrrGibbs::lambdaObjective(const std::vector<double> &lambdas,
+				   std::vector<double>       &grad,
+				   void                      *extras)
 {
-  bool nanLambdas = isnan(lambdaVec[0]) | isnan(lambdaVec[1]) |
-    lambdaVec[0] != lambdaVec[0] | lambdaVec[1] != lambdaVec[1];
+  // Check for finite, well-defined lambda values:
+  bool nanLam1 = isnan(lambdas[0]) | lambdas[0] != lambdas[0];
+  bool nanLam2 = isnan(lambdas[1]) | lambdas[1] != lambdas[1];
   
-  if(nanLambdas) 
-    throw invalid_argument("An Elastic Net penalty parameter is NaN.");  
+  if(nanLam1 & nanLam2) 
+    throw invalid_argument("Both elastic net penalty parameters are NaN.");  
+  else if(nanLam1) 
+    throw invalid_argument("The LASSO penalty parameter is NaN.");  
+  else if(nanLam2) 
+    throw invalid_argument("The ridge penalty parameter is NaN.");  
   
   _optIterCount++; // Track the number of function evaluations
   
   int nPreds = _tauSam.cols();
-  int nSams = _tauSam.rows();
+  int nSams  = _tauSam.rows();
 
   // BEGIN compute LL and gradient terms.
   ArrayXd tmpArray = 2.0 * _sigmaSam;
-  double w1 = nPreds * log(lambdaVec[0]);
-  ArrayXd w2 = lambdaVec[1] / tmpArray;
-  ArrayXd w3 = 1 / tmpArray;
+  double  w1       = nPreds * log(lambdas[0]);
+  ArrayXd w2       = lambdas[1] / tmpArray;
+  ArrayXd w3       = 1 / tmpArray;
   
-  tmpArray = 8.0 * _sigmaSam * lambdaVec[1];
-  ArrayXd w4 = pow(lambdaVec[0], 2) / tmpArray;
-  double w5 = nPreds / lambdaVec[0];
-  double w6 = (nPreds * lambdaVec[0]) / (4.0 * lambdaVec[1]);
+  tmpArray   = 8.0 * _sigmaSam * lambdas[1];
+  ArrayXd w4 = pow(lambdas[0], 2) / tmpArray;
+  double  w5 = nPreds / lambdas[0];
+  double  w6 = (nPreds * lambdas[0]) / (4.0 * lambdas[1]);
   
-  tmpArray = 4.0 * _sigmaSam * lambdaVec[1];
-  ArrayXd w7 = lambdaVec[0] / tmpArray;
-  double w8 = (nPreds * pow(lambdaVec[0], 2)) / (8.0 * pow(lambdaVec[1], 2));
+  tmpArray   = 4.0 * _sigmaSam * lambdas[1];
+  ArrayXd w7 = lambdas[0] / tmpArray;
+  double  w8 = (nPreds * pow(lambdas[0], 2)) / (8.0 * pow(lambdas[1], 2));
   
-  tmpArray = 8.0 * _sigmaSam * pow(lambdaVec[1], 2);
-  ArrayXd w9 = pow(lambdaVec[0], 2) / tmpArray;
+  tmpArray   = 8.0 * _sigmaSam * pow(lambdas[1], 2);
+  ArrayXd w9 = pow(lambdas[0], 2) / tmpArray;
   
-  ArrayXd uiGammaArray(nSams); 
+  ArrayXd igArray(nSams); 
   for(int i = 0; i < nSams; i++)
-    uiGammaArray[i] = R::pgamma(w4[i], 0.5, 1.0, 0, 0) * tgamma(0.5);
+    igArray[i] = calcIncGamma(0.5, w4[i], false);
   
-  ArrayXd term1 = uiGammaArray.log();
+  ArrayXd term1 = igArray.log();
   ArrayXd term2 =
-    ((_tauSam / (_tauSam - 1)) * _betaSam.array().square()).rowwise().sum();
+    ((_tauSam / (_tauSam - 1)) *
+     _betaSam.rightCols(nPreds).array().square()).rowwise().sum();
   // END compute LL and gradient terms.
   
-  if(!gradVec.empty()) {// Calculate the gradient vector:
-    ArrayXd term3 = (1 / uiGammaArray) * (1 / w4.sqrt()) * (-1.0 * w4).exp() *
+  if(!grad.empty()) {// Calculate the gradient vector:
+    ArrayXd term3 = (1 / igArray) * (1 / w4.sqrt()) * (-1.0 * w4).exp() *
       (1 / _sigmaSam.array());
-    gradVec[0] = (w5 + (w6 * term3) - w7 * _tauSam.rowwise().sum()).mean();
-    gradVec[1] =
+    grad[0] = (w5 + (w6 * term3) - w7 * _tauSam.rowwise().sum()).mean();
+    grad[1] =
       (-1.0 * (w8 * term3) - (w3 * term2) + w9 * _tauSam.rowwise().sum()).mean();
   }
   
-  // Calculate and return the objective value:
+  // Return the objective value:
   return (w1 - (nPreds * term1) - (w2 * term2) -
 	  (w4 * _tauSam.rowwise().sum())).mean();
-}// END eNetLambdaObjective()
+}// END lambdaObjective()
+
 
 
 // As suggested by the nlopt authors, specify a simple  wrapper function for
-// eNetLambdaObjective() so that nlopt will run inside the MibrrGibbs class:
-double eNetObjectiveWrap(const std::vector<double> &lambdaVec, 
-			 std::vector<double> &gradVec, 
-			 void *extraOptData) 
+// lambdaObjective() so that nlopt will run inside the MibrrGibbs class:
+double objectiveWrap(const std::vector<double> &lambdas, 
+		     std::vector<double>       &grad, 
+		     void                      *extras) 
 {
-  MibrrGibbs *obj = static_cast<MibrrGibbs *>(extraOptData);   
-  return obj -> eNetLambdaObjective(lambdaVec, gradVec, extraOptData);
-}// END eNetObjectiveWrap()
+  MibrrGibbs *obj = static_cast<MibrrGibbs *>(extras);   
+  return obj -> lambdaObjective(lambdas, grad, extras);
+}// END objectiveWrap()
 
 
-void MibrrGibbs::optimizeMibenLambdas(bool preOptimize) 
+
+void MibrrGibbs::optimizeMibenLambdas(const bool preOptimize) 
 {
-  std::vector<double> lambdaVec(2), gradVec(2), lamBounds(2);
-  lambdaVec[0] = _lambdas[0];
-  lambdaVec[1] = _lambdas[1];
-  gradVec[0] = 0.0;
-  gradVec[1] = 0.0;
+  string              algName, outPrefix; 
+  bool                optimized = false;
+  std::vector<double> lambdas(2), grad(2), lamBounds(2);
+  nlopt::algorithm    optAlg;
+  
+  lambdas[0]   = _lambdas[0];
+  lambdas[1]   = _lambdas[1];
+  grad[0]      = 0.0;
+  grad[1]      = 0.0;
   lamBounds[0] = 1.0e-4; // Set low bounds slightly above zero to avoid dividing 
   lamBounds[1] = 1.0e-4; // by zero when no regularization is needed.
-  _optMethod = 0;
-  nlopt::algorithm optAlg;
-  string algName, outPrefix; 
-  bool optimized = false;
+  _optMethod   = 0;
   
   while(!optimized) {//Try different algorithms until convergence
     if(preOptimize) {
       _optPrefix = "pre-";
       if(_optMethod == 0) {
-	optAlg = nlopt::LN_BOBYQA;
+	optAlg   = nlopt::LN_BOBYQA;
 	_algName = "BOBYQA";
       }
       else if(_optMethod == 1) {
-	optAlg = nlopt::LN_COBYLA;
+	optAlg   = nlopt::LN_COBYLA;
 	_algName = "COBYLA";
       }
       else if(_optMethod == 2) {
-	optAlg = nlopt::LN_SBPLX;
+	optAlg   = nlopt::LN_SBPLX;
 	_algName = "SBPLX";
       }
       else if(_optMethod == 3) {
-	optAlg = nlopt::LN_PRAXIS;
+	optAlg   = nlopt::LN_PRAXIS;
 	_algName = "PRAXIS";
       }
     }
     else {
       _optPrefix = "";
       if(_optMethod == 0) {
-	optAlg = nlopt::LD_MMA;
+	optAlg   = nlopt::LD_MMA;
 	_algName = "MMA";
       }
       else if(_optMethod == 1) {
-	optAlg = nlopt::LD_VAR2;
+	optAlg   = nlopt::LD_VAR2;
 	_algName = "VAR2";
       }
       else if(_optMethod == 2) {
-	optAlg = nlopt::LD_VAR1;
+	optAlg   = nlopt::LD_VAR1;
 	_algName = "VAR1";
       }
       else if(_optMethod == 3) {
-	optAlg = nlopt::LD_LBFGS;
+	optAlg   = nlopt::LD_LBFGS;
 	_algName = "LBFGS";
       }
     }// END if(preOptimize}
     
     nlopt::opt myOptimizer(optAlg, 2);       // Initialize the optimizer object
-    myOptimizer.set_max_objective(eNetObjectiveWrap, this);
+    myOptimizer.set_max_objective(objectiveWrap, this);
     myOptimizer.set_ftol_rel(_emConvTol);    // Stopping criterion
     myOptimizer.set_lower_bounds(lamBounds); // Force positive Lambdas	
     
+    double        maxLL = 0.0;
     nlopt::result myResult;
-    double maxLL = 0.0;
     try {
-      myResult = myOptimizer.optimize(lambdaVec, maxLL);  
-      if(myResult < 0) {            // Catch nlopt failure codes
-	_optMethod ++;              // Try the next algorithm
-	lambdaVec[0] = _lambdas[0]; // Reset the lambdas
-	lambdaVec[1] = _lambdas[1];
+      myResult = myOptimizer.optimize(lambdas, maxLL);  
+      if(myResult < 0) {          // Catch nlopt failure codes
+	_optMethod ++;            // Try the next algorithm
+	lambdas[0] = _lambdas[0]; // Reset the lambdas
+	lambdas[1] = _lambdas[1];
 	lambdaError();
       }
       else if(myResult > 0) {// Successful convergence!
@@ -741,50 +638,55 @@ void MibrrGibbs::optimizeMibenLambdas(bool preOptimize)
     catch(int &e) {
       throw e;
     }
-    catch(exception &e) {        //Catch Lambdas == NaN
-      _optMethod ++;             // Try the next algorithm
-      lambdaVec[0] = _lambdas[0];
-      lambdaVec[1] = _lambdas[1];// Reset lambdas
+    catch(exception &e) {       // Catch Lambdas == NaN
+      _optMethod ++;            // Try the next algorithm
+      lambdas[0] = _lambdas[0]; // Reset the lambdas
+      lambdas[1] = _lambdas[1]; 
       lambdaError(e);
     }  
     _optIterCount = 0;
   }// END while(!optimized)      
   // Store the updated penalty parameters:
-  _lambdas[0] = lambdaVec[0];
-  _lambdas[1] = lambdaVec[1];
+  _lambdas[0]                    = lambdas[0];
+  _lambdas[1]                    = lambdas[1];
   _lambdaHistory.row(_emIterNum) = _lambdas.transpose();
 }// END optimizeMibenLambdas()
+
 
 
 void MibrrGibbs::updateLambdas()
 {
   if(_useElasticNet) {// MIBEN version
-    // For MIBEN, optimization is done in two stages:
+    // For MIBEN, optimization can be done in two stages:
     // 1) A rough, gradient-free, pre-optimization is done to move the estimates
     //    into the neighborhood of the MLE.
     // 2) Gradient-based optimization is used to fine-tune the estimates from
     //    Step (1).
-    optimizeMibenLambdas(true);  // Pre-optimization
-    optimizeMibenLambdas(false); // Optimization    
+    if(_twoPhaseOpt) optimizeMibenLambdas(true);  // Pre-optimization
+    optimizeMibenLambdas(false);                  // Optimization    
   }
   else {// MIBL version:
     int nPreds = _tauSam.cols();
     
     // For MIBL, optimization is done via the closed-form update rule given by
     // Park and Casella (2008).
-    double lambdaDenominator = (_tauSam.colwise().mean()).sum();
-    double newLambda = sqrt((2.0 * double(nPreds)) / lambdaDenominator); 
-    _lambdas[0] = newLambda;
+    double lambdaDenom = (_tauSam.colwise().mean()).sum();
+    double newLambda   = sqrt((2.0 * double(nPreds)) / lambdaDenom); 
+    _lambdas[0]                   = newLambda;
     _lambdaHistory(_emIterNum, 0) = _lambdas[0];
   }
   
   // Do some housekeeping:
   _emIterNum++;
   _storeGibbsSamples = false;
-  _drawNum = 0;
+  _drawNum           = 0;
 }// END updateLambdas()
 
+
+
 ///////////////////////// EXCEPTION HANDLING FUNCTIONS //////////////////////////
+
+
 
 void MibrrGibbs::tauError(int errorCode) const
 {
@@ -796,17 +698,19 @@ while updating Tau,\nand one of its mean values is non-positive.\n");
   else if (errorCode == 2) {
     Rcpp::Rcout << "\n";
     Rcpp::stop("Ouch! My tau is broken :(\nSomething terrible has occured \
-while updating Tau,\nand one of its mean values is non-positive.\n");
+while updating Tau,\nand one of its scale values is non-positive.\n");
   }
 }
+
 
 
 void MibrrGibbs::betaError(exception &e) const
 {
   Rcpp::Rcerr << e.what() << endl;
   Rcpp::stop("Something terrible has occured while updating Beta.\nAbove this \
-message, I've printed the that exception I caught.\nBeta luck next time ;)");
+message, I've printed the that exception I caught.\nBeta luck next time.");
 }
+
 
 
 void MibrrGibbs::lambdaError() const
@@ -826,6 +730,7 @@ void MibrrGibbs::lambdaError() const
     }
   }
 }
+
 
 
 void MibrrGibbs::lambdaError(exception &e) const

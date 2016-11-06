@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-MAY-11
+// Modified: 2016-NOV-05
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -27,158 +27,132 @@
 #include "MibrrData.hpp"
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
-  
-//MibrrData::MibrrData(MatrixXd &newData)
-//{
-//  _data     = newData;
-//  _dataScales = RowVectorXd( _data.cols() );
-//}
 
-//MibrrData::MibrrData(MatrixXd &newData,
-//		     VectorXd &newDataScales,
-//		     double missingDataCode) 
-//{
-//  _missingDataCode   = missingDataCode;
-//  _data              = newData;
-//  _dataScales        = newDataScales;
-//  _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
-//  computeNonresponseFilter();
-//}
-
-MibrrData::MibrrData()
+MibrrData::MibrrData(const MatrixXd &newData)
 {
+  _data       = newData;
+  _dataScales = RowVectorXd( _data.cols() );
 }
 
-MibrrData::~MibrrData() 
+
+MibrrData::MibrrData(const MatrixXd &newData,
+		     const VectorXd &newDataScales,
+		     const double   missingDataCode) 
 {
+  _missingDataCode   = missingDataCode;
+  _data              = newData;
+  _dataScales        = newDataScales;
+  _nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
+  computeNonresponseFilter();
 }
+
+MibrrData::MibrrData() {}
+
+MibrrData::~MibrrData() {}
+
 
 ///////////////////////////////// ACCESSORS /////////////////////////////////////
 
-MatrixXd MibrrData::getIVs(int targetIndex)
-{
-  int nObs = _data.rows();
-  int nVars = _data.cols();
-  int newRowIndex = 0;
-  MatrixXd outMat = MatrixXd::Zero(_responseCounts[targetIndex], nVars);
-  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
-  
-  // outMat is the same width as _data and tmpMat. outMat includes a leading
-  // constant column and excludes the current target variable:
-  outMat.col(0) = MatrixXd::Ones(_responseCounts[targetIndex], 1);
-  
-  // All variables other than current target are used as predictors:
-  for(int i = 0; i < nObs; i++) {
-    if(_nonresponseFilter(i, targetIndex) == false) {     
-      if(targetIndex > 0) 
-	outMat.block(newRowIndex, 1, 1, targetIndex) =
-	  tmpMat.block(i, 0, 1, targetIndex);
-      
-      outMat.block(newRowIndex, targetIndex + 1, 1, nVars - targetIndex - 1) = 
-	tmpMat.block(i, targetIndex + 1, 1, nVars - targetIndex - 1);
 
-      newRowIndex++;
-    }
-  }
-  
-  return outMat;
-}
-
-
-MatrixXd MibrrData::getFullIVs(int targetIndex)
+MatrixXd MibrrData::getIVs(int targetIndex) const
 { 
-  int nObs = _data.rows();
-  int nVars = _data.cols();
-  MatrixXd outMat = MatrixXd::Zero(nObs, nVars);
-  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
-
-  outMat.col(0) = MatrixXd::Ones(nObs, 1);
-  outMat.middleCols(1, targetIndex) = tmpMat.leftCols(targetIndex);
-      
-  outMat.rightCols(nVars - targetIndex - 1) =
-    tmpMat.rightCols(nVars - targetIndex - 1);
-  
-  return outMat;
-}
-
-
-VectorXd MibrrData::getDV(int targetIndex)
-{ 
-  int nObs = _data.rows();
-  int newRowIndex = 0;
-  VectorXd outVec = VectorXd::Zero(_responseCounts[targetIndex]);
+  int      nObs     = _data.rows();
+  int      nVars    = _data.cols();
+  int      rowIndex = 0;
+  MatrixXd tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
+  MatrixXd outMat   = MatrixXd::Zero(_respCounts[targetIndex], nVars - 1);
   
   for(int i = 0; i < nObs; i++) {
     if(_nonresponseFilter(i, targetIndex) == false) {
-      outVec[newRowIndex] = _data(i, targetIndex);
-      newRowIndex++;
+      outMat.block(rowIndex, 0, 1, targetIndex) =
+	tmpMat.block(i, 0, 1, targetIndex);
+      
+      outMat.block(rowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
+	tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
+      
+      rowIndex++;
+    }
+  }
+  return outMat;
+}
+
+
+MatrixXd MibrrData::getFullIVs(int targetIndex) const
+{ 
+  int      nObs   = _data.rows();
+  int      nVars  = _data.cols();
+  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
+  MatrixXd outMat = MatrixXd::Zero(nObs, nVars - 1);
+  
+  outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
+      
+  outMat.rightCols(nVars - (targetIndex + 1)) =
+    tmpMat.rightCols(nVars - (targetIndex + 1));
+  
+  return outMat;
+}
+
+
+VectorXd MibrrData::getDV(int targetIndex) const
+{ 
+  int      nObs     = _data.rows();
+  int      rowIndex = 0;
+  VectorXd outVec   = VectorXd::Zero(_respCounts[targetIndex]);
+  
+  for(int i = 0; i < nObs; i++) {
+    if(_nonresponseFilter(i, targetIndex) == false) {
+      outVec[rowIndex] = _data(i, targetIndex);
+      rowIndex++;
     }
   }
   return outVec; 
 }
 
 
-VectorXd MibrrData::getFullDV(int targetIndex)
+VectorXd MibrrData::getFullDV(int targetIndex) const
 {
   return _data.col(targetIndex);
 }
 
 
-ArrayXb MibrrData::getNonresponseVector(int targetIndex) 
+ArrayXb MibrrData::getNonresponseVector(int targetIndex) const 
 { 
   return _nonresponseFilter.col(targetIndex); 
 }
 
 
-ArrayXXb MibrrData::getNonresponseFilter()
-{
-  return _nonresponseFilter;
-}
-
-
-MatrixXd MibrrData::getData()
-{
-  return _data;
-}
-
-
-VectorXd MibrrData::getDataScales()
-{
-  return _dataScales;
-}
-
-
-double MibrrData::getDataScales(int targetIndex)
+double MibrrData::getDataScales(int targetIndex) const
 {
   return _dataScales[targetIndex];
 }
 
+
+ArrayXXb MibrrData::getNonresponseFilter() const { return _nonresponseFilter;   }
+MatrixXd MibrrData::getData()              const { return _data;                }
+VectorXd MibrrData::getDataScales()        const { return _dataScales;          }
+
+
 ///////////////////////////////// MUTATORS //////////////////////////////////////
 
-void MibrrData::setData(MatrixXd &newData) 
-{
-  _data = newData;
-}
+
+void MibrrData::setData(const MatrixXd &newData) { _data = newData;             }
 
 
-void MibrrData::setDV(VectorXd &newDV,
-		      int targetIndex)
+void MibrrData::setDV(const VectorXd &newDV, const int targetIndex)
 {
   _data.col(targetIndex) = newDV;
 }
 
 
-void MibrrData::setElement(double newElement,
-			   int rowIndex,
-			   int colIndex)
+void MibrrData::setElement(const double element, const int row, const int col)
 {
-  _data(rowIndex, colIndex) = newElement;
+  _data(row, col) = element;
 }
 
 
-void MibrrData::setMissingDataCode(double missingDataCode)
+void MibrrData::setMissingDataCode(const double code)
 {
-  _missingDataCode = missingDataCode;
+  _missingDataCode = code;
 }
 
 
@@ -191,27 +165,31 @@ void MibrrData::computeNonresponseFilter()
     }
   }
   
-  VectorXd nObsVec = VectorXd::Constant(_data.cols(), _data.rows()).array();
-  VectorXd nMissingVec = _nonresponseFilter.colwise().count().cast<double>();
+  VectorXd nObsVec  = VectorXd::Constant(_data.cols(), _data.rows()).array();
+  VectorXd nMissVec = _nonresponseFilter.colwise().count().cast<double>();
   
-  _responseCounts = nObsVec - nMissingVec;
+  _respCounts = nObsVec - nMissVec;
 }
 
 
 void MibrrData::computeDataScales()
 {
-  for(int i = 0; i < _data.cols(); i++) {
-    double tmpMean = _data.col(i).mean();
-    double tmpVar = (_data.col(i).array() - tmpMean).square().mean();
-    _dataScales[i] = sqrt(tmpVar);
+  int nObs  = _data.rows();
+  int nVars = _data.cols();
+  
+  for(int v = 0; v < nVars; v++) {
+    double tmpMean = _data.col(v).mean();
+    double tmpVar  =
+      (_data.col(v).array() - tmpMean).square().sum() / double(nObs - 1);
+    _dataScales[v] = sqrt(tmpVar);
   }
 }
 
 
-void MibrrData::fillMissing(int nTargets)
+void MibrrData::fillMissing(const int nTargets)
 {
-  int nObs = _data.rows();
-  int nVars = _data.cols();
+  int      nObs  = _data.rows();
+  int      nVars = _data.cols();
   MatrixXd mvnDraws(nObs, nTargets);
 
   // Targets are also zero imputed, initially, to compute dvSigma
@@ -225,7 +203,7 @@ void MibrrData::fillMissing(int nTargets)
     // Compute the mean of non-missing target values:
     VectorXd dvMeans = _data.leftCols(nTargets).colwise().sum();
     for(int v = 0; v < nTargets; v++)
-      dvMeans[v] = dvMeans[v] / _responseCounts[v];
+      dvMeans[v] = dvMeans[v] / _respCounts[v];
 
     // Compute the target covariances with pairwise deletion
     MatrixXd dvSigma = _data.leftCols(nTargets).transpose() *
@@ -242,7 +220,7 @@ void MibrrData::fillMissing(int nTargets)
     }  
   }
   else {
-    double dvMean = _data.col(0).sum() / _responseCounts[0];
+    double dvMean = _data.col(0).sum() / _respCounts[0];
     for(int i = 0; i < nObs; i++) {
       if(_nonresponseFilter(i, 0))
 	_data(i, 0) = R::rnorm(dvMean, _dataScales[0]);
@@ -251,10 +229,10 @@ void MibrrData::fillMissing(int nTargets)
 }// END fillMissing()
 
 
-void MibrrData::fillMissing(MatrixXd &newTargets)
+void MibrrData::fillMissing(const MatrixXd &newTargets)
 {
-  int nObs = _data.rows();
-  int nVars = _data.cols();
+  int nObs     = _data.rows();
+  int nVars    = _data.cols();
   int nTargets = newTargets.cols();
 
   for(int i = 0; i < nObs; i++) {
@@ -271,41 +249,33 @@ void MibrrData::fillMissing(MatrixXd &newTargets)
 }// END fillMissing()
 
 
-void MibrrData::fillMissing(VectorXd &newTarget,
-			    int targetIndex)
+void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 {
   int nObs = _data.rows();
   for(int i = 0; i < nObs; i++) {
-    if(_nonresponseFilter(i, targetIndex))
-      _data(i, targetIndex) = newTarget[i];
+    if(_nonresponseFilter(i, targetIndex)) _data(i, targetIndex) = newTarget[i];
   }
 }// END fillMissing()
 
+
 //////////////////////////// DESCRIPTIVE FUNCTIONS //////////////////////////////
 
-int MibrrData::nObs() const 
-{ 
-  return _data.rows(); 
-}
 
+int MibrrData::nObs()   const { return _data.rows();                            }
+int MibrrData::nPreds() const { return _data.cols() - 1;                        }
 
-int MibrrData::nResponses(int targetIndex)
+int MibrrData::nResponses(int targetIndex) const
 {
-  return _responseCounts[targetIndex];
+  return _respCounts[targetIndex];
 }
 
-
-int MibrrData::nPreds() const 
-{ 
-  return _data.cols(); 
-}
 
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
-  
-VectorXd MibrrData::drawMVN(VectorXd &meanVec, 
-			    MatrixXd &covMat)
+
+
+VectorXd MibrrData::drawMVN(VectorXd &meanVec, MatrixXd &covMat) const
 {
-  int nVars = meanVec.size();
+  int      nVars = meanVec.size();
   MatrixXd covCholesky;
   VectorXd normDraws(nVars);
   

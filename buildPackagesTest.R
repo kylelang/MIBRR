@@ -1,23 +1,21 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2016-MAY-05
+### Modified: 2016-NOV-05
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
 
-install.packages(c("statmod", "MCMCpack"),
-                 repos = "http://rweb.quant.ku.edu/cran")
+#install.packages(c("statmod", "MCMCpack"),
+#                 repos = "http://rweb.quant.ku.edu/cran")
 
 library(RcppEigen)
 
-system("rm -r packageSource/mibrr/src/nlopt/* \
-        rm packageSource/mibrr/src/RcppExports.cpp \
-        rm packageSource/mibrr/R/RcppExports.R \
-        rm packageSource/mibrr/src/*.o packageSource/mibrr/src/*.so")
-system("cp -r ~/data/software/miscPackages/nlopt-2.4.2/* packageSource/mibrr/src/nlopt/")
-Rcpp::compileAttributes("packageSource/mibrr")
-install.packages("packageSource/mibrr", repos = NULL, type = "source")
+system("rm source/mibrr/src/RcppExports.cpp \
+        rm source/mibrr/R/RcppExports.R \
+        rm source/mibrr/src/*.o source/mibrr/src/*.so")
+Rcpp::compileAttributes("source/mibrr")
+install.packages("source/mibrr", repos = NULL, type = "source")
 
 library(mice)
 library(statmod)
@@ -75,59 +73,72 @@ out4.1 - out4.2
 ## Test MIBEN and MIBL:
 data(mibrrExampleData)
 
+miceOut <- mice(mibrrExampleData,
+                m = 1,
+                maxit = 100)
+
+dat0 <- complete(miceOut)
+dat1 <- data.frame(mibrrExampleData[ , 1 : 5], dat0[ , 6 : 17])
+
 debug(miben)
 undebug(miben)
 
-miben
-
-testOut <- miben(rawData      = mibrrExampleData,
+testOut <- miben(rawData      = dat1,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
-                 returnParams = TRUE)
+                                        #iterations   = c(2, 1),
+                                        #sampleSizes  = c(100, 500, 1000),
+                 returnParams = TRUE,
+                 verbose      = TRUE,
+                 control      = list(simpleIntercept = TRUE,
+                                     adaptScales     = TRUE)
+                 )
 
 fitOut <- lapply(testOut$imps,
                  FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
                  )
 MIcombine(fitOut)
 
+summary(lm(y ~ x1 + x2 + x3, data = dat1))
+
+
 testOut2 <- mibl(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
                  returnParams = TRUE)
 
-fitOut2 <- lapply(testOut$imps,
-                 FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                 )
+fitOut2 <- lapply(testOut2$imps,
+                  FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
+                  )
 MIcombine(fitOut2)
 
 
 ## Test BEN and BL:
 library(mibrr)
 
-alpha <- 0.5
-nPreds <- 75
+alpha  <- 0.5
+nPreds <- 175
 
-parms <- list()
-parms$nObs <- 100
-parms$nPreds <- nPreds
-parms$r2 <- 0.2
-parms$collin <- 0.3
-                                        #parms$beta <- matrix(
-                                        #    c(alpha, runif(nPreds / 2, 0.3, 0.6), rep(0, nPreds / 2))
-                                        #)
-parms$beta <- matrix(c(alpha, runif(nPreds, 0.3, 0.6)))
-parms$means <- runif(nPreds, 0, 1)
-parms$scales <- rep(1, nPreds)
-parms$center <- FALSE
-parms$scale <- FALSE
-parms$useClassic <- FALSE
-parms$simpleInt <- FALSE
-parms$verbose <- FALSE
-parms$postN <- 5000
+parms             <- list()
+parms$nObs        <- 100
+parms$nPreds      <- nPreds
+parms$r2          <- 0.2
+parms$collin      <- 0.3
+parms$beta        <- matrix(c(alpha, runif(nPreds, 0.3, 0.6)))
+parms$means       <- runif(nPreds, 0, 1)
+parms$scales      <- rep(1, nPreds)
+parms$center      <- TRUE
+parms$scale       <- TRUE
+parms$simpleInt   <- FALSE
+parms$verbose     <- FALSE
+parms$postN       <- 5000
+parms$adaptScales <- TRUE
 
 testFun(1, parms)
 
 rp <- 1
+
+colMeans(dat1)
 
 testFun <- function(rp, parms) {
     nObs   <- parms$nObs
@@ -146,39 +157,30 @@ testFun <- function(rp, parms) {
                          means  = means,
                          scales = scales)
     
-    testOut <- ben(rawData         = dat1,
-                   y               = "y",
-                   X               = paste0("x", c(1 : nPreds)),
-                   mcemApproxIters = 200,
-                   mcemApproxN     = 50,
-                   mcemPostN       = parms$postN,
-                   verbose         = parms$verbose,
-                   control         =
+    testOut <- ben(rawData = dat1,
+                   y       = "y",
+                   X       = paste0("x", c(1 : nPreds)),
+                   verbose = parms$verbose,
+                   control =
                        list(center          = parms$center,
                             scale           = parms$scale,
-                            adaptScales     = FALSE,
-                            regIntercept    = FALSE,
-                            useClassic      = parms$useClassic,
+                            adaptScales     = parms$adaptScales,
                             simpleIntercept = parms$simpleInt)
                    )
     
-    testOut2 <- bl(rawData         = dat1,
-                   y               = "y",
-                   X               = paste0("x", c(1 : nPreds)),
-                   mcemApproxIters = 200,
-                   mcemApproxN     = 50,
-                   mcemPostN       = parms$postN,
-                   verbose         = parms$verbose,
-                   control         =
+    testOut2 <- bl(rawData = dat1,
+                   y       = "y",
+                   X       = paste0("x", c(1 : nPreds)),
+                   verbose = parms$verbose,
+                   control =
                        list(center          = parms$center,
                             scale           = parms$scale,
-                            adaptScales     = FALSE,
-                            regIntercept    = FALSE,
-                            useClassic      = parms$useClassic,
+                            adaptScales     = parms$adaptScales,
                             simpleIntercept = parms$simpleInt)
                    )
-
-    testForm <- as.formula(paste0("y ~ ", paste0("x", c(1 : nPreds), collapse = " + ")))
+    
+    testForm <-
+        as.formula(paste0("y ~ ", paste0("x", c(1 : nPreds), collapse = " + ")))
     lmOut <- lm(testForm, data = dat1)
     
     nTests <- 100
@@ -191,8 +193,7 @@ testFun <- function(rp, parms) {
                                 beta   = beta,
                                 means  = means,
                                 scales = scales)
-
-
+        
         predOut1 <- predictMibrr(object  = testOut,
                                  newData = as.matrix(testDat[ , -1])
                                  )
@@ -200,15 +201,15 @@ testFun <- function(rp, parms) {
         predOut2 <- predictMibrr(object  = testOut2,
                                  newData = as.matrix(testDat[ , -1])
                                  )
-
+        
         predOut3 <- predict(lmOut, newdata = testDat[ , -1])
-       
+        
         mseMat[i, 1] <- mean((predOut1 - dat1$y)^2)
         mseMat[i, 2] <- mean((predOut2 - dat1$y)^2)
         mseMat[i, 3] <- mean((predOut3 - dat1$y)^2)
     }
     
-    outMat <- rbind(colMeans(mseMat), apply(mseMat, 2, var))
+    outMat           <- rbind(colMeans(mseMat), apply(mseMat, 2, var))
     colnames(outMat) <- c("MIBEN", "MIBL", "MLR")
     rownames(outMat) <- c("MSE", "var(MSE)")
     outMat
@@ -244,3 +245,39 @@ lines(dens3, col = "green")
 ls(testOut)
 
 plot(testOut2$lambdaHistory[[1]][ , 1], type = "l")
+
+
+
+
+
+
+
+
+
+mod1 <- paste(
+    paste0("F",
+           colnames(dat1),
+           " =~ 1*",
+           colnames(dat1),
+           "\n"),
+    collapse = "")
+
+cat(mod1)
+
+## Estimate the sufficient statistics with FIML:
+out1 <- lavaan(model           = mod1,
+               data            = dat1,
+               int.ov.free     = FALSE,
+               int.lv.free     = TRUE,
+               auto.var        = TRUE,
+               auto.fix.single = TRUE,
+               missing         = "fiml")
+        
+## Store the item means and scales:
+dataMeans  <- as.vector(inspect(out1, "coef")$alpha)
+dataScales <- sqrt(diag(inspect(out1, "coef")$psi))
+
+(dataMeans - colMeans(dat1)) / colMeans(dat1)
+(dataScales - apply(dat1, 2, sd)) / apply(dat1, 2, sd)
+
+names(env$dataMeans) <- names(env$dataScales) <- colnames(env$rawData)
