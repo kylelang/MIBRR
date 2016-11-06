@@ -1,0 +1,8 @@
+Title:    MIBRR Development ToDo List
+Author:   Kyle M. Lang
+Created:  2016-NOV-05
+Modified: 2016-NOV-05
+
+2016-NOV-05:
+-Remove intercept regularization option
+-Use FIML to get means for centering

@@ -1,0 +1,61 @@
+### Title:    MIBEN Simulation Mark-II
+### Author:   Kyle M. Lang
+### Created:  2016-MAY-05
+### Modified: 2016-MAY-06
+
+rm(list = ls(all = TRUE)) # Clear workspace
+
+## Load needed packages:
+library(parallel)
+library(mvtnorm)
+library(Matrix)
+library(mice)
+library(mibrr)
+library(mitools)
+library(AER)
+library(rlecuyer)
+
+## Setup environment:
+source("simFunctions2.R")
+cSize    <- 4   # number of cores in the cluster
+startRep <- 1
+endRep   <- 4   # number of replications = endRep - startRep + 1
+expNum   <- 1   # 1 = small data, 2 = big data
+
+## Parameterize simulation job:
+parms <- list()
+parms$nObs       <- 100
+parms$nAux       <- ifelse(expNum == 1, 1, 150)
+parms$pmVec      <- c(0.1, 0.2, 0.3, 0.4)
+parms$nImps      <- 100
+parms$moments    <- prepData()
+parms$incompVars <- c("score8", "exptot", "stratio", "salary")
+parms$marType    <- c("lower", "upper", "tails", "center")
+parms$bigData    <- expNum == 2
+parms$resDir     <- "../results1/"
+parms$testForm   <- as.formula("score8 ~ exptot + stratio + salary")
+parms$maxStreams <- 500
+parms$expNum     <- expNum
+
+saveRDS(parms, paste0(parms$resDir,
+                      "mibenSimParms",
+                      "_exp", expNum,
+                      "_n", parms$nObs,
+                      "_v", parms$nAux,
+                      ".rds")
+        )
+
+if(!dir.exists(parms$resDir)) dir.create(parms$resDir)
+
+## Run simulation:
+repTime <- system.time(
+    mclapply(c(startRep : endRep),
+             FUN = doRep,
+             parms = parms,
+             mc.cores = cSize)
+)
+
+debug(doRep)
+undebug(doRep)
+debug(miben)
+doRep(1, parms)

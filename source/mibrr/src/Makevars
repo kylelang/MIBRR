@@ -1,0 +1,17 @@
+## -*- mode: makefile; -*-
+
+## Title:    Makevars for the MIBRR Package
+## Author:   Kyle M. Lang
+## Created:  2016-APR-24
+## Modified: 2016-NOV-05
+## NOTE:     This code will only run on debain
+
+## Tell the compiler where the nlopt library lives:
+PKG_LIBS=-L"/usr/local/lib" -lnlopt -lm
+
+## Tell the compiler where nlopt's 'includes' directory lives:
+PKG_CPPFLAGS=-I"/usr/local/include"
+
+## With R 3.1.0 or later, you can uncomment the following line to tell R to 
+## enable compilation with C++11 (where available)
+USE_CXX1X = 
