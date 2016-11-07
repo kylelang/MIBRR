@@ -16,80 +16,18 @@ system("rm source/mibrr/src/RcppExports.cpp \
         rm source/mibrr/src/*.o source/mibrr/src/*.so")
 Rcpp::compileAttributes("source/mibrr")
 install.packages("source/mibrr", repos = NULL, type = "source")
-                 
-?install.packages
 
-library(mice)
-library(statmod)
-library(MCMCpack)
-library(mitools)
-library(mvtnorm)
 library(mibrr)
-
-## Test MVN sampler:
-nObs <- 500000
-mvnMu <- rep(10, 3)
-mvnSigma <- matrix(5, 3, 3)
-diag(mvnSigma) <- 20
-
-out1.1 <- mibrr::drawMVN(nObs, mvnMu, mvnSigma)
-out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
-
-par(mfrow = c(1, 3))
-for(i in 1 : length(mvnMu)) {
-    plot(density(out1.1[ , i]), col = "red")
-    lines(density(out1.2[ , i]), col = "blue")
-}
-
-## Test inverse gamma sampler:
-gamShape <- 10
-gamScale <- 10
-
-out2.1 <- mibrr::drawInvGamma(nObs, gamShape, gamScale)
-out2.2 <- rinvgamma(nObs, gamShape, gamScale)
-
-plot(density(out2.1), col = "red")
-lines(density(out2.2), col = "blue")
-
-## Test inverse gaussian sampler:
-igMu = 1
-igLam = 2
-
-out3.1 <- mibrr::drawInvGauss(nObs, igMu, igLam)
-out3.2 <- rinvgauss(nObs, igMu, igLam)
-
-plot(density(out3.1), col = "red")
-lines(density(out3.2), col = "blue")
-
-## Test the incomplte gamma calculation:
-incGamShape <- 10
-incGamCut <- 5
-
-out4.1 <- mibrr::calcIncGamma(incGamShape, incGamCut, FALSE)
-out4.2 <- pgamma(q = incGamCut,
-                 shape = incGamShape,
-                 lower = FALSE) * gamma(incGamShape)
-
-out4.1 - out4.2
+library(mitools)
 
 ## Test MIBEN and MIBL:
 data(mibrrExampleData)
 
-miceOut <- mice(mibrrExampleData,
-                m = 1,
-                maxit = 100)
-
-dat0 <- complete(miceOut)
-dat1 <- data.frame(mibrrExampleData[ , 1 : 5], dat0[ , 6 : 17])
-
 debug(miben)
-undebug(miben)
 
-testOut <- miben(rawData      = dat1,
+testOut <- miben(rawData      = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
-                                        #iterations   = c(2, 1),
-                                        #sampleSizes  = c(100, 500, 1000),
                  returnParams = TRUE,
                  verbose      = TRUE,
                  control      = list(simpleIntercept = TRUE,
@@ -101,7 +39,7 @@ fitOut <- lapply(testOut$imps,
                  )
 MIcombine(fitOut)
 
-summary(lm(y ~ x1 + x2 + x3, data = dat1))
+summary(lm(y ~ x1 + x2 + x3, data = mibrrExampleData))
 
 
 testOut2 <- mibl(rawData      = mibrrExampleData,

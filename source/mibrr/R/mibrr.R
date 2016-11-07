@@ -35,6 +35,7 @@
 ##-----------------------------------------------------------------------------##
 
 
+
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doBl,
                   doImp,
@@ -66,19 +67,19 @@ mibrr <- function(doBl,
     
     ## Preprocess the raw data:
 
-    ## 1) Save the original variable names:
+    ## Save the original variable names:
     rawNames <- colnames(rawData)
 
-    ## 2) Set aside the ignored variables:
+    ## Set aside the ignored variables:
     ignoredColumns <- rawData[ , ignoreVars]
     
-    ## 3) Move target variables to the leftmost columns
+    ## Move target variables to the leftmost columns
     rawData <- data.frame(rawData[ , targetVars],
                           rawData[ , !colnames(rawData) %in%
                                   c(targetVars, ignoreVars)]
                           )
 
-    ## 4) Temporarily replace missCode entries with NAs
+    ## Replace missCode entries with NAs
     if(!is.null(missCode)) {
         userMissCode <- TRUE
         rawData[rawData == missCode] <- NA
@@ -86,11 +87,17 @@ mibrr <- function(doBl,
         userMissCode <- FALSE
     }
 
-    ## 5) Fill any missing data on the covariates:
-    covNames <- setdiff(colnames(rawData), targetVars)
-    if(any(is.na(rawData[ , covNames]))) imputeCovs()
+    ## Create a list of missing elements in each target variable and count
+    ## responses:
+    missList   <- lapply(rawData,
+                         FUN = function(x) which(is.na(x))
+                         )
+    respCounts <- colSums(!is.na(rawData[ , targetVars]))
     
-    ## 6) Mean-center the data        
+    ## Start the missing values with (temporary) single imputations:
+    simpleImpute()
+    
+    ## Mean-center the data        
     scaleData()
     
     ## Initialize starting values for the Gibbs sampled parameters.
@@ -103,21 +110,19 @@ mibrr <- function(doBl,
     betaStarts  <- paramStarts$beta
     tauStarts   <- paramStarts$tau
     sigmaStarts <- paramStarts$sigma
-
-    ## Fill the missing data with an integer code:
-    applyMissCode(dataName = "rawData")
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
         runGibbs(inData          = as.matrix(rawData),
                  dataScales      = dataScales,
                  nTargets        = nTargets,
+                 missList        = missList[c(1 : nTargets)],
+                 respCounts      = respCounts,
                  lambda1Starts   = lambdaMat[ , 1], 
                  lambda2Starts   = lambdaMat[ , 2],     # Ignored for BL
                  sigmaStarts     = sigmaStarts,
                  tauStarts       = tauStarts,
                  betaStarts      = betaStarts,
-                 missCode        = missCode,
                  nApproxIters    = iterations[1],
                  nTuneIters      = iterations[2],
                  nApproxBurn     = control$approxBurn,
@@ -134,13 +139,17 @@ mibrr <- function(doBl,
                  adaptScales     = control$adaptScales,
                  simpleIntercept = control$simpleIntercept,
                  twoPhaseOpt     = control$twoPhaseOpt) # Ignored for BL
-    
+   
     names(gibbsOut) <- targetVars
-    if(doImp)
-        if(!userMissCode) rawData[rawData == missCode] <- NA
 
     ## Uncenter the data:
     scaleData(revert = TRUE)
+
+    ## Replace missing values:
+    if(doImp) {
+        missFill <- ifelse(userMissCode, userMissCode, NA)
+        for(v in colnames(rawData)) rawData[missList[[v]], v] <- missFill
+    }
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
@@ -157,7 +166,8 @@ mibrr <- function(doBl,
                                   nImps       = nImps,
                                   rawData     = rawData,
                                   targetMeans = dataMeans[targetVars],
-                                  targetVars  = targetVars)
+                                  targetVars  = targetVars,
+                                  missList    = missList)
     }
     
     ## Aggregate and return the requested output:

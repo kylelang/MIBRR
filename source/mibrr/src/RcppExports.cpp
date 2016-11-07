@@ -59,20 +59,21 @@ BEGIN_RCPP
 END_RCPP
 }
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataScales, int nTargets, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, double missCode, int nApproxIters, int nTuneIters, int nApproxBurn, int nApproxGibbs, int nTuneBurn, int nTuneGibbs, int nPostBurn, int nPostGibbs, int lambdaWindow, double emConvTol, bool verbose, bool doBl, bool doImputation, bool adaptScales, bool simpleIntercept, bool twoPhaseOpt);
-RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP missCodeSEXP, SEXP nApproxItersSEXP, SEXP nTuneItersSEXP, SEXP nApproxBurnSEXP, SEXP nApproxGibbsSEXP, SEXP nTuneBurnSEXP, SEXP nTuneGibbsSEXP, SEXP nPostBurnSEXP, SEXP nPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP doImputationSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP twoPhaseOptSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd inData, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1Starts, Eigen::VectorXd lambda2Starts, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int nApproxIters, int nTuneIters, int nApproxBurn, int nApproxGibbs, int nTuneBurn, int nTuneGibbs, int nPostBurn, int nPostGibbs, int lambdaWindow, double emConvTol, bool verbose, bool doBl, bool doImputation, bool adaptScales, bool simpleIntercept, bool twoPhaseOpt);
+RcppExport SEXP mibrr_runGibbs(SEXP inDataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1StartsSEXP, SEXP lambda2StartsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP nApproxItersSEXP, SEXP nTuneItersSEXP, SEXP nApproxBurnSEXP, SEXP nApproxGibbsSEXP, SEXP nTuneBurnSEXP, SEXP nTuneGibbsSEXP, SEXP nPostBurnSEXP, SEXP nPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP doImputationSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP twoPhaseOptSEXP) {
 BEGIN_RCPP
     Rcpp::RObject __result;
     Rcpp::RNGScope __rngScope;
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type inData(inDataSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type dataScales(dataScalesSEXP);
     Rcpp::traits::input_parameter< int >::type nTargets(nTargetsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type missList(missListSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type respCounts(respCountsSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type lambda1Starts(lambda1StartsSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type lambda2Starts(lambda2StartsSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type sigmaStarts(sigmaStartsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type tauStarts(tauStartsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type betaStarts(betaStartsSEXP);
-    Rcpp::traits::input_parameter< double >::type missCode(missCodeSEXP);
     Rcpp::traits::input_parameter< int >::type nApproxIters(nApproxItersSEXP);
     Rcpp::traits::input_parameter< int >::type nTuneIters(nTuneItersSEXP);
     Rcpp::traits::input_parameter< int >::type nApproxBurn(nApproxBurnSEXP);
@@ -89,7 +90,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type adaptScales(adaptScalesSEXP);
     Rcpp::traits::input_parameter< bool >::type simpleIntercept(simpleInterceptSEXP);
     Rcpp::traits::input_parameter< bool >::type twoPhaseOpt(twoPhaseOptSEXP);
-    __result = Rcpp::wrap(runGibbs(inData, dataScales, nTargets, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, missCode, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt));
+    __result = Rcpp::wrap(runGibbs(inData, dataScales, nTargets, missList, respCounts, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt));
     return __result;
 END_RCPP
 }

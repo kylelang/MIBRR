@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-NOV-05
+// Modified: 2016-NOV-06
 // Purpose:  This class contains data- and sampling-related functions used by the
 //           MIBRR Gibbs sampler.
 
@@ -37,13 +37,17 @@ class MibrrData {
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
   
-  MibrrData(const MatrixXd&);
+  //MibrrData(const MatrixXd&);
   // @param: data matrix
   
-  MibrrData(const MatrixXd&, const VectorXd&, const double);
+  MibrrData(const MatrixXd&,
+	    const VectorXd&,
+	    vector<vector<int>>,
+	    const VectorXi&);
   // @param1: data matrix
   // @param2: data scales
-  // @param3: missing data code
+  // @param3: list of indices for missing rows
+  // @param4: vector or response counts
   
   MibrrData();
   // @effect: initialize MibrrData without any data to allow access to the
@@ -54,17 +58,25 @@ public:
   
   //////////////////////////////// ACCESSORS ////////////////////////////////////
 
+  vector<int> getObsRows(int) const;
+  // @param:  the column-index of the current target variable
+  // @return: the row indices for the observed rows of the target variable
   
-  MatrixXd getIVs(int) const;
+  MatrixXd getObsIVs(int) const;
   // @param:  the column-index of the current target variable
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
+
+  MatrixXd getMissIVs(int) const;
+  // @param:  the column-index of the current target variable
+  // @return: the IVs of the imputation model with rows corresponding to
+  //          observed DV observations deleted
   
   MatrixXd getFullIVs(int) const;
   // @param:  the column-index of the current target variable
   // @return: the full IVs matrix for the imputation model
 
-  VectorXd getDV(int) const;
+  VectorXd getObsDV(int) const;
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
@@ -72,7 +84,7 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the full DV vector for the imputation model
 
-  ArrayXb getNonresponseVector(int) const;
+  //ArrayXb getNonresponseVector(int) const;
   // @param:  the column-index of the current target variable  
   // @return: the appropriate nonresponse indicator vector
 
@@ -80,7 +92,7 @@ public:
   // @param:  a column index
   // @return: the  scale of the data in the specified column
   
-  ArrayXXb getNonresponseFilter() const;
+  //ArrayXXb getNonresponseFilter() const;
   // @return: the nonresponse filter matrix
   
   MatrixXd getData() const;
@@ -105,16 +117,16 @@ public:
   // @param2: the row index of the element to replace
   // @param3: the column index of the element to replace
 
-  void setMissingDataCode(const double);
+  //void setMissingDataCode(const double);
   // @param: a new missing data code
 
-  void computeNonresponseFilter();
+  //void computeNonresponseFilter();
   // @effect: construct the nonresponse filter matrix
 
   void computeDataScales();
   // @effect: update the value of _dataScales based on imputed data
   
-  void fillMissing(const int);
+  //void fillMissing(const int);
   // @param:  the number of variables to be imputed
   // @effect: initially fill the missing values with (poor) imputaitons
   
@@ -135,13 +147,21 @@ public:
   int nObs() const;
   // @return: the number of observations
 
+  //int nObs(int) const;
+  // @param:  the column-index for the current target variable
+  // @return: the number of non-missing observations for the target variable
+
   int nPreds() const;
   // @return: the number of independent variables in the imputation model
 
-  int nResponses(int) const;
+  int nResp(int) const;
   // @param:  the index for the target variable
-  // @return: the number of responses (i.e., non-missing values)
-  // for the target variable
+  // @return: the number of responses (i.e., non-missing values) for the target
+  //          variable
+
+  int nMiss(int) const;
+  // @param:  the index for the target variable
+  // @return: the number of missing values for the target variable
 
   
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
@@ -153,11 +173,12 @@ public:
   // @return: random multivariate normal variates
   
 private:
-  MatrixXd _data;
-  ArrayXXb _nonresponseFilter;
-  VectorXd _respCounts;
-  VectorXd _dataScales;
-  double   _missingDataCode;
+  MatrixXd    _data;
+  //ArrayXXb _nonresponseFilter;
+  VectorXi    _respCounts;
+  VectorXd    _dataScales;
+  vector<vector<int>> _missIndices;
+  //double   _missingDataCode;
 };
 
 #endif

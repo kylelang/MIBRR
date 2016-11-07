@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-NOV-05
+// Modified: 2016-NOV-07
 // Purpose:  This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
 //           the Bayesian LASSO (MIBL).
@@ -30,16 +30,20 @@
 #include "MibrrData.hpp"
 #include "MibrrGibbs.hpp"
 
+// The following plugin should allow us to use C++11:
+// [[Rcpp::plugins(cpp11)]]
+
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    Eigen::VectorXd dataScales,
 		    int             nTargets,  
+		    Rcpp::List      missList,
+		    Eigen::VectorXi respCounts,
 		    Eigen::VectorXd lambda1Starts,
 		    Eigen::VectorXd lambda2Starts,
 		    Eigen::VectorXd sigmaStarts,
 		    Eigen::MatrixXd tauStarts,
 		    Eigen::MatrixXd betaStarts,
-		    double          missCode,
 		    int             nApproxIters,
 		    int             nTuneIters,
 		    int             nApproxBurn,
@@ -57,17 +61,18 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
 		    bool            simpleIntercept,
 		    bool            twoPhaseOpt)
 {
+  // Unpack the list of missing row indices:
+  std::vector<std::vector<int>> missIndices;
+  for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
+      
   // Initialize the various classes needed below:
-  MibrrData  mibrrData(inData, dataScales, missCode);
+  MibrrData  mibrrData(inData, dataScales, missIndices, respCounts);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
-  // Specify some useful constants:
-  int nPreds   = mibrrData.nPreds();
-  int nObs     = mibrrData.nObs();
+  // Specify the total number of MCEM iterations:
   int nEmIters = nApproxIters + nTuneIters;
    
   // Initialize all parameters, setup the Gibbs sampler and the EM Optimization:
-  mibrrData.fillMissing(nTargets);
   for(int j = 0; j < nTargets; j++) {
     Eigen::VectorXd betaStartVec  = betaStarts.col(j);
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
@@ -92,9 +97,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
     if(simpleIntercept) mibrrGibbs[j].useSimpleInt();
   }
   
-  // Specify containers for the parameters' starting values:
-  Eigen::MatrixXd dvStartMat = MatrixXd(nObs, nTargets);
-
   for (int k = 0; k < (nEmIters + 1); k++) {// LOOP over MCEM iterations
     int emIterNum = k + 1;
     int nGibbsIters, nBurnIns, nPostBurnIns;

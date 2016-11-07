@@ -84,12 +84,11 @@ fillMissing <- function(impNum,
                         targetVars,
                         targetMeans,
                         impSams,
-                        rawData)
+                        rawData,
+                        missList)
 {
-    for(j in targetVars) {
-        naFlag             <- is.na(rawData[ , j])
-        rawData[naFlag, j] <- impSams[[j]][impNum, naFlag] + targetMeans[j]
-    }
+    for(j in targetVars)
+        rawData[missList[[j]], j] <- impSams[[j]][impNum, ] + targetMeans[j]
     rawData
 }
 
@@ -99,7 +98,8 @@ getImputedData <- function(gibbsState,
                            nImps,
                            rawData,
                            targetVars,
-                           targetMeans)
+                           targetMeans,
+                           missList)
 {
     nDraws <- nrow(gibbsState[[1]]$imps)
     
@@ -113,7 +113,8 @@ getImputedData <- function(gibbsState,
            targetVars  = targetVars,
            targetMeans = targetMeans,
            impSams     = impSams,
-           rawData     = rawData)
+           rawData     = rawData,
+           missList    = missList)
 }# END getImputedData()
 
 
@@ -432,7 +433,7 @@ you forget to provide a\nvalue for 'missCode'?\n")
 
 
 
-scaleData <- function(revert = FALSE) {
+scaleDataWithFiml <- function(revert = FALSE) {
     env  <- parent.frame()
     nObs <- nrow(env$rawData)
     nVar <- ncol(env$rawData)
@@ -480,6 +481,38 @@ scaleData <- function(revert = FALSE) {
 
 
 
+scaleData <- function(revert = FALSE) {
+    env  <- parent.frame()
+    nObs <- nrow(env$rawData)
+    nVar <- ncol(env$rawData)
+
+    if(!revert) {# Doing initial scaling
+        if(env$control$scale)
+            env$dataScales <- unlist(lapply(env$rawData, sd))
+        else
+            env$dataScales <- rep(1, nVar)
+        
+        ## Mean center rawData:
+        if(env$control$center) {
+            env$dataMeans <- colMeans(env$rawData)
+            env$rawData   <- as.data.frame(
+                scale(env$rawData, center = TRUE, scale = FALSE)
+            )
+        } else {
+            env$dataMeans <- rep(0, nVar)
+        }
+        
+        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$rawData)
+        
+    } else {# Reverting the data to its original scaling
+        env$rawData <- env$rawData + data.frame(
+            matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
+        )
+    }
+}# END scaleData()
+
+
+
 imputeCovs <- function() {
     env <- parent.frame()
     
@@ -504,6 +537,33 @@ imputeCovs <- function() {
     
     ## Replace missing covariate values with their imputations:
     env$rawData[ , env$covNames] <- complete(miceOut)[ , env$covNames]
+}# END imputeCovs()
+
+
+
+## Initially fill the missing values via single imputation:
+simpleImpute <- function() {
+    env  <- parent.frame()
+    rFlags <- colMeans(is.na(env$rawData)) > 0
+   
+    ## Construct a predictor matrix for mice() to use:
+    predMat <- quickpred(env$rawData, mincor = env$control$minPredCor)
+    
+    ## Construct a vector of elementary imputation methods:
+    methVec       <- rep("", ncol(env$rawData))
+    methVec[rFlags] <- "pmm"
+
+    ## Singly impute the missing covariate values:
+    miceOut <- mice(data            = env$rawData,
+                    m               = 1,
+                    maxit           = env$control$miceIters,
+                    method          = methVec,
+                    predictorMatrix = predMat,
+                    printFlag       = FALSE,
+                    ridge           = env$control$miceRidge)
+    
+    ## Replace missing values with their imputations:
+    env$rawData <- complete(miceOut)
 }# END imputeCovs()
 
 
