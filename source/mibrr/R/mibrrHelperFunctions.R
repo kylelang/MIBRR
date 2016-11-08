@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-NOV-05
+### Modified: 2016-NOV-07
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -84,19 +84,19 @@ fillMissing <- function(impNum,
                         targetVars,
                         targetMeans,
                         impSams,
-                        rawData,
+                        data,
                         missList)
 {
     for(j in targetVars)
-        rawData[missList[[j]], j] <- impSams[[j]][impNum, ] + targetMeans[j]
-    rawData
+        data[missList[[j]], j] <- impSams[[j]][impNum, ] + targetMeans[j]
+    data
 }
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
 getImputedData <- function(gibbsState,
                            nImps,
-                           rawData,
+                           data,
                            targetVars,
                            targetMeans,
                            missList)
@@ -113,7 +113,7 @@ getImputedData <- function(gibbsState,
            targetVars  = targetVars,
            targetMeans = targetMeans,
            impSams     = impSams,
-           rawData     = rawData,
+           data        = data,
            missList    = missList)
 }# END getImputedData()
 
@@ -239,12 +239,12 @@ checkGibbsConv <- function(targetIndex,
 
 ## Initialize the gibbs sampled parameters with draws from the parameters'
 ## respective prior distributions
-initializeParams <- function(rawData, nTargets, doBl, control)
+initializeParams <- function(data, nTargets, doBl, control)
 {    
-    nRows       <- nrow(rawData)
-    nObsVec     <- colSums(!is.na(rawData))
-    nPreds      <- ncol(rawData) - 1
-    dataScales  <- apply(rawData, 2, FUN = sd, na.rm = TRUE)
+    nRows       <- nrow(data)
+    nObsVec     <- colSums(!is.na(data))
+    nPreds      <- ncol(data) - 1
+    dataScales  <- apply(data, 2, FUN = sd, na.rm = TRUE)
     sigmaStarts <- dataScales[1 : nTargets]
     tauStarts   <- betaStarts <- matrix(NA, nPreds, nTargets)
     dvStarts    <- matrix(NA, nRows, nTargets)
@@ -259,7 +259,7 @@ initializeParams <- function(rawData, nTargets, doBl, control)
     } else {
         if(control$usePCStarts) {
             ## Must call this before the NA's are replaced with missCode:
-            lambdaVec <- getLambdaStarts(inData   = rawData,
+            lambdaVec <- getLambdaStarts(inData   = data,
                                          nTargets = nTargets,
                                          nPreds   = nPreds)
         } else {
@@ -341,7 +341,9 @@ padControlList <- function()
         twoPhaseOpt     = TRUE,
         minPredCor      = 0.3,
         miceIters       = 10,
-        miceRidge       = 1e-4
+        miceRidge       = 1e-4,
+        miceMethod      = "pmm",
+        fimlStarts      = FALSE
     )
     
     ## Pad the user-provided control list with default values:
@@ -351,19 +353,19 @@ padControlList <- function()
 
 
 ## Fill missing data with an appropriate integer code:
-applyMissCode <- function(dataName) {
+applyMissCode <- function() {
     env <- parent.frame()
     ## Construct an integer-valued missing data code that
     ## does not take legal data values and use it to flag NAs.
     if(is.null(env$missCode)) {
-        if(max(abs(env[[dataName]]), na.rm = TRUE) < 1.0) {
+        if(max(abs(env$data), na.rm = TRUE) < 1.0) {
             env$missCode <- -9
         } else {
-            codeMag <- floor(log10(max(abs(env[[dataName]]), na.rm = TRUE))) + 2
+            codeMag <- floor(log10(max(abs(env$data), na.rm = TRUE))) + 2
             env$missCode <- -(10^codeMag - 1)
         }
     }
-    env[[dataName]][is.na(env[[dataName]])] <- env$missCode
+    env$data[is.na(env$data)] <- env$missCode
 }
 
 
@@ -376,9 +378,9 @@ checkInputs <- function() {
     if(is.null(env$targetVars)) {
         if(env$doImp) {
             targetCandidates <-
-                colnames(env$rawData)[!colnames(env$rawData) %in% env$ignoreVars]
+                colnames(env$data)[!colnames(env$data) %in% env$ignoreVars]
             warning("You did not specify any target variables, so I will impute \
-the missing data on\nevery variable in 'rawData' that is not listed in \
+the missing data on\nevery variable in 'data' that is not listed in \
 'ignoreVars'.\n")        
         } else {
             stop("Please specify a DV.")
@@ -387,32 +389,32 @@ the missing data on\nevery variable in 'rawData' that is not listed in \
         targetCandidates <- env$targetVars
     }
         
-    ## Make sure 'rawData' contains missing data that we can find:
+    ## Make sure 'data' contains missing data that we can find:
     if(env$doImp) {
         if(is.null(env$missCode)) {
             if(length(targetCandidates) > 1) {
                 completeTargets <-
-                    colMeans(is.na(env$rawData[ , targetCandidates])) == 0
+                    colMeans(is.na(env$data[ , targetCandidates])) == 0
             } else {
                 completeTargets <-
-                    mean(is.na(env$rawData[ , targetCandidates])) == 0
+                    mean(is.na(env$data[ , targetCandidates])) == 0
             }
             if(all(completeTargets)) {
                 stop("Your target variables appear to be fully observed. Did \
 you forget to provide a\nvalue for 'missCode'?\n")
             }
         } else {
-            rMat <- env$rawData == env$missCode
+            rMat <- env$data == env$missCode
             if(!any(rMat, na.rm = TRUE)) {
                 stop(paste0("The value you provided for 'missCode' (i.e., ",
                             env$missCode,
-                            ") does not appear anywhere in 'rawData'.\n",
+                            ") does not appear anywhere in 'data'.\n",
                             "Are you sure that ",
                             env$missCode,
                             " encodes your missing data?\n")
                      )
             } else {
-                env$rawData[rMat] <- NA
+                env$data[rMat] <- NA
             }
         }
     }
@@ -435,22 +437,22 @@ you forget to provide a\nvalue for 'missCode'?\n")
 
 scaleDataWithFiml <- function(revert = FALSE) {
     env  <- parent.frame()
-    nObs <- nrow(env$rawData)
-    nVar <- ncol(env$rawData)
+    nObs <- nrow(env$data)
+    nVar <- ncol(env$data)
 
     if(!revert) {# Doing initial scaling
-        ## Specify a lavaan model to estimate rawData's sufficient statistics:
+        ## Specify a lavaan model to estimate data's sufficient statistics:
         mod1 <- paste(
             paste0("F",
-                   colnames(env$rawData),
+                   colnames(env$data),
                    " =~ 1*",
-                   colnames(env$rawData),
+                   colnames(env$data),
                    "\n"),
             collapse = "")
         
         ## Estimate the sufficient statistics with FIML:
         out1 <- lavaan(model           = mod1,
-                       data            = env$rawData,
+                       data            = env$data,
                        int.ov.free     = FALSE,
                        int.lv.free     = TRUE,
                        auto.var        = TRUE,
@@ -464,15 +466,15 @@ scaleDataWithFiml <- function(revert = FALSE) {
         else
             env$dataScales <- rep(1, nVar)
         
-        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$rawData)
+        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$data)
         
-        ## Mean center rawData:
+        ## Mean center data:
         if(env$control$center)
-            env$rawData <- env$rawData - data.frame(
+            env$data <- env$data - data.frame(
                 matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
             )
     } else {# Reverting the data to its original scaling
-        env$rawData <- env$rawData + data.frame(
+        env$data <- env$data + data.frame(
             matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
         )
     }
@@ -483,29 +485,29 @@ scaleDataWithFiml <- function(revert = FALSE) {
 
 scaleData <- function(revert = FALSE) {
     env  <- parent.frame()
-    nObs <- nrow(env$rawData)
-    nVar <- ncol(env$rawData)
+    nObs <- nrow(env$data)
+    nVar <- ncol(env$data)
 
     if(!revert) {# Doing initial scaling
         if(env$control$scale)
-            env$dataScales <- unlist(lapply(env$rawData, sd))
+            env$dataScales <- unlist(lapply(env$data, sd))
         else
             env$dataScales <- rep(1, nVar)
         
-        ## Mean center rawData:
+        ## Mean center data:
         if(env$control$center) {
-            env$dataMeans <- colMeans(env$rawData)
-            env$rawData   <- as.data.frame(
-                scale(env$rawData, center = TRUE, scale = FALSE)
+            env$dataMeans <- colMeans(env$data)
+            env$data   <- as.data.frame(
+                scale(env$data, center = TRUE, scale = FALSE)
             )
         } else {
             env$dataMeans <- rep(0, nVar)
         }
         
-        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$rawData)
+        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$data)
         
     } else {# Reverting the data to its original scaling
-        env$rawData <- env$rawData + data.frame(
+        env$data <- env$data + data.frame(
             matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
         )
     }
@@ -514,20 +516,19 @@ scaleData <- function(revert = FALSE) {
 
 
 imputeCovs <- function() {
-    env <- parent.frame()
+    env      <- parent.frame()
+    covNames <- setdiff(colnames(env$data), env$targetVars)
     
     ## Construct a predictor matrix for mice() to use:
-    predMat <- quickpred(env$rawData,
-                         mincor  = env$control$minPredCor,
-                         exclude = env$ignoreVars)
+    predMat <- quickpred(env$data, mincor  = env$control$minPredCor)
 
     ## Construct a vector of elementary imputation methods:
-    methVec           <- rep("", ncol(env$rawData))
-    names(methVec)    <- colnames(env$rawData)
-    methVec[env$covNames] <- "pmm"
+    methVec           <- rep("", ncol(env$data))
+    names(methVec)    <- colnames(env$data)
+    methVec[covNames] <- env$control$miceMethod
 
     ## Singly impute the missing covariate values:
-    miceOut <- mice(data            = env$rawData,
+    miceOut <- mice(data            = env$data,
                     m               = 1,
                     maxit           = env$control$miceIters,
                     method          = methVec,
@@ -536,7 +537,7 @@ imputeCovs <- function() {
                     ridge           = env$control$miceRidge)
     
     ## Replace missing covariate values with their imputations:
-    env$rawData[ , env$covNames] <- complete(miceOut)[ , env$covNames]
+    env$data[ , covNames] <- complete(miceOut)[ , covNames]
 }# END imputeCovs()
 
 
@@ -544,17 +545,17 @@ imputeCovs <- function() {
 ## Initially fill the missing values via single imputation:
 simpleImpute <- function() {
     env  <- parent.frame()
-    rFlags <- colMeans(is.na(env$rawData)) > 0
+    rFlags <- colMeans(is.na(env$data)) > 0
    
     ## Construct a predictor matrix for mice() to use:
-    predMat <- quickpred(env$rawData, mincor = env$control$minPredCor)
+    predMat <- quickpred(env$data, mincor = env$control$minPredCor)
     
     ## Construct a vector of elementary imputation methods:
-    methVec       <- rep("", ncol(env$rawData))
-    methVec[rFlags] <- "pmm"
+    methVec       <- rep("", ncol(env$data))
+    methVec[rFlags] <- env$control$miceMethod
 
     ## Singly impute the missing covariate values:
-    miceOut <- mice(data            = env$rawData,
+    miceOut <- mice(data            = env$data,
                     m               = 1,
                     maxit           = env$control$miceIters,
                     method          = methVec,
@@ -563,7 +564,7 @@ simpleImpute <- function() {
                     ridge           = env$control$miceRidge)
     
     ## Replace missing values with their imputations:
-    env$rawData <- complete(miceOut)
+    env$data <- complete(miceOut)
 }# END imputeCovs()
 
 

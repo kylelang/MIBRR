@@ -39,7 +39,7 @@
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doBl,
                   doImp,
-                  rawData,
+                  data,
                   nImps,
                   targetVars,
                   ignoreVars,
@@ -59,8 +59,8 @@ mibrr <- function(doBl,
     
     ## Define some useful constants and counters:
     nTargets <- length(targetVars)
-    nPreds   <- ncol(rawData) - length(ignoreVars) - 1
-    nObs     <- nrow(rawData)
+    nPreds   <- ncol(data) - length(ignoreVars) - 1
+    nObs     <- nrow(data)
     
     ## Ensure a correct list of control parameters:
     control <- padControlList()
@@ -68,41 +68,70 @@ mibrr <- function(doBl,
     ## Preprocess the raw data:
 
     ## Save the original variable names:
-    rawNames <- colnames(rawData)
+    rawNames <- colnames(data)
 
     ## Set aside the ignored variables:
-    ignoredColumns <- rawData[ , ignoreVars]
+    ignoredColumns <- data[ , ignoreVars]
     
     ## Move target variables to the leftmost columns
-    rawData <- data.frame(rawData[ , targetVars],
-                          rawData[ , !colnames(rawData) %in%
-                                  c(targetVars, ignoreVars)]
-                          )
+    data <- data.frame(data[ , targetVars],
+                       data[ , !colnames(data) %in% c(targetVars, ignoreVars)]
+                       )
 
+    ## Hack to deal with 1D matrix conversion to vector:
+    if(length(targetVars) == 1) colnames(data)[1] <- targetVars
+    
     ## Replace missCode entries with NAs
     if(!is.null(missCode)) {
         userMissCode <- TRUE
-        rawData[rawData == missCode] <- NA
+        data[data == missCode] <- NA
     } else {
         userMissCode <- FALSE
     }
+    
+    ## Create a list of missing elements in each target variable
+    ## NOTE: Subtract 1 from each index vector to base indices at 0 for C++
+    missList <- lapply(data, FUN = function(x) which(is.na(x)) - 1)
 
-    ## Create a list of missing elements in each target variable and count
-    ## responses:
-    missList   <- lapply(rawData,
-                         FUN = function(x) which(is.na(x))
-                         )
-    respCounts <- colSums(!is.na(rawData[ , targetVars]))
+    ## Create a vector of response counts:
+    if(length(targetVars) > 1)
+        respCounts <- colSums(!is.na(data[ , targetVars]))
+    else
+        respCounts <- sum(!is.na(data[ , targetVars]))
     
-    ## Start the missing values with (temporary) single imputations:
-    simpleImpute()
+#################################################################################
+                                        #print("missList[[1]]")
+                                        #print(missList[[1]])
     
-    ## Mean-center the data        
-    scaleData()
+                                        #print("missList[[2]]")
+                                        #print(missList[[2]])
+    
+                                        #print("missList[[3]]")
+                                        #print(missList[[3]])
+    
+                                        #print("missList[[4]]")
+                                        #print(missList[[4]])
+    
+                                        #rMat <- is.na(data)
+#################################################################################
+    
+    if(control$fimlStarts) {
+        ## Singly impute any missing data on auxiliaries:
+        imputeCovs()
+
+        ## Mean-center the data using FIML means as centers:
+        scaleDataWithFiml()
+    } else {
+        ## Start the missing values with (temporary) single imputations:
+        simpleImpute()
+        
+        ## Mean-center the data        
+        scaleData()
+    }
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    paramStarts <- initializeParams(rawData  = rawData, 
+    paramStarts <- initializeParams(data     = data, 
                                     nTargets = nTargets,
                                     doBl     = doBl,
                                     control  = control)
@@ -110,10 +139,17 @@ mibrr <- function(doBl,
     betaStarts  <- paramStarts$beta
     tauStarts   <- paramStarts$tau
     sigmaStarts <- paramStarts$sigma
+
+    ## Fill remaining missing data with an integer code:
+    if(control$fimlStarts) applyMissCode()
+    
+#################################################################################
+                                        #data[rMat] <- -1e5
+#################################################################################
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
-        runGibbs(inData          = as.matrix(rawData),
+        runGibbs(data            = as.matrix(data),
                  dataScales      = dataScales,
                  nTargets        = nTargets,
                  missList        = missList[c(1 : nTargets)],
@@ -148,12 +184,16 @@ mibrr <- function(doBl,
     ## Replace missing values:
     if(doImp) {
         missFill <- ifelse(userMissCode, userMissCode, NA)
-        for(v in colnames(rawData)) rawData[missList[[v]], v] <- missFill
+        for(v in colnames(data)) {
+            ## Rebase indices as per R's preference :
+            missList[[v]] <- missList[[v]] + 1
+            data[missList[[v]], v] <- missFill
+        }
     }
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
-    rHatList <- lapply(c(1 : nTargets),
+    rHatList <- lapply(X           = c(1 : nTargets),
                        FUN         = checkGibbsConv,
                        gibbsStates = gibbsOut,
                        returnRHats = TRUE,
@@ -164,7 +204,7 @@ mibrr <- function(doBl,
     if(doImp) {
         outImps <- getImputedData(gibbsState  = gibbsOut,
                                   nImps       = nImps,
-                                  rawData     = rawData,
+                                  data        = data,
                                   targetMeans = dataMeans[targetVars],
                                   targetVars  = targetVars,
                                   missList    = missList)
@@ -205,7 +245,7 @@ mibrr <- function(doBl,
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
-miben <- function(rawData,
+miben <- function(data,
                   nImps          = 100,
                   targetVars     = NULL,
                   ignoreVars     = NULL,
@@ -221,7 +261,7 @@ miben <- function(rawData,
 {
     mibrr(doBl           = FALSE,
           doImp          = TRUE,
-          rawData        = rawData,
+          data           = data,
           nImps          = nImps,
           targetVars     = targetVars,
           ignoreVars     = ignoreVars,
@@ -238,7 +278,7 @@ miben <- function(rawData,
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Lasso (MIBL):
-mibl <- function(rawData,
+mibl <- function(data,
                  nImps          = 100,
                  targetVars     = NULL,
                  ignoreVars     = NULL,
@@ -254,7 +294,7 @@ mibl <- function(rawData,
 {
     mibrr(doBl           = TRUE,
           doImp          = TRUE,
-          rawData        = rawData,
+          data           = data,
           nImps          = nImps,
           targetVars     = targetVars,
           ignoreVars     = ignoreVars,
@@ -270,7 +310,7 @@ mibl <- function(rawData,
 
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
-ben <- function(rawData,
+ben <- function(data,
                 y              = NULL,
                 X              = NULL,
                 iterations     = c(100, 10),
@@ -283,9 +323,9 @@ ben <- function(rawData,
 {
     mibrr(doBl           = FALSE,
           doImp          = FALSE,
-          rawData        = rawData,
+          data           = data,
           targetVars     = y,
-          ignoreVars     = setdiff(colnames(rawData), c(y, X)),
+          ignoreVars     = setdiff(colnames(data), c(y, X)),
           iterations     = iterations,
           sampleSizes    = sampleSizes,
           missCode       = NULL,
@@ -298,7 +338,7 @@ ben <- function(rawData,
 
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
-bl <- function(rawData,
+bl <- function(data,
                y              = NULL,
                X              = NULL,
                iterations     = c(100, 10),
@@ -311,9 +351,9 @@ bl <- function(rawData,
 {
     mibrr(doBl           = TRUE,
           doImp          = FALSE,
-          rawData        = rawData,
+          data           = data,
           targetVars     = y,
-          ignoreVars     = setdiff(colnames(rawData), c(y, X)),
+          ignoreVars     = setdiff(colnames(data), c(y, X)),
           iterations     = iterations,
           sampleSizes    = sampleSizes,
           missCode       = NULL,
