@@ -16,7 +16,7 @@ PKG_CPPFLAGS=-I"/usr/local/include"
 ## enable compilation with C++11 (where available)
 #USE_CXX1X = 
 
-#CXX_STD = CXX11
+CXX_STD = CXX11
 
 #CC = clang
 #CXX = clang++

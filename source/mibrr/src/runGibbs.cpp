@@ -34,7 +34,7 @@
 // [[Rcpp::plugins(cpp11)]]
 
 // [[Rcpp::export]]
-Rcpp::List runGibbs(Eigen::MatrixXd inData,
+Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    Eigen::VectorXd dataScales,
 		    int             nTargets,  
 		    Rcpp::List      missList,
@@ -64,9 +64,35 @@ Rcpp::List runGibbs(Eigen::MatrixXd inData,
   // Unpack the list of missing row indices:
   std::vector<std::vector<int>> missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
-      
+
+  if(false) {
+  int nMiss0 = 200 - respCounts[0];
+  cout << "missIndices[0]:" << endl;
+  for(int i = 0; i < nMiss0; i++)
+    cout << missIndices[0][i] << " ";
+  cout << endl;
+
+  int nMiss1 = 200 - respCounts[1];
+  cout << "missIndices[1]:" << endl;
+  for(int i = 0; i < nMiss1; i++)
+    cout << missIndices[1][i] << " ";
+  cout << endl;
+
+  int nMiss2 = 200 - respCounts[2];
+  cout << "missIndices[2]:" << endl;
+  for(int i = 0; i < nMiss2; i++)
+    cout << missIndices[2][i] << " ";
+  cout << endl;
+
+  int nMiss3 = 200 - respCounts[3];
+  cout << "missIndices[3]:" << endl;
+  for(int i = 0; i < nMiss3; i++)
+    cout << missIndices[3][i] << " ";
+  cout << endl;
+  }
+  
   // Initialize the various classes needed below:
-  MibrrData  mibrrData(inData, dataScales, missIndices, respCounts);
+  MibrrData  mibrrData(data, dataScales, missIndices, respCounts);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Specify the total number of MCEM iterations:

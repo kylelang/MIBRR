@@ -63,7 +63,7 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
   
   // Get an integer sequence of row indices:
   vector<int> allRows(nObs);
-  std::iota(allRows.begin(), allRows.end(), 1);
+  std::iota(allRows.begin(), allRows.end(), 0);
 
   // Get the indices for rows with missing values on targetIndex:
   vector<int> missRows = _missIndices[targetIndex];

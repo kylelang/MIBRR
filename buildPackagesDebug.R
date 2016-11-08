@@ -23,23 +23,56 @@ library(mitools)
 ## Test MIBEN and MIBL:
 data(mibrrExampleData)
 
-debug(miben)
+miceOut <- mice(mibrrExampleData,
+                m = 1,
+                maxit = 100)
+dat1 <- complete(miceOut)
+dat2 <- dat1
+dat2$y <- mibrrExampleData$y
 
-testOut <- miben(rawData      = mibrrExampleData,
+head(dat2)
+debug(miben)
+undebug(miben)
+
+outList <- list()
+
+testOut <- miben(data         = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),
                  ignoreVars   = "idNum",
                  returnParams = TRUE,
                  verbose      = TRUE,
-                 control      = list(simpleIntercept = TRUE,
-                                     adaptScales     = TRUE)
+                 control      =
+                     list(fimlStarts      = FALSE,
+                          simpleIntercept = TRUE,
+                          adaptScales     = TRUE)
                  )
+
+colMeans(is.na(testOut$imps[[1]]))
+
+colMeans(is.na(do.call(rbind, testOut$imps)))
+
+testOut <- mibl(data         = mibrrExampleData,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                ignoreVars   = "idNum",
+                returnParams = TRUE,
+                verbose      = TRUE,
+                control      =
+                    list(fimlStarts      = TRUE,
+                         simpleIntercept = TRUE,
+                         adaptScales     = TRUE)
+                )
 
 fitOut <- lapply(testOut$imps,
                  FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
                  )
 MIcombine(fitOut)
 
-summary(lm(y ~ x1 + x2 + x3, data = mibrrExampleData))
+
+outList
+
+round(coef(tmp), 3)
+
+summary(lm(y ~ x1 + x2 + x3, data = dat1))
 
 
 testOut2 <- mibl(rawData      = mibrrExampleData,
