@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-NOV-05
+### Modified: 2016-NOV-08
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -35,7 +35,6 @@
 ##-----------------------------------------------------------------------------##
 
 
-
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doBl,
                   doImp,
@@ -65,13 +64,12 @@ mibrr <- function(doBl,
     ## Ensure a correct list of control parameters:
     control <- padControlList()
     
-    ## Preprocess the raw data:
-
     ## Save the original variable names:
     rawNames <- colnames(data)
 
     ## Set aside the ignored variables:
-    ignoredColumns <- data[ , ignoreVars]
+    ignoredColumns <- as.data.frame(data[ , ignoreVars])
+    if(length(ignoreVars) == 1) colnames(ignoredColumns) <- ignoreVars
     
     ## Move target variables to the leftmost columns
     data <- data.frame(data[ , targetVars],
@@ -94,38 +92,20 @@ mibrr <- function(doBl,
     missList <- lapply(data, FUN = function(x) which(is.na(x)) - 1)
 
     ## Create a vector of response counts:
-    if(length(targetVars) > 1)
-        respCounts <- colSums(!is.na(data[ , targetVars]))
-    else
-        respCounts <- sum(!is.na(data[ , targetVars]))
-    
-#################################################################################
-                                        #print("missList[[1]]")
-                                        #print(missList[[1]])
-    
-                                        #print("missList[[2]]")
-                                        #print(missList[[2]])
-    
-                                        #print("missList[[3]]")
-                                        #print(missList[[3]])
-    
-                                        #print("missList[[4]]")
-                                        #print(missList[[4]])
-    
-                                        #rMat <- is.na(data)
-#################################################################################
-    
-    if(control$fimlStarts) {
+    respCounts <- colSums(!is.na(data))
+    noMiss     <- all(respCounts == nObs)
+
+    if(noMiss) {
+        ## Mean-center the data:
+        scaleData()
+    } else if(control$fimlStarts) {
         ## Singly impute any missing data on auxiliaries:
         imputeCovs()
-
         ## Mean-center the data using FIML means as centers:
         scaleDataWithFiml()
     } else {
         ## Start the missing values with (temporary) single imputations:
         simpleImpute()
-        
-        ## Mean-center the data        
         scaleData()
     }
     
@@ -143,17 +123,13 @@ mibrr <- function(doBl,
     ## Fill remaining missing data with an integer code:
     if(control$fimlStarts) applyMissCode()
     
-#################################################################################
-                                        #data[rMat] <- -1e5
-#################################################################################
-    
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
         runGibbs(data            = as.matrix(data),
                  dataScales      = dataScales,
                  nTargets        = nTargets,
                  missList        = missList[c(1 : nTargets)],
-                 respCounts      = respCounts,
+                 respCounts      = respCounts[c(1 : nTargets)],
                  lambda1Starts   = lambdaMat[ , 1], 
                  lambda2Starts   = lambdaMat[ , 2],     # Ignored for BL
                  sigmaStarts     = sigmaStarts,
@@ -193,11 +169,10 @@ mibrr <- function(doBl,
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
-    rHatList <- lapply(X           = c(1 : nTargets),
+    rHatList <- lapply(X           = targetVars,
                        FUN         = checkGibbsConv,
                        gibbsStates = gibbsOut,
                        returnRHats = TRUE,
-                       targetNames = targetVars,
                        critVal     = control$convThresh)
     
     ## Draw imputations from the convergent posterior predictive distribution:
@@ -209,6 +184,9 @@ mibrr <- function(doBl,
                                   targetVars  = targetVars,
                                   missList    = missList)
     }
+
+    ## Provide some pretty names for the output objects:
+    nameOutput()
     
     ## Aggregate and return the requested output:
     outList <- list()
@@ -217,7 +195,7 @@ mibrr <- function(doBl,
     if(returnConvInfo) {
         outList$rHats <- rHatList
         lamHistList   <- list()
-        for(j in 1 : length(gibbsOut)) {
+        for(j in targetVars) {
             lamHistList[[j]] <- gibbsOut[[j]]$lambdaHistory
         }
         outList$lambdaHistory <- lamHistList
@@ -225,19 +203,14 @@ mibrr <- function(doBl,
     
     totalIters <- sum(iterations)
     if(returnParams) {
-        betaList <- tauList <- sigmaList <- lamList <- list()
-        for(j in 1 : length(gibbsOut)) {
-            betaList[[j]]  <- gibbsOut[[j]]$beta
-            tauList[[j]]   <- gibbsOut[[j]]$tau
-            sigmaList[[j]] <- gibbsOut[[j]]$sigma
-            lamList[[j]]   <- gibbsOut[[j]]$lambdaHistory[totalIters, ]
+        paramList <- list()
+        for(j in targetVars) {
+            paramList[[j]]$beta   <- gibbsOut[[j]]$beta
+            paramList[[j]]$tau    <- gibbsOut[[j]]$tau
+            paramList[[j]]$sigma  <- gibbsOut[[j]]$sigma
+            paramList[[j]]$lambda <- gibbsOut[[j]]$lambdaHistory[totalIters, ]
         }
-        outList$params <- list(
-            beta   = betaList,
-            tau    = tauList,
-            sigma  = sigmaList,
-            lambda = lamList
-        )
+        outList$params <- paramList
     }
     outList
 }# END mibrr()

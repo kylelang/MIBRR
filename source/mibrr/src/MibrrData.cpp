@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-NOV-06
+// Modified: 2016-NOV-08
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -28,25 +28,15 @@
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
 
-//MibrrData::MibrrData(const MatrixXd &newData)
-//{
-//  _data       = newData;
-//  _dataScales = RowVectorXd( _data.cols() );
-//}
-
-
 MibrrData::MibrrData(const MatrixXd &data,
 		     const VectorXd &dataScales,
 		     vector<vector<int>>    missIndices,
 		     const VectorXi &respCounts) 
 {
-  //_missingDataCode   = missingDataCode;
   _data        = data;
   _dataScales  = dataScales;
   _missIndices = missIndices;
   _respCounts  = respCounts;
-  //_nonresponseFilter = ArrayXXb::Constant(_data.rows(), _data.cols(), false);
-  //computeNonresponseFilter();
 }
 
 MibrrData::MibrrData() {}
@@ -106,6 +96,7 @@ MatrixXd MibrrData::getObsIVs(int targetIndex) const
   }
   return outMat;
 }
+
 
 
 MatrixXd MibrrData::getMissIVs(int targetIndex) const
@@ -170,11 +161,6 @@ VectorXd MibrrData::getFullDV(int targetIndex) const
 }
 
 
-//ArrayXb MibrrData::getNonresponseVector(int targetIndex) const 
-//{ 
-//  return _nonresponseFilter.col(targetIndex); 
-//}
-
 
 double MibrrData::getDataScales(int targetIndex) const
 {
@@ -182,7 +168,6 @@ double MibrrData::getDataScales(int targetIndex) const
 }
 
 
-//ArrayXXb MibrrData::getNonresponseFilter() const { return _nonresponseFilter;   }
 MatrixXd MibrrData::getData()              const { return _data;                }
 VectorXd MibrrData::getDataScales()        const { return _dataScales;          }
 
@@ -205,28 +190,6 @@ void MibrrData::setElement(const double element, const int row, const int col)
 }
 
 
-//void MibrrData::setMissingDataCode(const double code)
-//{
-//  _missingDataCode = code;
-//}
-
-
-//void MibrrData::computeNonresponseFilter() 
-//{
-//  for(int i = 0; i < _data.rows(); i++) {
-//    for(int j = 0; j < _data.cols(); j++) {
-//      bool isMissing = _data(i, j) == _missingDataCode;
-//      if(isMissing) _nonresponseFilter(i, j) = true;
-//    }
-//  }
-//  
-//  VectorXd nObsVec  = VectorXd::Constant(_data.cols(), _data.rows()).array();
-//  VectorXd nMissVec = _nonresponseFilter.colwise().count().cast<double>();
-//  
-//  _respCounts = nObsVec - nMissVec;
-//}
-
-
 void MibrrData::computeDataScales()
 {
   int nObs  = _data.rows();
@@ -239,49 +202,6 @@ void MibrrData::computeDataScales()
     _dataScales[v] = sqrt(tmpVar);
   }
 }
-
-
-//void MibrrData::fillMissing(const int nTargets)
-//{
-//  int      nObs  = _data.rows();
-//  int      nVars = _data.cols();
-//  MatrixXd mvnDraws(nObs, nTargets);
-//
-//  // Targets are also zero imputed, initially, to compute dvSigma
-//  for(int i = 0; i < nObs; i++) {
-//    for(int j = 0; j < nVars; j++) {
-//      if(_nonresponseFilter(i, j)) _data(i, j) = 0.0;
-//    }
-//  }
-//  
-//  if(nTargets > 1) {
-//    // Compute the mean of non-missing target values:
-//    VectorXd dvMeans = _data.leftCols(nTargets).colwise().sum();
-//    for(int v = 0; v < nTargets; v++)
-//      dvMeans[v] = dvMeans[v] / _respCounts[v];
-//
-//    // Compute the target covariances with pairwise deletion
-//    MatrixXd dvSigma = _data.leftCols(nTargets).transpose() *
-//      _data.leftCols(nTargets) / double(nObs - 1);
-//    
-//    for(int i = 0; i < nObs; i++) {
-//      mvnDraws.row(i) = drawMVN(dvMeans, dvSigma);
-//    }
-//    
-//    for(int i = 0; i < nObs; i++) {
-//      for(int j = 0; j < nTargets; j++) {
-//	if( _nonresponseFilter(i, j) ) _data(i, j) = mvnDraws(i, j);
-//      }
-//    }  
-//  }
-//  else {
-//    double dvMean = _data.col(0).sum() / _respCounts[0];
-//    for(int i = 0; i < nObs; i++) {
-//      if(_nonresponseFilter(i, 0))
-//	_data(i, 0) = R::rnorm(dvMean, _dataScales[0]);
-//    }
-//  }
-//}// END fillMissing()
 
 
 void MibrrData::fillMissing(const MatrixXd &newTargets)
@@ -298,12 +218,6 @@ void MibrrData::fillMissing(const MatrixXd &newTargets)
       rowIndex++;
     }
   }
-  
-  //for(int i = 0; i < nObs; i++) {
-  //  for(int j = nTargets; j < nVars; j++) {
-  //    if(_nonresponseFilter(i, j)) _data(i, j) = 0.0;
-  //  }
-  //}
 }// END fillMissing()
 
 
@@ -322,7 +236,6 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 
 
 int MibrrData::nObs  ()                const { return _data.rows();             }
-//int MibrrData::nObs  (int targetIndex) const { return _respCounts[targetIndex]; }
 int MibrrData::nPreds()                const { return _data.cols() - 1;         }
 int MibrrData::nResp (int targetIndex) const {return _respCounts[targetIndex];  }
 

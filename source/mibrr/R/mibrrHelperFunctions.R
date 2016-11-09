@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2016-NOV-07
+### Modified: 2016-NOV-08
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -27,21 +27,25 @@
 .onAttach <- function(libname, pkgname) {
     version <- read.dcf(file = system.file("DESCRIPTION", package = pkgname),
                         fields = "Version")
-    packageStartupMessage(
-        "Loading: ", paste(pkgname, version), ", Copyright (C) 2016 Kyle M. Lang."
-    )
-    packageStartupMessage(
-        pkgname, " is distributed under Version 3 of the GNU Lesser General Public License"
-    )
-    packageStartupMessage(
-        "(LGPL-3); execute 'mibrrL()' for details. ", pkgname, " comes with ABSOLUTELY NO"
-    )
-    packageStartupMessage(
-        "WARRANTY; execute 'mibrrW()' for details. ", pkgname, " is beta software. Please report"
-    )
-    packageStartupMessage(
-        "any bugs. Thank You."
-    )
+    
+    greet <-
+        strwrap(
+            paste0("Loading: ",
+                   pkgname,
+                   " ",
+                   version,
+                   ", Copyright (C) 2016 Kyle M. Lang. ",
+                   pkgname,
+                   " is distributed under Version 3 of the GNU Lesser General",
+                   " Public License (LGPL-3); execute 'mibrrL()' for details. ",
+                   pkgname,
+                   " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for",
+                   " details. ",
+                   pkgname,
+                   " is beta software. Please report any bugs. Thank You."),
+            width = 81)
+    
+    for(i in greet) packageStartupMessage(i)
 }
 
 
@@ -87,10 +91,19 @@ fillMissing <- function(impNum,
                         data,
                         missList)
 {
+    ## Set number of previous generations to 3 to get back to the execution
+    ## environment of mibrr():
+    env <- parent.frame(3)
+    
     for(j in targetVars)
         data[missList[[j]], j] <- impSams[[j]][impNum, ] + targetMeans[j]
+    
+    ## Restructure imputed data to match the raw data layout:
+    if(env$control$preserveStructure)
+        data <- data.frame(data, env$ignoredColumns)[ , env$rawNames]
     data
 }
+
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
@@ -107,7 +120,7 @@ getImputedData <- function(gibbsState,
                       FUN    = sampleImps,
                       nDraws = nDraws,
                       nImps  = nImps)
-    
+
     lapply(X           = c(1 : nImps),
            FUN         = fillMissing,
            targetVars  = targetVars,
@@ -174,14 +187,12 @@ default values.")
     
 ## Compute R-Hat values for model parameters and throw a warning if any R-Hats
 ## exceed a given threshold
-checkGibbsConv <- function(targetIndex,
+checkGibbsConv <- function(targetName,
                            gibbsStates,
-                           targetNames,
                            critVal,
                            returnRHats = TRUE)
 {
-    gibbsState <- gibbsStates[[targetIndex]]
-    targetName <- targetNames[targetIndex]
+    gibbsState <- gibbsStates[[targetName]]
     
     ## Compute R-Hat values to check convergence:
     betaRHats <- apply(gibbsState$beta, 2, FUN = calcRHat, nChains = 1)
@@ -325,25 +336,26 @@ padControlList <- function()
     env <- parent.frame()
     ## Define the default control parameters:
     defaults = list(
-        approxBurn      = env$sampleSizes[1],
-        tuneBurn        = env$sampleSizes[2],
-        postBurn        = env$sampleSizes[3],
-        convThresh      = 1.1,
-        lambda1Starts   = rep(0.5, env$nTargets),
-        lambda2Starts   = rep(env$nPreds / 10, env$nTargets),
-        usePCStarts     = FALSE,
-        mcemEpsilon     = 1.0e-5,
-        smoothingWindow = 1,
-        center          = TRUE,
-        scale           = TRUE,
-        adaptScales     = TRUE,
-        simpleIntercept = FALSE,
-        twoPhaseOpt     = TRUE,
-        minPredCor      = 0.3,
-        miceIters       = 10,
-        miceRidge       = 1e-4,
-        miceMethod      = "pmm",
-        fimlStarts      = FALSE
+        approxBurn        = env$sampleSizes[1],
+        tuneBurn          = env$sampleSizes[2],
+        postBurn          = env$sampleSizes[3],
+        convThresh        = 1.1,
+        lambda1Starts     = rep(0.5, env$nTargets),
+        lambda2Starts     = rep(env$nPreds / 10, env$nTargets),
+        usePCStarts       = FALSE,
+        mcemEpsilon       = 1.0e-5,
+        smoothingWindow   = 1,
+        center            = TRUE,
+        scale             = TRUE,
+        adaptScales       = TRUE,
+        simpleIntercept   = FALSE,
+        twoPhaseOpt       = TRUE,
+        minPredCor        = 0.3,
+        miceIters         = 10,
+        miceRidge         = 1e-4,
+        miceMethod        = "pmm",
+        fimlStarts        = FALSE,
+        preserveStructure = TRUE
     )
     
     ## Pad the user-provided control list with default values:
@@ -568,7 +580,32 @@ simpleImpute <- function() {
 }# END imputeCovs()
 
 
+
+nameOutput <- function() {
+    env <- parent.frame()
     
+    if(env$returnConvInfo) {
+        names(env$rHatList) <- env$targetVars
+
+        if(ncol(env$gibbsOut[[1]]$lambdaHistory) == 2)
+            lamNames <- c("lambda1", "lambda2")
+        else
+            lamNames <- "lambda"
+        
+        for(v in env$targetVars)
+            colnames(env$gibbsOut[[v]]$lambdaHistory) <- lamNames
+    }
+    
+    if(env$returnParams)
+        for(v in env$targetVars) {
+            colnames(env$gibbsOut[[v]]$beta) <-
+                c("intercept", setdiff(colnames(env$data), v))
+            colnames(env$gibbsOut[[v]]$tau) <- setdiff(colnames(env$data), v)
+        }
+}
+
+
+        
 predictMibrr <- function(object,
                          newData,
                          targetNum = 1)

@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-NOV-07
+// Modified: 2016-NOV-08
 // Purpose:  This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
 //           the Bayesian LASSO (MIBL).
@@ -65,32 +65,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
   std::vector<std::vector<int>> missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
 
-  if(false) {
-  int nMiss0 = 200 - respCounts[0];
-  cout << "missIndices[0]:" << endl;
-  for(int i = 0; i < nMiss0; i++)
-    cout << missIndices[0][i] << " ";
-  cout << endl;
-
-  int nMiss1 = 200 - respCounts[1];
-  cout << "missIndices[1]:" << endl;
-  for(int i = 0; i < nMiss1; i++)
-    cout << missIndices[1][i] << " ";
-  cout << endl;
-
-  int nMiss2 = 200 - respCounts[2];
-  cout << "missIndices[2]:" << endl;
-  for(int i = 0; i < nMiss2; i++)
-    cout << missIndices[2][i] << " ";
-  cout << endl;
-
-  int nMiss3 = 200 - respCounts[3];
-  cout << "missIndices[3]:" << endl;
-  for(int i = 0; i < nMiss3; i++)
-    cout << missIndices[3][i] << " ";
-  cout << endl;
-  }
-  
   // Initialize the various classes needed below:
   MibrrData  mibrrData(data, dataScales, missIndices, respCounts);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
@@ -102,7 +76,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
   for(int j = 0; j < nTargets; j++) {
     Eigen::VectorXd betaStartVec  = betaStarts.col(j);
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
-
+    
     if(doBl) {
       mibrrGibbs[j].doBl();
       emConvTol = 0.0; // Set dummy value for EM convergence criterion

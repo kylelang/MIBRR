@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-NOV-07
+// Modified: 2016-NOV-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -64,7 +64,6 @@ bool     MibrrGibbs::getVerbosity()       const { return _verbose;              
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
 bool     MibrrGibbs::getDoImputation()    const { return _doImputation;         }
 bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;      }
-//bool     MibrrGibbs::getTwoPhaseOpt()     const { return _twoPhaseOpt;          }
 
 VectorXd MibrrGibbs::getLambdas() const
 { 
@@ -94,7 +93,6 @@ void MibrrGibbs::beQuiet       ()                  { _verbose = false;          
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
 void MibrrGibbs::doPrediction  ()                  { _doImputation = false;     }
 void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
-//void MibrrGibbs::doSimpleOpt   ()                  { _twoPhaseOpt = false;      }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
 
 
@@ -196,20 +194,6 @@ double MibrrGibbs::drawInvGamma(double shape, double scale) const
 {
   return 1.0 / R::rgamma(shape, 1.0 / scale);
 }//END drawInvGamma()
-
-
-//VectorXd MibrrGibbs::drawMVN(const VectorXd &meanVec, const MatrixXd &covMat)
-//{
-//  int      nVars = meanVec.size();
-//  MatrixXd covCholesky;
-//  VectorXd normDraws(nVars);
-//  
-//  covCholesky = covMat.llt().matrixL();
-//  for(int i = 0; i < nVars; i++) normDraws[i] = norm_rand();
-//  VectorXd testVec = covCholesky * normDraws;
-//  
-//  return meanVec + (covCholesky * normDraws);
-//}// END drawMVN()
 
 
 double MibrrGibbs::calcIncGamma(const double shape, 

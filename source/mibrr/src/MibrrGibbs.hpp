@@ -120,9 +120,6 @@ public:
   void beQuiet();
   // @effect: turn off verbose output
 
-  //void adaptScales();
-  // @effect: update the variable scales be updated at each Gibbs iteration?
-
   void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
 
@@ -184,11 +181,6 @@ public:
   // @param1: shape parameter
   // @param2: scale parameter
   // @return: random Inverse Gamma variate
-
-  //VectorXd drawMVN(const VectorXd&, const MatrixXd&);
-  // @param1: mean vector
-  // @param2: covariance matrix
-  // @return: random multivariate normal variates
 
   double calcIncGamma(const double, const double, const bool);
   // @param1: shape parameter of the underlying gamma distribution
