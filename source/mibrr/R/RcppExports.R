@@ -17,7 +17,7 @@ drawInvGauss <- function(n, mu, lambda) {
     .Call('mibrr_drawInvGauss', PACKAGE = 'mibrr', n, mu, lambda)
 }
 
-runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt) {
-    .Call('mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt)
+runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt, noMiss) {
+    .Call('mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1Starts, lambda2Starts, sigmaStarts, tauStarts, betaStarts, nApproxIters, nTuneIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt, noMiss)
 }
 

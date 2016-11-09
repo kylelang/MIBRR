@@ -28,15 +28,17 @@
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
 
-MibrrData::MibrrData(const MatrixXd &data,
-		     const VectorXd &dataScales,
-		     vector<vector<int>>    missIndices,
-		     const VectorXi &respCounts) 
+MibrrData::MibrrData(const MatrixXd      &data,
+		     const VectorXd      &dataScales,
+		     vector<vector<int>> missIndices,
+		     const VectorXi      &respCounts,
+		     const bool          noMiss) 
 {
   _data        = data;
   _dataScales  = dataScales;
   _missIndices = missIndices;
   _respCounts  = respCounts;
+  _noMiss      = noMiss;
 }
 
 MibrrData::MibrrData() {}
@@ -76,88 +78,65 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 
 
-MatrixXd MibrrData::getObsIVs(int targetIndex) const
+MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
 { 
-  int          nObs     = _data.rows();
-  int          nVars    = _data.cols();
-  int          rowIndex = 0;
-  MatrixXd     tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
-  MatrixXd     outMat   = MatrixXd::Zero(_respCounts[targetIndex], nVars - 1);
-  vector<int>  obsRows  = getObsRows(targetIndex);
-
-  for(int i : obsRows) {
-    outMat.block(rowIndex, 0, 1, targetIndex) =
-      tmpMat.block(i, 0, 1, targetIndex);
-    
-    outMat.block(rowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
-      tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
-    
-    rowIndex++;
-  }
-  return outMat;
-}
-
-
-
-MatrixXd MibrrData::getMissIVs(int targetIndex) const
-{ 
-  int         nMiss    = _data.rows() - _respCounts[targetIndex];
-  int         nVars    = _data.cols();
-  int         rowIndex = 0;
-  MatrixXd    tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
-  MatrixXd    outMat   = MatrixXd::Zero(nMiss, nVars - 1);
-  vector<int> missRows = _missIndices[targetIndex];
+  int      nVars    = _data.cols();
+  int      rowIndex = 0;
+  int      nObs     = _data.rows();
+  MatrixXd tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
+  MatrixXd outMat   = MatrixXd::Zero(nObs, nVars - 1);
+  vector<int> useRows;
   
-  for(int i : missRows) {
-    outMat.block(rowIndex, 0, 1, targetIndex) =
-      tmpMat.block(i, 0, 1, targetIndex);
+  if(_noMiss) {  // Return full predictor matrix:
+    outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
     
-    outMat.block(rowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
-      tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
-    
-    rowIndex++;
+    outMat.rightCols(nVars - (targetIndex + 1)) =
+      tmpMat.rightCols(nVars - (targetIndex + 1));
   }
-  return outMat;
-}
-
-
-
-MatrixXd MibrrData::getFullIVs(int targetIndex) const
-{ 
-  int      nObs   = _data.rows();
-  int      nVars  = _data.cols();
-  MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse(); 
-  MatrixXd outMat = MatrixXd::Zero(nObs, nVars - 1);
-  
-  outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
+  else {
+    if(obsRows) {// Return predictor rows corresponding to observed DVs:
+      nObs    = _respCounts[targetIndex];
+      useRows = getObsRows(targetIndex);
+    }
+    else {       // Return predictor rows corresponding to missing DVs:
+      nObs    = _data.rows() - _respCounts[targetIndex];
+      useRows = _missIndices[targetIndex];
+    }
+    
+    outMat = MatrixXd::Zero(nObs, nVars - 1);
+    
+    for(int i : useRows) {
+      outMat.block(rowIndex, 0, 1, targetIndex) =
+	tmpMat.block(i, 0, 1, targetIndex);
       
-  outMat.rightCols(nVars - (targetIndex + 1)) =
-    tmpMat.rightCols(nVars - (targetIndex + 1));
-  
+      outMat.block(rowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
+	tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
+      
+      rowIndex++;
+    }
+  }
   return outMat;
 }
 
 
 
-VectorXd MibrrData::getObsDV(int targetIndex) const
+VectorXd MibrrData::getDV(int targetIndex) const
 { 
-  int          nObs     = _data.rows();
-  int          rowIndex = 0;
-  VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
-  vector<int>  obsRows  = getObsRows(targetIndex);
-  
-  for(int i : obsRows) {
-    outVec[rowIndex] = _data(i, targetIndex);
-    rowIndex++;
+  if(_noMiss) {
+    return _data.col(targetIndex);
   }
-  return outVec; 
-}
-
-
-
-VectorXd MibrrData::getFullDV(int targetIndex) const
-{
-  return _data.col(targetIndex);
+  else {
+    int          nObs     = _data.rows();
+    int          rowIndex = 0;
+    VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
+    vector<int>  obsRows  = getObsRows(targetIndex);
+    
+    for(int i : obsRows) {
+      outVec[rowIndex] = _data(i, targetIndex);
+      rowIndex++;
+    }
+    return outVec;
+  }
 }
 
 
@@ -168,8 +147,8 @@ double MibrrData::getDataScales(int targetIndex) const
 }
 
 
-MatrixXd MibrrData::getData()              const { return _data;                }
-VectorXd MibrrData::getDataScales()        const { return _dataScales;          }
+MatrixXd MibrrData::getData()       const { return _data;                       }
+VectorXd MibrrData::getDataScales() const { return _dataScales;                 }
 
 
 ///////////////////////////////// MUTATORS //////////////////////////////////////

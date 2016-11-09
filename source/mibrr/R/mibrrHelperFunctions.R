@@ -23,6 +23,7 @@
 ##-----------------------------------------------------------------------------##
 
 
+
 ## Print startup message:
 .onAttach <- function(libname, pkgname) {
     version <- read.dcf(file = system.file("DESCRIPTION", package = pkgname),
@@ -42,11 +43,12 @@
                    " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for",
                    " details. ",
                    pkgname,
-                   " is beta software. Please report any bugs. Thank You."),
+                   " is beta software. Please report any bugs."),
             width = 81)
     
     for(i in greet) packageStartupMessage(i)
 }
+
 
 
 ## Calculate the potential scale reduction factor (R-Hat)
@@ -75,12 +77,14 @@ calcRHat <- function(simsIn, nChains = 1)
 }# END calcRHat()
 
 
+
 ## Sample imputations from the target's posterior gibbs sample:
 sampleImps <- function(x, nDraws, nImps)
 {
     sampledIndex <- sample(c(1 : nDraws), nImps)
     x$imps[sampledIndex, ]
 }
+
 
 
 ## Fill the missing data with the sampled imputations:
@@ -103,6 +107,7 @@ fillMissing <- function(impNum,
         data <- data.frame(data, env$ignoredColumns)[ , env$rawNames]
     data
 }
+
 
 
 ## Sample the imputations from the stationary posterior predictive distibution
@@ -129,6 +134,7 @@ getImputedData <- function(gibbsState,
            data        = data,
            missList    = missList)
 }# END getImputedData()
+
 
 
 ## Use a variant of the method recommended by Park and Casella (2008) to get
@@ -184,7 +190,8 @@ default values.")
     lambdaStarts
 }# END getLambdaStarts()
     
-    
+
+
 ## Compute R-Hat values for model parameters and throw a warning if any R-Hats
 ## exceed a given threshold
 checkGibbsConv <- function(targetName,
@@ -246,6 +253,7 @@ checkGibbsConv <- function(targetName,
         list()
     }
 }# END checkGibbsConv()
+
 
 
 ## Initialize the gibbs sampled parameters with draws from the parameters'
@@ -317,6 +325,7 @@ initializeParams <- function(data, nTargets, doBl, control)
 }# END initializeParams()
 
 
+
 ## Compute the posterior means of the Gibbs samples
 gibbsMeanFun <- function(gibbsState)
 {
@@ -328,6 +337,7 @@ gibbsMeanFun <- function(gibbsState)
     
     outList
 }
+
 
 
 ## Make sure that all control parameters are initialized
@@ -364,6 +374,7 @@ padControlList <- function()
 }# END padControlList()
 
 
+
 ## Fill missing data with an appropriate integer code:
 applyMissCode <- function() {
     env <- parent.frame()
@@ -379,6 +390,7 @@ applyMissCode <- function() {
     }
     env$data[is.na(env$data)] <- env$missCode
 }
+
 
 
 ## Check the user inputs and isolate a set of target variables:
@@ -605,34 +617,32 @@ nameOutput <- function() {
 }
 
 
-        
+
 predictMibrr <- function(object,
                          newData,
-                         targetNum = 1)
+                         targetVar,
+                         nDraws = 0)
 {
-    beta  <- matrix(colMeans(object$params$beta[[targetNum]]))
-    sigma <- mean(object$params$sigma[[targetNum]])
-    
-    cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
-}
-
-
-
-predictMibrr2 <- function(object,
-                          newData,
-                          nDraws = 1,
-                          targetNum = 1)
-{
-    index <- sample(c(1 : length(object$params$sigma[[targetNum]])), nDraws)
-    beta  <- object$params$beta[[targetNum]][index, ]
-    sigma <- object$params$sigma[[targetNum]][index]
-    
-    out <- matrix(NA, nrow(newData), nDraws)
-    for(j in 1 : nDraws)
-        out[ , j] <-
-            cbind(1, newData) %*% matrix(beta[j, ]) + rnorm(1, 0, sqrt(sigma[j]))
+    if(nDraws == 0) {
+        beta  <- matrix(colMeans(object$params[[targetVar]]$beta))
+        sigma <- mean(object$params[[targetVar]]$sigma)
+        
+        out <- cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
+    } else if(nDraws > 0) {
+        index <- sample(c(1 : length(object$params[[targetVar]]$sigma)), nDraws)
+        beta  <- object$params[[targetVar]]$beta[index, ]
+        sigma <- object$params[[targetVar]]$sigma[index]
+        
+        out <- matrix(NA, nrow(newData), nDraws)
+        for(j in 1 : nDraws)
+            out[ , j] <- cbind(1, newData) %*% matrix(beta[j, ]) +
+                rnorm(1, 0, sqrt(sigma[j]))
+    } else {
+        stop("nDraws must be non-negative.")
+    }
     out
 }
+
 
 
 simulateData <- function(nObs,

@@ -17,9 +17,9 @@ install.packages("source/mibrr", repos = NULL, type = "source")
 library(mibrr)
 library(mitools)
 
-## Test MIBEN and MIBL:
 data(mibrrExampleData)
 
+## Use mice() as a baseline comparison:
 miceOut <- mice(mibrrExampleData,
                 m = 100,
                 maxit = 20)
@@ -32,6 +32,7 @@ miceFits <- lapply(miceImps,
 micePooled <- MIcombine(miceFits)
 micePooled
 
+## Test MIBEN and MIBL:
 mibenOut <- miben(data           = mibrrExampleData,
                   targetVars     = c("y", paste0("x", c(1 : 3))),
                   ignoreVars     = "idNum",
@@ -48,6 +49,7 @@ mibenFits <- lapply(mibenOut$imps,
                     FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
                     )
 mibenPooled <- MIcombine(mibenFits)
+mibenPooled
 
 par(mfcol = c(2, 4))
 for(v in 1 : 4) {
@@ -76,6 +78,7 @@ miblFits <- lapply(miblOut$imps,
                    FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
                    )
 miblPooled <- MIcombine(miblFits)
+miblPooled
 
 par(mfcol = c(2, 2))
 for(v in 1 : 4) {
@@ -105,11 +108,7 @@ parms$simpleInt   <- FALSE
 parms$verbose     <- TRUE
 parms$postN       <- 5000
 parms$adaptScales <- TRUE
-
-testFun(1, parms)
-
-rp <- 1
-
+parms$iterations  <- c(2000, 25)
 
 testFun <- function(rp, parms) {
     nObs   <- parms$nObs
@@ -127,24 +126,23 @@ testFun <- function(rp, parms) {
                          beta   = beta,
                          means  = means,
                          scales = scales)
-
-    rMat <- matrix(as.logical(rbinom(prod(dim(dat1)), 1, .2)), nrow(dat1))
-    dat1[rMat] <- NA
-    
-    testOut <- ben(data    = dat1,
-                   y       = "y",
-                   X       = paste0("x", c(1 : nPreds)),
-                   verbose = parms$verbose,
-                   control =
+      
+    testOut <- ben(data       = dat1,
+                   y          = "y",
+                   X          = paste0("x", c(1 : nPreds)),
+                   iterations = parms$iterations,
+                   verbose    = parms$verbose,
+                   control    =
                        list(adaptScales     = parms$adaptScales,
                             simpleIntercept = parms$simpleInt)
                    )
     
-    testOut2 <- bl(data    = dat1,
-                   y       = "y",
-                   X       = paste0("x", c(1 : nPreds)),
-                   verbose = parms$verbose,
-                   control =
+    testOut2 <- bl(data       = dat1,
+                   y          = "y",
+                   X          = paste0("x", c(1 : nPreds)),
+                   iterations = parms$iterations,
+                   verbose    = parms$verbose,
+                   control    =
                        list(adaptScales     = parms$adaptScales,
                             simpleIntercept = parms$simpleInt)
                    )
@@ -164,18 +162,26 @@ testFun <- function(rp, parms) {
                                 means  = means,
                                 scales = scales)
         
-        predOut1 <- predictMibrr(object  = testOut,
-                                 newData = as.matrix(testDat[ , -1])
-                                 )
+        predOut1 <- predictMibrr(object    = testOut,
+                                 newData   = as.matrix(testDat[ , -1]),
+                                 targetVar = "y",
+                                 nDraws    = 250)
+
+        meanPred1 <- rowMeans(predOut1)
+        varPred1  <- apply(predOut1, 1, var)
         
-        predOut2 <- predictMibrr(object  = testOut2,
-                                 newData = as.matrix(testDat[ , -1])
-                                 )
+        predOut2 <- predictMibrr(object    = testOut2,
+                                 newData   = as.matrix(testDat[ , -1]),
+                                 targetVar = "y",
+                                 nDraws    = 250)
+
+        meanPred2 <- rowMeans(predOut2)
+        varPred2  <- apply(predOut2, 1, var)
         
         predOut3 <- predict(lmOut, newdata = testDat[ , -1])
         
-        mseMat[i, 1] <- mean((predOut1 - dat1$y)^2)
-        mseMat[i, 2] <- mean((predOut2 - dat1$y)^2)
+        mseMat[i, 1] <- mean((meanPred1 - dat1$y)^2)
+        mseMat[i, 2] <- mean((meanPred2 - dat1$y)^2)
         mseMat[i, 3] <- mean((predOut3 - dat1$y)^2)
     }
     
@@ -185,6 +191,9 @@ testFun <- function(rp, parms) {
     outMat
 }# END testFun()
 
+mean(varPred1)
+mean(varPred2)
+
 library(parallel)
 nReps <- 10
 mseList <- mclapply(c(1 : nReps),
@@ -192,4 +201,10 @@ mseList <- mclapply(c(1 : nReps),
                     parms = parms,
                     mc.cores = 4)
 
-mseList
+tmp1 <- testOut$lambdaHistory$y
+tmp2 <- testOut2$lambdaHistory$y
+
+par(mfrow = c(1, 3))
+plot(tmp1[ , "lambda1"], type = "l")
+plot(tmp1[ , "lambda2"], type = "l")
+plot(tmp2, type = "l")

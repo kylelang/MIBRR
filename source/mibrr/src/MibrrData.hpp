@@ -40,11 +40,13 @@ public:
   MibrrData(const MatrixXd&,
 	    const VectorXd&,
 	    vector<vector<int>>,
-	    const VectorXi&);
+	    const VectorXi&,
+	    const bool);
   // @param1: data matrix
   // @param2: data scales
   // @param3: list of indices for missing rows
   // @param4: vector or response counts
+  // @param5: logical flag denoting completely observed data
   
   MibrrData();
   // @effect: initialize MibrrData without any data to allow access to the
@@ -55,32 +57,20 @@ public:
   
   //////////////////////////////// ACCESSORS ////////////////////////////////////
 
+  
   vector<int> getObsRows(int) const;
   // @param:  the column-index of the current target variable
   // @return: the row indices for the observed rows of the target variable
   
-  MatrixXd getObsIVs(int) const;
+  MatrixXd getIVs(int, bool) const;
   // @param:  the column-index of the current target variable
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
 
-  MatrixXd getMissIVs(int) const;
-  // @param:  the column-index of the current target variable
-  // @return: the IVs of the imputation model with rows corresponding to
-  //          observed DV observations deleted
-  
-  MatrixXd getFullIVs(int) const;
-  // @param:  the column-index of the current target variable
-  // @return: the full IVs matrix for the imputation model
-
-  VectorXd getObsDV(int) const;
+  VectorXd getDV(int) const;
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
-  VectorXd getFullDV(int) const;
-  // @param:  the column-index of the current target variable
-  // @return: the full DV vector for the imputation model
-
   double getDataScales(int) const;
   // @param:  a column index
   // @return: the  scale of the data in the specified column
@@ -149,9 +139,10 @@ public:
   // @return: random multivariate normal variates
   
 private:
-  MatrixXd    _data;
-  VectorXi    _respCounts;
-  VectorXd    _dataScales;
+  bool                _noMiss;
+  MatrixXd            _data;
+  VectorXi            _respCounts;
+  VectorXd            _dataScales;
   vector<vector<int>> _missIndices;
 };
 

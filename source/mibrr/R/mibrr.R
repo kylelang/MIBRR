@@ -96,6 +96,8 @@ mibrr <- function(doBl,
     noMiss     <- all(respCounts == nObs)
 
     if(noMiss) {
+        ## Don't try to impute any data:
+        doImp <- FALSE
         ## Mean-center the data:
         scaleData()
     } else if(control$fimlStarts) {
@@ -121,7 +123,7 @@ mibrr <- function(doBl,
     sigmaStarts <- paramStarts$sigma
 
     ## Fill remaining missing data with an integer code:
-    if(control$fimlStarts) applyMissCode()
+    if(control$fimlStarts & !noMiss) applyMissCode()
     
     ## Estimate the MIBEN/MIBL model:
     gibbsOut <-
@@ -150,7 +152,8 @@ mibrr <- function(doBl,
                  doImputation    = doImp,
                  adaptScales     = control$adaptScales,
                  simpleIntercept = control$simpleIntercept,
-                 twoPhaseOpt     = control$twoPhaseOpt) # Ignored for BL
+                 twoPhaseOpt     = control$twoPhaseOpt, # Ignored for BL
+                 noMiss          = noMiss)
    
     names(gibbsOut) <- targetVars
 

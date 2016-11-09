@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-NOV-05
+// Modified: 2016-NOV-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -79,7 +79,7 @@ public:
   bool getElasticNetFlag() const;
   // @return: current value of the _useElasticNet switch
 
-  bool getDoImputation() const;
+  bool getDoImp() const;
   // @return: current value of the flag denoting if missing data are to be
   //          imputed
 
@@ -117,14 +117,14 @@ public:
   void setNDraws(int);
   // @param: new value for the number of retained Gibbs sampling draws
 
+  void setDoImp(bool);
+  // @param: new value for the logical switch for imputation
+  
   void beQuiet();
   // @effect: turn off verbose output
 
   void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
-
-  void doPrediction();
-  // @effect: do not impute missing data, only fit the predictive model
 
   void useSimpleInt();
   // @effect: use the unconditional mean of the target as the mean of the
@@ -281,7 +281,7 @@ private:
   bool     _verbose;
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
-  bool     _doImputation;
+  bool     _doImp;
   bool     _simpleIntercept;
   bool     _twoPhaseOpt;
   string   _optPrefix;

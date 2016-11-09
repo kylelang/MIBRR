@@ -12,5 +12,4 @@ export(mibl,
        ben,
        bl,
        simulateData,
-       predictMibrr,
-       predictMibrr2)
+       predictMibrr)

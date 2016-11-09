@@ -41,7 +41,6 @@ MibrrGibbs::MibrrGibbs()
   _storeGibbsSamples = false;
   _verbose           = true;
   _useElasticNet     = true;
-  _doImputation      = true;
   _twoPhaseOpt       = true;
 }
 
@@ -62,8 +61,9 @@ int      MibrrGibbs::getNDraws()          const { return _nDraws;               
 int      MibrrGibbs::getNEmIters()        const { return _nEmIters;             }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
-bool     MibrrGibbs::getDoImputation()    const { return _doImputation;         }
+bool     MibrrGibbs::getDoImp()           const { return _doImp       ;         }
 bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;      }
+
 
 VectorXd MibrrGibbs::getLambdas() const
 { 
@@ -89,9 +89,9 @@ void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;            
 void MibrrGibbs::setNEmIters   (int nEmIters)      { _nEmIters = nEmIters;      }
 void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;      }
 void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;          }
+void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;            }
 void MibrrGibbs::beQuiet       ()                  { _verbose = false;          }
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
-void MibrrGibbs::doPrediction  ()                  { _doImputation = false;     }
 void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
 
@@ -166,13 +166,19 @@ void MibrrGibbs::setupOptimizer(int    nEmIters,
 
 void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 {
-  int nMiss          = mibrrData.nMiss(_targetIndex);
-  _storeGibbsSamples = true;
+  if(_doImp) {
+    int nMiss = mibrrData.nMiss(_targetIndex);
+    _impSam   = MatrixXd(_nDraws, nMiss);
+  }
+  else {
+    _impSam = MatrixXd::Zero(1, 1);
+  }
   
   _betaSam  = MatrixXd(_nDraws, _betas.size());
   _tauSam   = MatrixXd(_nDraws, _taus.size());
   _sigmaSam = VectorXd(_nDraws);
-  _impSam   = MatrixXd(_nDraws, nMiss);
+  
+  _storeGibbsSamples = true;
 }
 
 
@@ -181,9 +187,11 @@ void MibrrGibbs::restartParameters(MibrrData &mibrrData)
   _betas = _betaSam.bottomRows(_betaSam.rows() - 1).colwise().mean().transpose();
   _taus  = _tauSam.bottomRows(_tauSam.rows() - 1).colwise().mean().transpose();
   _sigma = _sigmaSam.tail(_sigmaSam.size() - 1).mean();
-  
-  VectorXd meanImps = _impSam.bottomRows(_impSam.rows() - 1).colwise().mean();
-  mibrrData.fillMissing(meanImps, _targetIndex);
+
+  if(_doImp) {
+    VectorXd meanImps = _impSam.bottomRows(_impSam.rows() - 1).colwise().mean();
+    mibrrData.fillMissing(meanImps, _targetIndex);
+  }
 }
 
 
@@ -302,8 +310,8 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   }
   
   MatrixXd aMatrix;
-  aMatrix = mibrrData.getObsIVs(_targetIndex).transpose() *
-    mibrrData.getObsIVs(_targetIndex) + tmpMat;
+  aMatrix = mibrrData.getIVs(_targetIndex, true).transpose() *
+    mibrrData.getIVs(_targetIndex, true) + tmpMat;
   
   VectorXd betaMeans;
   MatrixXd betaCovariances;
@@ -312,8 +320,8 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
     // and use it to compute the moments of beta's fully conditional posterior:
     aMatrixCholesky.compute(aMatrix);
     betaMeans =
-      aMatrixCholesky.solve(mibrrData.getObsIVs(_targetIndex).transpose() *
-			    mibrrData.getObsDV(_targetIndex)); 
+      aMatrixCholesky.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
+			    mibrrData.getDV(_targetIndex)); 
     
     tmpMat = _sigma * MatrixXd::Identity(nPreds, nPreds);   
     betaCovariances = aMatrixCholesky.solve(tmpMat);
@@ -324,10 +332,11 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   double intSd = sqrt(_sigma / double(nObs));
   double intMean;
   if(_simpleIntercept)
-    intMean = mibrrData.getObsDV(_targetIndex).mean();
+    intMean = mibrrData.getDV(_targetIndex).mean();
   else
-    intMean = mibrrData.getObsDV(_targetIndex).mean() -
-      mibrrData.getObsIVs(_targetIndex).colwise().mean() * _betas.tail(nPreds);
+    intMean = mibrrData.getDV(_targetIndex).mean() -
+      mibrrData.getIVs(_targetIndex, true).colwise().mean() *
+      _betas.tail(nPreds);
   
   VectorXd newBetas(nPreds + 1);  
   newBetas[0] = R::rnorm(intMean, intSd);
@@ -352,10 +361,10 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
   
   // Compute the regularized residual sum of squares:
   double sse =
-    (mibrrData.getObsDV(_targetIndex) - _betas[0] * tmpBiasVector -
-     mibrrData.getObsIVs(_targetIndex) * _betas.tail(nPreds)).transpose() *
-    (mibrrData.getObsDV(_targetIndex) - _betas[0] * tmpBiasVector -
-     mibrrData.getObsIVs(_targetIndex) * _betas.tail(nPreds));
+    (mibrrData.getDV(_targetIndex) - _betas[0] * tmpBiasVector -
+     mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds)).transpose() *
+    (mibrrData.getDV(_targetIndex) - _betas[0] * tmpBiasVector -
+     mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds));
   
   if(_useElasticNet) {// MIBEN Version
     double scaleSum =
@@ -413,7 +422,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
   VectorXd tmpImps = _betas[0] * tmpBiasVector +
-    mibrrData.getMissIVs(_targetIndex) * _betas.tail(nPreds) + errorVector;
+    mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) + errorVector;
   
   // Replace the missing data in the target variable with the imputations:
   mibrrData.fillMissing(tmpImps, _targetIndex);
@@ -429,7 +438,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
   updateTaus       (mibrrData);
   updateBetas      (mibrrData);
   updateSigma      (mibrrData);
-  updateImputations(mibrrData);
+  if(_doImp) updateImputations(mibrrData);
   
   if(_storeGibbsSamples) _drawNum++;
 }// END doGibbsIteration()

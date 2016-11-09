@@ -59,14 +59,15 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    bool            doImputation,
 		    bool            adaptScales,
 		    bool            simpleIntercept,
-		    bool            twoPhaseOpt)
+		    bool            twoPhaseOpt,
+		    bool            noMiss)
 {
   // Unpack the list of missing row indices:
   std::vector<std::vector<int>> missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
 
   // Initialize the various classes needed below:
-  MibrrData  mibrrData(data, dataScales, missIndices, respCounts);
+  MibrrData  mibrrData(data, dataScales, missIndices, respCounts, noMiss);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Specify the total number of MCEM iterations:
@@ -92,8 +93,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 				  lambda2Starts[j]);
     
     mibrrGibbs[j].setTargetIndex(j);
+    mibrrGibbs[j].setDoImp(!noMiss);
     if(!verbose)        mibrrGibbs[j].beQuiet(); 
-    if(!doImputation)   mibrrGibbs[j].doPrediction();
     if(simpleIntercept) mibrrGibbs[j].useSimpleInt();
   }
   
@@ -177,6 +178,4 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    );    
   }
   return outList;
-}// END runGibbs() 
-
-
+}// END runGibbs()
