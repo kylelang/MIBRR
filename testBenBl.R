@@ -22,7 +22,7 @@ library(glmnet)
 library(parallel)
 
 ## Test BEN and BL:
-
+nReps          <- 500
 alpha          <- 50
 nPreds         <- 10
 
@@ -113,7 +113,9 @@ outList <- mclapply(X        = c(1 : nReps),
                     parms    = parms,
                     mc.cores = 4)
 
+getwd()
 
+saveRDS(outList, "../../predTestOutList.rds")
 
 
 
