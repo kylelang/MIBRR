@@ -19,78 +19,7 @@ install.packages("source/mibrr", repos = NULL, type = "source")
 library(mibrr)
 library(mitools)
 library(glmnet)
-
-data(mibrrExampleData)
-
-## Use mice() as a baseline comparison:
-miceOut <- mice(mibrrExampleData,
-                m = 100,
-                maxit = 20)
-miceImps <- list()
-for(m in 1 : 100) miceImps[[m]] <- complete(miceOut, m)
-
-miceFits <- lapply(miceImps,
-                   FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                   )
-micePooled <- MIcombine(miceFits)
-micePooled
-
-## Test MIBEN and MIBL:
-mibenOut <- miben(data           = mibrrExampleData,
-                  targetVars     = c("y", paste0("x", c(1 : 3))),
-                  ignoreVars     = "idNum",
-                  returnConvInfo = TRUE,
-                  returnParams   = TRUE,
-                  verbose        = TRUE,
-                  control        =
-                      list(fimlStarts      = TRUE,
-                           simpleIntercept = TRUE,
-                           adaptScales     = TRUE)
-                  )
-
-mibenFits <- lapply(mibenOut$imps,
-                    FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                    )
-mibenPooled <- MIcombine(mibenFits)
-mibenPooled
-
-par(mfcol = c(2, 4))
-for(v in 1 : 4) {
-    tmp <- mibenOut$lambdaHistory[[v]]
-
-    plot(tmp[ , 1], type = "l", main = "Lambda1")
-    plot(tmp[ , 2], type = "l", main = "Lambda2")
-}
-
-any(unlist(mibenOut$rHats) > 1.1)
-colMeans(is.na(do.call(rbind, mibenOut$imps)))
-
-miblOut <- mibl(data           = mibrrExampleData,
-                targetVars     = c("y", paste0("x", c(1 : 3))),
-                ignoreVars     = "idNum",
-                returnConvInfo = TRUE,
-                returnParams   = TRUE,
-                verbose        = TRUE,
-                control        =
-                    list(fimlStarts      = TRUE,
-                         simpleIntercept = TRUE,
-                         adaptScales     = TRUE)
-                )
-
-miblFits <- lapply(miblOut$imps,
-                   FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                   )
-miblPooled <- MIcombine(miblFits)
-miblPooled
-
-par(mfcol = c(2, 2))
-for(v in 1 : 4) {
-    tmp <- miblOut$lambdaHistory[[v]]
-    plot(tmp, type = "l", main = "Lambda")
-}
-
-any(unlist(mibenOut$rHats) > 1.1)
-colMeans(is.na(do.call(rbind, mibenOut$imps)))
+library(parallel)
 
 ## Test BEN and BL:
 
@@ -103,144 +32,23 @@ parms$nPreds          <- nPreds
 parms$r2              <- 0.5
 parms$collin          <- 0.3
 parms$beta            <- matrix(
-    c(alpha, rep(0.3, ceiling(nPreds / 2)), rep(0, floor(nPreds / 2)))
+    c(alpha, runif(ceiling(nPreds / 2), -5, 5), rep(0, floor(nPreds / 2)))
 )
-parms$means           <- runif(nPreds, 0, 100)
+parms$means           <- runif(nPreds, -10, 10)
 parms$scales          <- runif(nPreds, 1, 50)
 parms$simpleInt       <- FALSE
-parms$verbose         <- TRUE
+parms$verbose         <- FALSE
 parms$adaptScales     <- TRUE
-parms$iterations      <- c(2500, 25)
+parms$iterations      <- c(500, 25)
 parms$latentStructure <- FALSE
 parms$itemsPerFactor  <- 4
 parms$itemReliability <- 0.8
-parms$twoPhaseOpt     <- FALSE
+parms$twoPhaseOpt     <- TRUE
+parms$center          <- TRUE
+parms$scale           <- TRUE
+
 
 testFun <- function(rp, parms) {
-    nObs            <- parms$nObs
-    nPreds          <- parms$nPreds
-    r2              <- parms$r2
-    collin          <- parms$collin
-    beta            <- parms$beta
-    means           <- parms$means
-    scales          <- parms$scales
-    latentStructure <- parms$latentStructure
-    itemsPerFactor  <- parms$itemsPerFactor
-    itemReliability <- parms$itemReliability
-    
-    dat1 <- simulateData(nObs            = nObs,
-                         nPreds          = nPreds,
-                         r2              = r2,
-                         collin          = collin,
-                         beta            = beta,
-                         means           = means,
-                         scales          = scales,
-                         latentStructure = latentStructure,
-                         itemsPerFactor  = itemsPerFactor,
-                         itemReliability = itemReliability)
-    
-    nIVs <- ifelse(latentStructure, nPreds * itemsPerFactor, nPreds)
-
-    X <- as.matrix(dat1[ , paste0("x", c(1 : nIVs))])
-    y <- dat1$y
-    
-    benOut <- ben(data       = dat1,
-                  y          = "y",
-                  X          = paste0("x", c(1 : nIVs)),
-                  iterations = parms$iterations,
-                  verbose    = parms$verbose,
-                  control    =
-                      list(adaptScales     = parms$adaptScales,
-                           simpleIntercept = parms$simpleInt,
-                           twoPhaseOpt     = parms$twoPhaseOpt)
-                  )
-    
-    blOut <- bl(data       = dat1,
-                y          = "y",
-                X          = paste0("x", c(1 : nIVs)),
-                iterations = parms$iterations,
-                verbose    = parms$verbose,
-                control    =
-                    list(adaptScales     = parms$adaptScales,
-                         simpleIntercept = parms$simpleInt)
-                )
-    
-    aVec <- seq(0, 1, 0.01)
-    cvmVec <- lamVec <- rep(NA, length(aVec))
-    for(i in 1 : length(aVec)) {
-        cvOut <- cv.glmnet(x = X,
-                           y = y,
-                           nfolds = length(y),
-                           alpha = aVec[i],
-                           grouped = FALSE)
-        
-        best <- which(cvOut$lambda == cvOut$lambda.min)
-        
-        cvmVec[i] <- cvOut$cvm[best]
-        lamVec[i] <- cvOut$lambda.min
-    }
-    
-    alpha    <- aVec[which.min(cvmVec)]
-    
-    enOut    <- cv.glmnet(x       = X,
-                          y       = y,
-                          nfolds  = length(y),
-                          alpha   = alpha,
-                          grouped = FALSE)
-
-    lassoOut <- cv.glmnet(x       = X,
-                          y       = y,
-                          nfolds  = length(y),
-                          alpha   = 1,
-                          grouped = FALSE)
-    
-    testForm <-
-        as.formula(paste0("y ~ ", paste0("x", c(1 : nIVs), collapse = " + ")))
-
-    lmOut <- lm(testForm, data = dat1)
-
-    testDat <- simulateData(nObs            = nObs,
-                            nPreds          = nPreds,
-                            r2              = r2,
-                            collin          = collin,
-                            beta            = beta,
-                            means           = means,
-                            scales          = scales,
-                            latentStructure = latentStructure,
-                            itemsPerFactor  = itemsPerFactor,
-                            itemReliability = itemReliability)
-    
-    newX <- as.matrix(testDat[ , paste0("x", c(1 : nIVs))])
-    
-    benPPD <- predictMibrr(object    = benOut,
-                           newData   = as.matrix(testDat[ , -1]),
-                           targetVar = "y",
-                           nDraws    = 250)
-    benPred <- rowMeans(benPPD)
-    
-    blPPD <- predictMibrr(object    = blOut,
-                          newData   = as.matrix(testDat[ , -1]),
-                          targetVar = "y",
-                          nDraws    = 250)
-    blPred <- rowMeans(blPPD)
-    
-    lmPred    <- predict(lmOut, newdata = testDat[ , -1])
-    enPred    <- predict(enOut, newX)
-    lassoPred <- predict(lassoOut, newX)
-    
-    outVec <- c(mean((benPred   - dat1$y)^2),
-                mean((blPred    - dat1$y)^2),
-                mean((enPred    - dat1$y)^2),
-                mean((lassoPred - dat1$y)^2),
-                mean((lmPred    - dat1$y)^2))
-    names(outVec) <- c("MIBEN", "MIBL", "ENET", "LASSO", "MLR")
-    outVec
-}# END testFun()
-
-
-
-
-testFun2 <- function(rp, parms) {
     nObs            <- parms$nObs
     nPreds          <- parms$nPreds
     r2              <- parms$r2
@@ -299,15 +107,35 @@ testFun2 <- function(rp, parms) {
     outList
 }
 
-?lm
 
-out1 <- testFun2(1, parms)
+outList <- mclapply(X        = c(1 : nReps),
+                    FUN      = testFun,
+                    parms    = parms,
+                    mc.cores = 4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+out1 <- testFun(1, parms)
 
 benOut <- out1$ben
 blOut  <- out1$bl
 lmOut  <- out1$lm
-
-mibrr:::gibbsMeanFun(benOut$params$y)
 
 pars1 <- benOut$params$y
 
@@ -325,13 +153,13 @@ mean(pars2$sigma)
 dat1 <- out1$data
 
 benPPD <- predictMibrr(object    = benOut,
-                       newData   = scale(dat1[ , -1]), #scale = FALSE),
+                       newData   = scale(dat1[ , -1]),
                        targetVar = "y",
                        nDraws    = nrow(benOut$params$y$beta)
                        ) + mean(dat1$y)
 
 blPPD <- predictMibrr(object    = blOut,
-                      newData   = scale(dat1[ , -1]), #scale = FALSE),
+                      newData   = scale(dat1[ , -1]),
                       targetVar = "y",
                       nDraws    = nrow(benOut$params$y$beta)
                       ) + mean(dat1$y)
@@ -341,8 +169,7 @@ lmPPD <- predict(lmOut, newData = dat1[ , -1])
 benDens <- density(rowMeans(benPPD))
 blDens  <- density(rowMeans(blPPD))
 lmDens  <- density(lmPPD)
-#yDens   <- density(scale(dat1$y, scale = FALSE))
-yDens   <- density(dat1$y)
+yDens   <- density(scale(dat1$y, scale = FALSE))
 
 yLim <- range(benDens$y, blDens$y, lmDens$y, yDens$y)
 xLim <- range(benDens$x, blDens$x, lmDens$x, yDens$x)
@@ -352,6 +179,11 @@ plot(benDens, col = "red", ylim = yLim, xlim = xLim)
 lines(blDens, col = "blue")
 lines(lmDens, col = "green")
 lines(yDens)
+
+mean(benPPD)
+mean(dat1$y)
+mean(lmPPD)
+mean(blPPD)
 
 plot(enOut)
 
