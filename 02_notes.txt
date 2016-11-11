@@ -14,5 +14,6 @@
 
 - MibrrGibbs absorbs the intercept into the predictor matrix and avoid regularizing by setting _tau[0, 0] = 0
 
-
+*** 2016-NOV-10 ***
+- Question: If the observed parts of the data are centered, is it ever possible to estimate a non-zero intercept in an imputation model?
 

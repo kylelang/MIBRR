@@ -650,9 +650,14 @@ simulateData <- function(nObs,
                          r2,
                          collin,
                          beta,
-                         means,
-                         scales)
+                         means           = 0,
+                         scales          = 1,
+                         latentStructure = FALSE,
+                         itemsPerFactor  = 1,
+                         itemReliability = NULL)
 {
+    if(length(means) == 1) means <- rep(means, nPreds)
+    
     w1 <- matrix(scales, nPreds, nPreds)
     w2 <- matrix(scales, nPreds, nPreds, byrow = TRUE)
     
@@ -666,9 +671,27 @@ simulateData <- function(nObs,
     eta <- X %*% beta
     sigmaY <- (var(eta) / r2) - var(eta)
     y <- eta + rnorm(nObs, 0, sqrt(sigmaY))
-    
-    outDat <- data.frame(y, X[ , -1])
-    colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
 
+    if(latentStructure) {
+        nItems   <- nPreds * itemsPerFactor
+        loadings <- matrix(0, nItems, nPreds)
+        
+        for(m in 1 : nPreds) {
+            for(n in 1 : itemsPerFactor) {
+                offset <- (m - 1) * itemsPerFactor
+                loadings[n + offset, m] <- sqrt(itemReliability)
+            }
+        }
+
+        theta <- diag(rep(1 - itemReliability, nItems))
+    
+        X <- X[ , -1] %*% t(loadings) + rmvnorm(nObs, rep(0, nItems), theta)
+        
+        outDat <- data.frame(y, X)
+        colnames(outDat) <- c("y", paste0("x", c(1 : nItems)))
+    } else {
+        outDat <- data.frame(y, X[ , -1])
+        colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
+    }
     outDat
 }
