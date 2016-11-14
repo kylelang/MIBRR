@@ -1,20 +1,27 @@
-### Title:    Build R Packages
+### Title:    Test BEN and BL
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2016-NOV-05
+### Modified: 2016-NOV-11
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
 
-install.packages("glmnet", repos = "http://cloud.r-project.org")
+                                        #install.packages("glmnet", repos = "http://cloud.r-project.org")
 
-library(RcppEigen)
+                                        #library(RcppEigen)
 
-system("rm source/mibrr/src/RcppExports.cpp \
-        rm source/mibrr/R/RcppExports.R \
-        rm source/mibrr/src/*.o source/mibrr/src/*.so")
-Rcpp::compileAttributes("source/mibrr")
-install.packages("source/mibrr", repos = NULL, type = "source")
+                                        #softDir <- "~/data/software/development/mibrrProject/active/mibrr/"
+
+                                        #system(
+                                        #    paste0("rm ", softDir, "source/mibrr/src/RcppExports.cpp\n",
+                                        #           "rm ", softDir, "source/mibrr/R/RcppExports.R\n",
+                                        #           "rm ", softDir, "source/mibrr/src/*.o\n",
+                                        #           "rm ", softDir, "source/mibrr/src/*.so\n")
+                                        #)
+                                        #Rcpp::compileAttributes(paste0(softDir, "source/mibrr"))
+                                        #install.packages(paste0(softDir, "source/mibrr"),
+                                        #                 repos = NULL,
+                                        #                 type  = "source")
 
 library(mibrr)
 library(mitools)
@@ -22,33 +29,93 @@ library(glmnet)
 library(parallel)
 
 ## Test BEN and BL:
-nReps          <- 500
-alpha          <- 50
-nPreds         <- 10
+outDir <- "../output/"
+alpha  <- 50
+nPreds <- 40
 
 parms                 <- list()
-parms$nObs            <- 1000
+parms$nObs            <- 50
 parms$nPreds          <- nPreds
-parms$r2              <- 0.5
-parms$collin          <- 0.3
+parms$r2              <- 0.2
+parms$collin          <- 0.5
 parms$beta            <- matrix(
-    c(alpha, runif(ceiling(nPreds / 2), -5, 5), rep(0, floor(nPreds / 2)))
+                                        #c(alpha, runif(ceiling(nPreds / 2), 5, 10), rep(0, floor(nPreds / 2)))
+                                        #c(alpha, runif(nPreds, 5, 10))
+    c(alpha, rep(0.3, nPreds))
 )
-parms$means           <- runif(nPreds, -10, 10)
-parms$scales          <- runif(nPreds, 1, 50)
+parms$means           <- rep(0, nPreds) #runif(nPreds, -10, 10)
+parms$scales          <- rep(1, nPreds) #runif(nPreds, 1, 50)
 parms$simpleInt       <- FALSE
 parms$verbose         <- FALSE
 parms$adaptScales     <- TRUE
-parms$iterations      <- c(500, 25)
+parms$iterations      <- c(1000, 100)
+parms$sampleSizes     <- c(50, 100, 1000)
 parms$latentStructure <- FALSE
 parms$itemsPerFactor  <- 4
-parms$itemReliability <- 0.8
+                                        #parms$itemReliability <- 1.0
 parms$twoPhaseOpt     <- TRUE
 parms$center          <- TRUE
 parms$scale           <- TRUE
+parms$relRange        <- c(0.5, 0.75)
+
+simulateData2 <- function(nObs,
+                          nPreds,
+                          r2,
+                          collin,
+                          beta,
+                          means           = 0,
+                          scales          = 1,
+                          latentStructure = FALSE,
+                          itemsPerFactor  = 1,
+                                        #itemReliability = NULL,
+                          relRange        = c(0.5, 0.75))
+{
+    if(length(means) == 1) means <- rep(means, nPreds)
+    
+    w1 <- matrix(scales, nPreds, nPreds)
+    w2 <- matrix(scales, nPreds, nPreds, byrow = TRUE)
+    
+    maxCov <- w1*w2
+    
+    sigma <- maxCov * collin
+    diag(sigma) <- scales^2
+    
+    X <- cbind(1, rmvnorm(nObs, means, sigma))
+
+    eta <- X %*% beta
+    sigmaY <- (var(eta) / r2) - var(eta)
+    y <- eta + rnorm(nObs, 0, sqrt(sigmaY))
+
+    if(latentStructure) {
+        nItems   <- nPreds * itemsPerFactor
+        loadings <- matrix(0, nItems, nPreds)
+        
+        for(m in 1 : nPreds) {
+            for(n in 1 : itemsPerFactor) {
+                offset <- (m - 1) * itemsPerFactor
+                loadings[n + offset, m] <-
+                    sqrt(runif(1, relRange[1], relRange[2]))
+            }
+        }
+                
+        theta <- diag(1 - loadings[loadings != 0]^2)
+    
+        X <- X[ , -1] %*% t(loadings) + rmvnorm(nObs, rep(0, nItems), theta)
+        
+        outDat <- data.frame(y, X)
+        colnames(outDat) <- c("y", paste0("x", c(1 : nItems)))
+    } else {
+        outDat <- data.frame(y, X[ , -1])
+        colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
+    }
+    outDat
+}
+
 
 
 testFun <- function(rp, parms) {
+    print(paste0("Doing replication ", rp))
+    
     nObs            <- parms$nObs
     nPreds          <- parms$nPreds
     r2              <- parms$r2
@@ -58,28 +125,31 @@ testFun <- function(rp, parms) {
     scales          <- parms$scales
     latentStructure <- parms$latentStructure
     itemsPerFactor  <- parms$itemsPerFactor
-    itemReliability <- parms$itemReliability
+                                        #itemReliability <- parms$itemReliability
+    relRange        <- parms$relRange
 
     outList <- list()
-    outList$data <- simulateData(nObs            = nObs,
-                                 nPreds          = nPreds,
-                                 r2              = r2,
-                                 collin          = collin,
-                                 beta            = beta,
-                                 means           = means,
-                                 scales          = scales,
-                                 latentStructure = latentStructure,
-                                 itemsPerFactor  = itemsPerFactor,
-                                 itemReliability = itemReliability)
+    outList$data <- simulateData2(nObs            = nObs,
+                                  nPreds          = nPreds,
+                                  r2              = r2,
+                                  collin          = collin,
+                                  beta            = beta,
+                                  means           = means,
+                                  scales          = scales,
+                                  latentStructure = latentStructure,
+                                  itemsPerFactor  = itemsPerFactor,
+                                        #itemReliability = itemReliability
+                                  relRange        = relRange)
     
     nIVs <- ifelse(latentStructure, nPreds * itemsPerFactor, nPreds)
 
-    outList$ben <- ben(data       = outList$data,
-                       y          = "y",
-                       X          = paste0("x", c(1 : nIVs)),
-                       iterations = parms$iterations,
-                       verbose    = parms$verbose,
-                       control    =
+    outList$ben <- ben(data        = outList$data,
+                       y           = "y",
+                       X           = paste0("x", c(1 : nIVs)),
+                       iterations  = parms$iterations,
+                       sampleSizes = parms$sampleSizes,
+                       verbose     = parms$verbose,
+                       control     =
                            list(center          = parms$center,
                                 scale           = parms$scale,
                                 adaptScales     = parms$adaptScales,
@@ -87,12 +157,13 @@ testFun <- function(rp, parms) {
                                 twoPhaseOpt     = parms$twoPhaseOpt)
                        )
     
-    outList$bl <- bl(data       = outList$data,
-                     y          = "y",
-                     X          = paste0("x", c(1 : nIVs)),
-                     iterations = parms$iterations,
-                     verbose    = parms$verbose,
-                     control    =
+    outList$bl <- bl(data        = outList$data,
+                     y           = "y",
+                     X           = paste0("x", c(1 : nIVs)),
+                     iterations  = parms$iterations,
+                     sampleSizes = parms$sampleSizes,
+                     verbose     = parms$verbose,
+                     control     =
                          list(center          = parms$center,
                               scale           = parms$scale,
                               adaptScales     = parms$adaptScales,
@@ -102,33 +173,116 @@ testFun <- function(rp, parms) {
     testForm <-
         as.formula(paste0("y ~ ", paste0("x", c(1 : nIVs), collapse = " + ")))
 
-    #tmpDat <- as.data.frame(scale(outList$data, scale = FALSE))
+                                        #tmpDat <- as.data.frame(scale(outList$data, scale = FALSE))
     outList$lm <- lm(testForm, data = outList$data)
     outList
 }
 
 
-outList <- mclapply(X        = c(1 : nReps),
+mseFun <- function(x, nReps) {
+    nIVs <- ifelse(parms$latentStructure, parms$nPreds * parms$itemsPerFactor,
+                   parms$nPreds)
+
+    outMat <- matrix(NA, nReps, length(outList[[1]]) - 1)
+    for(rp in 1 : nReps) {
+        testData <- simulateData2(nObs            = parms$nObs,
+                                  nPreds          = parms$nPreds,
+                                  r2              = parms$r2,
+                                  collin          = parms$collin,
+                                  beta            = parms$beta,
+                                  means           = parms$means,
+                                  scales          = parms$scales,
+                                  latentStructure = parms$latentStructure,
+                                  itemsPerFactor  = parms$itemsPerFactor,
+                                        #itemReliability = parms$itemReliability
+                                  relRange        = parms$relRange)
+        
+        newX <- scale(testData[ , paste0("x", c(1 : nIVs))])
+        yMean <- mean(testData$y)
+        
+        nDraws <- length(x$ben$params$y$sigma)
+        
+        benPPD <- predictMibrr(object    = x$ben,
+                               newData   = newX,
+                               targetVar = "y",
+                               nDraws    = nDraws)
+        benPred <- rowMeans(benPPD) + yMean
+        
+        blPPD <- predictMibrr(object    = x$bl,
+                              newData   = newX,
+                              targetVar = "y",
+                              nDraws    = nDraws)
+        blPred <- rowMeans(blPPD) + yMean
+        
+        lmPred    <- predict(x$lm, newdata = testData[ , -1])
+        
+        outMat[rp, ] <- c(mean((benPred   - testData$y)^2),
+                          mean((blPred    - testData$y)^2),
+                          mean((lmPred    - testData$y)^2)
+                          )
+        colnames(outMat) <- c("MIBEN", "MIBL", "MLR")
+    }
+    colMeans(outMat)
+}
+
+
+outList <- testFun(1, parms)
+
+tmp1 <- outList$ben$lambdaHistory$y
+tmp2 <- outList$bl$lambdaHistory$y
+
+par(mfrow = c(1, 3))
+plot(tmp1[ , "lambda1"], type = "l")
+plot(tmp1[ , "lambda2"], type = "l")
+plot(tmp2, type = "l")
+
+outList <- mclapply(X        = c(1 : 100),
                     FUN      = testFun,
                     parms    = parms,
                     mc.cores = 4)
-
-getwd()
-
-saveRDS(outList, "../../predTestOutList.rds")
+saveRDS(outList, paste0(outDir, "predTestOutList19.rds"))
 
 
+                                        #outList <- readRDS(paste0(outDir, "predTestOutList.rds"))
 
 
+mean(benPred)
+mean(blPred)
+mean(lmPred)
+mean(testData$y)
 
+d1 <- density(testData$y)
+d2 <- density(benPred)
+d3 <- density(blPred)
+d4 <- density(lmPred)
 
+var(benPred)
+var(blPred)
+var(lmPred)
+var(testData$y)
 
+yLim <- range(d1$y, d2$y, d3$y, d4$y)
+xLim <- range(d1$x, d2$x, d3$x, d4$x)
 
+par(mfrow = c(1, 1))
+plot(d1, ylim = yLim, xlim = xLim)
+lines(d2, col = "red")
+lines(d3, col = "blue")
+lines(d4, col = "green")
 
+mseFrame <- do.call(rbind, lapply(outList, mseFun, nReps = 50))
 
+colMeans(mseFrame)
+apply(mseFrame, 2, median)
+apply(mseFrame, 2, var)
 
+cor(benPred, testData$y)
+cor(blPred, testData$y)
+cor(lmPred, testData$y)
 
-
+plot(testData$y, benPred)
+plot(testData$y, blPred)
+plot(testData$y, lmPred)
 
 
 
