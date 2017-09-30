@@ -268,6 +268,9 @@ initializeParams <- function(data, nTargets, doBl, control)
     tauStarts   <- betaStarts <- matrix(NA, nPreds, nTargets)
     dvStarts    <- matrix(NA, nRows, nTargets)
 
+    ## NOTE: We don't need to start the intercept. It's initial value will be
+    ##       sampled in the first iteration of the Gibbs sampler.
+    
     ## Populate the starting values for Lambda:
     if(!doBl) {
         options(warn = -1)# Suppress warnings about recycling elements
@@ -353,19 +356,24 @@ padControlList <- function()
         lambda1Starts     = rep(0.5, env$nTargets),
         lambda2Starts     = rep(env$nPreds / 10, env$nTargets),
         usePCStarts       = FALSE,
-        mcemEpsilon       = 1.0e-5,
+                                        #mcemEpsilon       = 1.0e-5,
         smoothingWindow   = 1,
         center            = TRUE,
         scale             = TRUE,
         adaptScales       = TRUE,
         simpleIntercept   = FALSE,
-        twoPhaseOpt       = TRUE,
+                                        #twoPhaseOpt       = TRUE,
         minPredCor        = 0.3,
         miceIters         = 10,
         miceRidge         = 1e-4,
         miceMethod        = "pmm",
         fimlStarts        = FALSE,
-        preserveStructure = TRUE
+        preserveStructure = TRUE,
+        optTraceLevel     = 1,
+        optCheckKkt       = TRUE,
+        optMethod         = "L-BFGS-B",
+        optBoundLambda    = TRUE,
+        optReturnACov     = FALSE
     )
     
     ## Pad the user-provided control list with default values:
@@ -713,6 +721,7 @@ eNetLL <- function(lambdaVec, gibbsState) {
 }# END eNetLL()
 
 
+
 ### The gradient function for the conditional LL of Lambda:
 eNetGrad <- function(lambdaVec, gibbsState)
 {
@@ -727,18 +736,19 @@ eNetGrad <- function(lambdaVec, gibbsState)
     tmp <- l1^2 / (8 * sigmas * l2)
     
     e1 <- mean(
-    (1 / pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5)) *
+    (1 / (pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5))) *
     (1 / (sqrt(tmp) * exp(tmp))) * (1 / sigmas)
     )
     e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
     e3 <- mean(rowSums(taus) / sigmas)
-
+    
     w1 <- l1 / (4 * l2)
     w2 <- l1^2 / (8 * l2^2)
     
     c((p / l1) + (p * w1 * e1) - (w1 * e3),  # dLL / dl1
     (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
 }# END eNetGrad()
+
 
 
 ## Wrapper to allow optimx to run within lapply():
@@ -780,7 +790,7 @@ optWrap <- function(targetIndex,
 optimizeLambda <- function(lambdaMat,
                            gibbsState,
                            printFlag  = TRUE,
-                           returnVCOV = FALSE,
+                           returnACov = FALSE,
                            controlParms)
 {
     optMethod <- controlParms$method
@@ -804,11 +814,11 @@ optimizeLambda <- function(lambdaMat,
                       optGrad    = eNetGrad,
                       optMethod  = optMethod,
                       optLower   = lowBounds,
-                      optHessian = returnVCOV,
+                      optHessian = returnACov,
                       optControl =
                           list(trace     = controlParms$traceLevel,
                                maximize  = TRUE,
-                               kkt       = controlParms$checkKKT,
+                               kkt       = controlParms$checkKkt,
                                follow.on = useSeqOpt),
                       myGibbs    = gibbsState)
     

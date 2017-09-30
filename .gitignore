@@ -59,3 +59,6 @@ testing/results*/
 
 # Auto-save stuff:
 *~
+
+# .rds data files
+*.rds

@@ -148,23 +148,56 @@ mibrr <- function(doBl,
 
         if(i < iterations[1]) {
             ## Conduct the MCEM update of the lambdas:
-            optOut <-
-                optimizeLambda(lambdaMat    = lambdaMat,
-                               gibbsState   = gibbsOut,
-                               controlParms = list(method      = "BFGS",
-                                                   boundLambda = FALSE,
-                                                   showWarns   = TRUE,
-                                                   traceLevel  = 1,
-                                                   checkKKT    = TRUE)
-                               )
+            optOut <- optimizeLambda(lambdaMat    = lambdaMat,
+                                     gibbsState   = gibbsOut,
+                                     printFlag    = verbose,
+                                     returnACov   = control$optReturnACov,
+                                     controlParms = list(
+                                         method      = control$optMethod,
+                                         boundLambda = control$optBoundLambda,
+                                         showWarns   = verbose,
+                                         traceLevel  = control$optTraceLevel,
+                                         checkKkt    = control$optCheckKkt
+                                     )
+                                     )
+
+            if(control$optCheckKkt) {
+                optCols <- 4
+                optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+            } else {
+                optCols <- 2
+                optLabs <- c("lambda1", "lambda2")
+            }
             
+            ## Organize the optimization output:
+            optMat <- matrix(unlist(optOut),
+                             ncol     = optCols,
+                             byrow    = TRUE,
+                             dimnames = list(NULL, optLabs)
+                             )
+            lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
+
+            ## Check optimality conditions:
+            if(control$optCheckKkt) {
+                kkt1Flag <- optMat[ , "kkt1"] == 0
+                kkt2Flag <- optMat[ , "kkt2"] == 0
+                
+                if(any(kkt1Flag))
+                    stop("First KKT optimality condition not satisfied when optimizing Lambda")
+                
+                if(any(kkt2Flag))
+                    stop("Second KKT optimality condition not satisfied when optimizing Lambda")
+            }
+                        
             ## Update parameter starting values:
-            betaStarts  <- colMeans(gibbsOut$betaSams)
-            sigmaStarts <- mean(gibbsOut$sigmaSams)
-            tauStarts   <- colMeans(gibbsOut$tauStarts)
+            for(j in 1 : nTargets) {
+                betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
+                sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)
+                tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
+            }
         }
     }# END for(i in 1 : emIters)
-    
+
     ## Give some nicer names:
     names(gibbsOut) <- targetVars
 

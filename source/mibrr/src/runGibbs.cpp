@@ -78,10 +78,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
     mibrrGibbs[j].setNDraws(totalIters - burnIters);
     
     if(!verbose)        mibrrGibbs[j].beQuiet(); 
-    if(simpleIntercept) mibrrGibbs[j].useSimpleInt();
-
-    Rcpp::Rcout << mibrrGibbs[j].getNDraws() << endl;
-    
+    if(simpleIntercept) mibrrGibbs[j].useSimpleInt();   
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
   for(int i = 0; i < totalIters; i++) {// LOOP over Gibbs iterations
@@ -97,12 +94,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       // Start saving iterations after burn-in:
-
-      //Rcpp::Rcout << "I made it to CP1" << endl;
-      
       if ((i + 1) == burnIters) mibrrGibbs[j].startGibbsSampling(mibrrData);
-
-      //Rcpp::Rcout << "I made it to CP2" << endl;
     }
     
     if(adaptScales) mibrrData.computeDataScales();

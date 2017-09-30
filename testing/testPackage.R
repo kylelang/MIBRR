@@ -30,13 +30,159 @@ out1 <- mibrr(doBl           = FALSE,
               nImps          = 5,
               targetVars     = c("y", paste0("x", c(1 : 3))),
               ignoreVars     = "idNum",
-              iterations     = c(5, 400, 1000),
+              iterations     = c(5, 500, 1000),
               missCode       = -99999,
               returnConvInfo = TRUE,
               returnParams   = TRUE,
               verbose        = TRUE,
               seed           = 235711)
 
+optOut <- readRDS("optOut.rds")
+
+do.call(rbind, optOut)
+
+control <- list(optCheckKkt = TRUE)
+
+
+lapply(optOut, function(x) 
+
+##### DEGUB OPTIMIZATION #####
+
+### The conditional loglikelihood function of Lambda for use during the
+### empirical bayes updating.
+eNetLL <- function(lambdaVec, gibbsState) {
+    l1 <- lambdaVec[1]
+    l2 <- lambdaVec[2]
+    
+    taus   <- gibbsState$tau
+    sigmas <- gibbsState$sigma
+    betas  <- gibbsState$beta
+    
+    p <- ncol(taus)
+    
+    e1 <- mean(
+        log(pgamma(l1^2 / (8 * sigmas * l2), 0.5, lower = FALSE) * gamma(0.5))
+    )
+    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
+    e3 <- mean(rowSums(taus) / sigmas)
+    
+    p * log(l1) - p * e1 - (l2 / 2) * e2 - (l1^2 / (8 * l2)) * e3 # LL
+}# END eNetLL()
+
+
+### The gradient function for the conditional LL of Lambda:
+eNetGrad <- function(lambdaVec, gibbsState)
+{
+    l1 <- lambdaVec[1]
+    l2 <- lambdaVec[2]
+
+    taus   <- gibbsState$tau
+    sigmas <- gibbsState$sigma
+    betas  <- gibbsState$beta
+    
+    p   <- ncol(taus)
+    tmp <- l1^2 / (8 * sigmas * l2)
+    
+    e1 <- mean(
+    (1 / (pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5))) *
+    (1 / (sqrt(tmp) * exp(tmp))) * (1 / sigmas)
+    )
+    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
+    e3 <- mean(rowSums(taus) / sigmas)
+
+    w1 <- l1 / (4 * l2)
+    w2 <- l1^2 / (8 * l2^2)
+    
+    c((p / l1) + (p * w1 * e1) - (w1 * e3),  # dLL / dl1
+    (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
+}# END eNetGrad()
+
+
+## Wrapper to allow optimx to run within lapply():
+optWrap <- function(targetIndex,
+                    lambdaMat,
+                    optFun,
+                    optGrad,
+                    optMethod,
+                    optLower,
+                    optHessian,
+                    optControl,
+                    myGibbs)
+{
+    optOut <- optimx(par        = lambdaMat[targetIndex, ],
+                     fn         = optFun,
+                     gr         = optGrad,
+                     method     = optMethod,
+                     lower      = optLower,
+                     hessian    = optHessian,
+                     control    = optControl,
+                     gibbsState = myGibbs[[targetIndex]])
+    
+    if(length(optMethod) > 1) optOut <- optOut[nrow(optOut), ]
+    
+    tmpList <- list()
+    if(optHessian) {
+        hessMat      <- attr(optOut, "details")[ , "nhatend"][[1]]
+        tmpList$vcov <- solve(-hessMat)
+    }
+    
+    if(optControl$kkt) tmpList$kktFlags <- c(optOut$kkt1, optOut$kkt2)
+    
+    tmpList$lambda <- c(optOut[[1]], optOut[[2]])
+    tmpList
+}# END optWrap()
+
+
+## Optimize the penalty parameters via numerical maximization of eNetLL():
+optimizeLambda <- function(lambdaMat,
+                           gibbsState,
+                           printFlag  = TRUE,
+                           returnVCOV = FALSE,
+                           controlParms)
+{
+    optMethod <- controlParms$method
+    useSeqOpt <- length(optMethod) > 1
+    
+    if(controlParms$boundLambda) {
+        lowBounds <- c(0, 0)
+        optMethod <- "L-BFGS-B"
+    } else {
+        lowBounds <- -Inf
+    }
+    
+    options(warn = ifelse(controlParms$showWarns, 0, -1))
+    
+    if(!printFlag) sink("/dev/null")
+    
+    optList <- lapply(c(1 : nrow(lambdaMat)),
+                      FUN        = optWrap,
+                      lambdaMat  = lambdaMat,
+                      optFun     = eNetLL,
+                      optGrad    = eNetGrad,
+                      optMethod  = optMethod,
+                      optLower   = lowBounds,
+                      optHessian = returnVCOV,
+                      optControl =
+                          list(trace     = controlParms$traceLevel,
+                               maximize  = TRUE,
+                               kkt       = controlParms$checkKKT,
+                               follow.on = useSeqOpt),
+                      myGibbs    = gibbsState)
+    
+    if(!printFlag) sink()
+    options(warn = 0)
+    
+    optList
+}# END optimizeLambda()
+
+
+gibbsOut   <- readRDS("gibbsOut3.rds")
+gibbsState <- gibbsOut[[1]]
+
+grad(func = eNetLL, x = c(0.5, 1.5), gibbsState = gibbsState)
+eNetGrad(c(0.5, 1.5), gibbsState)
+
+ls(gibbsOut[[1]])
 
 
 ## Test MVN sampler:
