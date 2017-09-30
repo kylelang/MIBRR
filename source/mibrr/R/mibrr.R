@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-NOV-08
+### Modified: 2017-SEP-30
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -43,7 +43,7 @@ mibrr <- function(doBl,
                   targetVars,
                   ignoreVars,
                   iterations,
-                  sampleSizes,
+                                        #sampleSizes,
                   missCode,
                   returnConvInfo,
                   returnParams,
@@ -81,7 +81,7 @@ mibrr <- function(doBl,
     
     ## Replace missCode entries with NAs
     if(!is.null(missCode)) {
-        userMissCode <- TRUE
+        userMissCode           <- TRUE
         data[data == missCode] <- NA
     } else {
         userMissCode <- FALSE
@@ -125,36 +125,50 @@ mibrr <- function(doBl,
     ## Fill remaining missing data with an integer code:
     if(control$fimlStarts & !noMiss) applyMissCode()
     
-    ## Estimate the MIBEN/MIBL model:
-    gibbsOut <-
-        runGibbs(data            = as.matrix(data),
-                 dataScales      = dataScales,
-                 nTargets        = nTargets,
-                 missList        = missList[c(1 : nTargets)],
-                 respCounts      = respCounts[c(1 : nTargets)],
-                 lambda1Starts   = lambdaMat[ , 1], 
-                 lambda2Starts   = lambdaMat[ , 2],     # Ignored for BL
-                 sigmaStarts     = sigmaStarts,
-                 tauStarts       = tauStarts,
-                 betaStarts      = betaStarts,
-                 nApproxIters    = iterations[1],
-                 nTuneIters      = iterations[2],
-                 nApproxBurn     = control$approxBurn,
-                 nApproxGibbs    = sampleSizes[1],
-                 nTuneBurn       = control$tuneBurn,
-                 nTuneGibbs      = sampleSizes[2],
-                 nPostBurn       = control$postBurn,
-                 nPostGibbs      = sampleSizes[3],
-                 emConvTol       = control$mcemEpsilon, # Ignored for BL
-                 lambdaWindow    = control$smoothingWindow,
-                 verbose         = verbose,
-                 doBl            = doBl,
-                 doImputation    = doImp,
-                 adaptScales     = control$adaptScales,
-                 simpleIntercept = control$simpleIntercept,
-                 twoPhaseOpt     = control$twoPhaseOpt, # Ignored for BL
-                 noMiss          = noMiss)
-   
+    for(i in 1 : iterations[1]) {
+        ## Estimate the MIBEN/MIBL model:
+        gibbsOut <-
+            runGibbs(data            = as.matrix(data),
+                     dataScales      = dataScales,
+                     nTargets        = nTargets,
+                     missList        = missList[c(1 : nTargets)],
+                     respCounts      = respCounts[c(1 : nTargets)],
+                     lambda1         = lambdaMat[ , 1], 
+                     lambda2         = lambdaMat[ , 2],     # Ignored for BL
+                     sigmaStarts     = sigmaStarts,
+                     tauStarts       = tauStarts,
+                     betaStarts      = betaStarts,
+                     burnIters       = iterations[2],
+                     totalIters      = iterations[3],
+                                        #nApproxBurn     = control$approxBurn,
+                                        #nApproxGibbs    = sampleSizes[1],
+                                        #nTuneBurn       = control$tuneBurn,
+                                        #nTuneGibbs      = sampleSizes[2],
+                                        #nPostBurn       = control$postBurn,
+                                        #nPostGibbs      = sampleSizes[3],
+                                        #emConvTol       = control$mcemEpsilon, # Ignored for BL
+                                        #lambdaWindow    = control$smoothingWindow,
+                     verbose         = verbose,
+                     doBl            = doBl,
+                     doImputation    = doImp,
+                     adaptScales     = control$adaptScales,
+                     simpleIntercept = control$simpleIntercept,
+                                        #twoPhaseOpt     = control$twoPhaseOpt, # Ignored for BL
+                     noMiss          = noMiss)
+
+        if(i < iterations[1]) {
+            ## Conduct the MCEM update of the lambdas:
+            optOut <-
+                optimizeLambda(lambdaMat = lambdaMat, gibbsState = gibbsOut)
+
+            ## Update parameter starting values:
+            betaStarts  <- colMeans(gibbsOut$betaSams)
+            sigmaStarts <- mean(gibbsOut$sigmaSams)
+            tauStarts   <- colMeans(gibbsOut$tauStarts)
+        }
+    }# END for(i in 1 : emIters)
+    
+    ## Give some nicer names:
     names(gibbsOut) <- targetVars
 
     ## Uncenter the data:
@@ -165,7 +179,7 @@ mibrr <- function(doBl,
         missFill <- ifelse(userMissCode, userMissCode, NA)
         for(v in colnames(data)) {
             ## Rebase indices as per R's preference :
-            missList[[v]] <- missList[[v]] + 1
+            missList[[v]]          <- missList[[v]] + 1
             data[missList[[v]], v] <- missFill
         }
     }
@@ -179,15 +193,13 @@ mibrr <- function(doBl,
                        critVal     = control$convThresh)
     
     ## Draw imputations from the convergent posterior predictive distribution:
-    if(doImp) {
-        outImps <- getImputedData(gibbsState  = gibbsOut,
-                                  nImps       = nImps,
-                                  data        = data,
-                                  targetMeans = dataMeans[targetVars],
-                                  targetVars  = targetVars,
-                                  missList    = missList)
-    }
-
+    if(doImp) outImps <- getImputedData(gibbsState  = gibbsOut,
+                                        nImps       = nImps,
+                                        data        = data,
+                                        targetMeans = dataMeans[targetVars],
+                                        targetVars  = targetVars,
+                                        missList    = missList)
+    
     ## Provide some pretty names for the output objects:
     nameOutput()
     

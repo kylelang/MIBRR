@@ -1,6 +1,7 @@
 useDynLib(mibrr)
 import(RcppEigen)
 importFrom(Rcpp, evalCpp)
+depends(optimx)
 export(mibl,
        miben,
        mibrrW,

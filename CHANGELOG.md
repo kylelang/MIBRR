@@ -14,6 +14,7 @@ undocumented.
 ## Added
 - *archive* directory to hold frozen source files
 - froze the current *src* directory and stored it as "archive/frozen_src-20170930.tar.gz"
+- froze the current *R* directory adn stored it as "archive/frozen_R-20170930.tar.gz"
 
 ## 0.0.0.9000 - 2017-09-30
 

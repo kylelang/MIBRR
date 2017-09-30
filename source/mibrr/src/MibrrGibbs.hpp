@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2016-NOV-08
+// Modified: 2017-SEP-30
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -64,13 +64,13 @@ public:
   MatrixXd getImpSam() const;
   // @return: (burnt in) Gibbs sample of the DV
 
-  MatrixXd getLambdaHistory() const;
+  //MatrixXd getLambdaHistory() const;
   // @return: estimates of Lambda at each iteration of the MCEM algorithm
 
   int getNDraws() const;
   // @return: current number of retained Gibbs sampling draws
 
-  int getNEmIters() const;
+  //int getNEmIters() const;
   // @return: number of MCEM iterations requested
 
   bool getVerbosity() const;
@@ -108,7 +108,7 @@ public:
   void setSigma(double);
   // @param: new residual variance of the elastic net model
 
-  void setNEmIters(int);
+  //void setNEmIters(int);
   // @param: new value for the number of MCEM iterations
 
   void setTargetIndex(int);
@@ -140,7 +140,7 @@ public:
   void setLambdas(double);
   // @param1: new value for the LASSO lambda
 
-  void setLambdas();
+  //void setLambdas();
   // @effect: set lambdas to the average of their values within _lambdaWindow
 
   void startParameters(VectorXd&, ArrayXd&, double, double, double);
@@ -158,7 +158,7 @@ public:
   // @param4: starting value for Lambda
   // @effect: provide starting values for all model parameters
 
-  void setupOptimizer(int, int, double, bool);
+  //void setupOptimizer(int, int, double, bool);
   // @param1: number of MCEM iterations
   // @param2: number of iterations in the smoothing window
   // @param3: convergence criterion for the optimization methods
@@ -225,19 +225,22 @@ public:
 
   //////////////////////// MCEM OPTIMIZATION FUNCTIONS //////////////////////////
 
-
-  double lambdaObjective(const std::vector<double>&,
-			 std::vector<double>&, void*);
+  //// Beginning with Version 0.0.0.9001, the MCEM steps have been moved back to
+  //// the R layer because installing NLopt has proven to be too much of a
+  //// portability issue.
+  
+  //double lambdaObjective(const std::vector<double>&,
+  //			 std::vector<double>&, void*);
   // @param1: starting values for Lambda
   // @param2: starting values for Lambda's gradient
   // @param3: pointer to additional data
   // @return: the BEN penalty parameters' evaluated EM objective function 
 
-  void optimizeMibenLambdas(const bool);
+  //void optimizeMibenLambdas(const bool);
   // @param:  are pre-optimizing (true) or fully optimizing (false) Lambda?
   // @effect: numerically optimize the MIBEN penalty parameters
 
-  void updateLambdas();
+  //void updateLambdas();
   // @effect: update the BEN or LASSO penalty parameters using marginal,
   //          numerical/deterministic optimization.
 
@@ -253,10 +256,10 @@ public:
   // @param:  orignial exception object
   // @effect: dispatch an appropriate error message to stderr
 
-  void lambdaError() const;
+  //void lambdaError() const;
   // @effect: dispatch an appropriate error message to stderr
 
-  void lambdaError(exception&) const;
+  //void lambdaError(exception&) const;
   // @param1: exception thrown by nlopt
   // @effect: dispatch an appropriate error message to stderr
   
@@ -269,24 +272,24 @@ private:
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;
   MatrixXd _impSam;
-  MatrixXd _lambdaHistory;
-  double   _emConvTol;
+  //MatrixXd _lambdaHistory;
+  //double   _emConvTol;
   int      _targetIndex;
   int      _nDraws;
   int      _drawNum;
-  int      _nEmIters;
-  int      _emIterNum;
-  int      _optIterCount;
-  int      _lambdaWindow;
+  //int      _nEmIters;
+  //int      _emIterNum;
+  //int      _optIterCount;
+  //int      _lambdaWindow;
   bool     _verbose;
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _simpleIntercept;
-  bool     _twoPhaseOpt;
-  string   _optPrefix;
-  string   _algName;
-  int      _optMethod;
+  //bool     _twoPhaseOpt;
+  //string   _optPrefix;
+  //string   _algName;
+  //int      _optMethod;
 };
 
 #endif
