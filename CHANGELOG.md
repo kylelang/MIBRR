@@ -14,6 +14,7 @@ undocumented.
 ### Changed
 - Adopted semantic versioning scheme
 - Reset version number
+- Cleaned up/restructured the project directory
 
 ### Added
 - This changelog file (CHANGELOG.md).
