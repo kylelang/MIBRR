@@ -6,8 +6,7 @@
 
 rm(list = ls(all = TRUE))
 
-#install.packages(c("statmod", "MCMCpack"),
-#                 repos = "http://rweb.quant.ku.edu/cran")
+install.packages(c("optimx"), repos = "http://cloud.r-project.org")
 
 library(RcppEigen)
 

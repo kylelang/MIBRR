@@ -6,7 +6,7 @@
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //
@@ -35,13 +35,13 @@ using namespace Eigen;
 class MibrrGibbs {
 
 public:
-  ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
-
+  //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
+  
   MibrrGibbs();
-
+  
   ~MibrrGibbs();
-
-  //////////////////////////////// ACCESSORS //////////////////////////////////////
+  
+  /////////////////////////////// ACCESSORS /////////////////////////////////////
 
   VectorXd getBetas() const;
   // @return: regression coefficients (and intercept) for the elastic net model
@@ -64,14 +64,8 @@ public:
   MatrixXd getImpSam() const;
   // @return: (burnt in) Gibbs sample of the DV
 
-  //MatrixXd getLambdaHistory() const;
-  // @return: estimates of Lambda at each iteration of the MCEM algorithm
-
   int getNDraws() const;
   // @return: current number of retained Gibbs sampling draws
-
-  //int getNEmIters() const;
-  // @return: number of MCEM iterations requested
 
   bool getVerbosity() const;
   // @return: flag indicating if printed output is currently verbose
@@ -108,9 +102,6 @@ public:
   void setSigma(double);
   // @param: new residual variance of the elastic net model
 
-  //void setNEmIters(int);
-  // @param: new value for the number of MCEM iterations
-
   void setTargetIndex(int);
   // @param: new value for the target variable's column index
 
@@ -140,9 +131,6 @@ public:
   void setLambdas(double);
   // @param1: new value for the LASSO lambda
 
-  //void setLambdas();
-  // @effect: set lambdas to the average of their values within _lambdaWindow
-
   void startParameters(VectorXd&, ArrayXd&, double, double, double);
   // @param1: starting values for beta
   // @param2: starting values for tau
@@ -158,20 +146,8 @@ public:
   // @param4: starting value for Lambda
   // @effect: provide starting values for all model parameters
 
-  //void setupOptimizer(int, int, double, bool);
-  // @param1: number of MCEM iterations
-  // @param2: number of iterations in the smoothing window
-  // @param3: convergence criterion for the optimization methods
-  // @param4: logical switch for two-phase optimization for MIBEN's lambdas
-  // @effect: parameterize the optimizers used to estimate Lambda
-
   void startGibbsSampling(const MibrrData&);
   // @effect: start storing the parameters' Gibbs sampled values
-
-  void restartParameters(MibrrData&);
-  // @param:  an initialized MibrrData object
-  // @effect: restart all model parameters at the posterior means of their
-  //          respective Gibbs samples
 
 
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
@@ -228,23 +204,7 @@ public:
   //// Beginning with Version 0.0.0.9001, the MCEM steps have been moved back to
   //// the R layer because installing NLopt has proven to be too much of a
   //// portability issue.
-  
-  //double lambdaObjective(const std::vector<double>&,
-  //			 std::vector<double>&, void*);
-  // @param1: starting values for Lambda
-  // @param2: starting values for Lambda's gradient
-  // @param3: pointer to additional data
-  // @return: the BEN penalty parameters' evaluated EM objective function 
-
-  //void optimizeMibenLambdas(const bool);
-  // @param:  are pre-optimizing (true) or fully optimizing (false) Lambda?
-  // @effect: numerically optimize the MIBEN penalty parameters
-
-  //void updateLambdas();
-  // @effect: update the BEN or LASSO penalty parameters using marginal,
-  //          numerical/deterministic optimization.
-
-  
+    
   //////////////////////// EXCEPTION HANDLING FUNCTIONS /////////////////////////
 
   
@@ -255,14 +215,7 @@ public:
   void betaError(exception&) const;
   // @param:  orignial exception object
   // @effect: dispatch an appropriate error message to stderr
-
-  //void lambdaError() const;
-  // @effect: dispatch an appropriate error message to stderr
-
-  //void lambdaError(exception&) const;
-  // @param1: exception thrown by nlopt
-  // @effect: dispatch an appropriate error message to stderr
-  
+ 
 private:
   VectorXd _betas;
   ArrayXd  _taus;
@@ -272,24 +225,14 @@ private:
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;
   MatrixXd _impSam;
-  //MatrixXd _lambdaHistory;
-  //double   _emConvTol;
   int      _targetIndex;
   int      _nDraws;
   int      _drawNum;
-  //int      _nEmIters;
-  //int      _emIterNum;
-  //int      _optIterCount;
-  //int      _lambdaWindow;
   bool     _verbose;
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _simpleIntercept;
-  //bool     _twoPhaseOpt;
-  //string   _optPrefix;
-  //string   _algName;
-  //int      _optMethod;
 };
 
 #endif

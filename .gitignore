@@ -52,7 +52,10 @@ vignettes/*.pdf
 .httr-oauth
 
 # Package checking results
-quark.Rcheck
+*.Rcheck
 
 # Testing results:
 testing/results*/
+
+# Auto-save stuff:
+*~

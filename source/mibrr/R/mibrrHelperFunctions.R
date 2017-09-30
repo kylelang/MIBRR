@@ -403,9 +403,7 @@ checkInputs <- function() {
         if(env$doImp) {
             targetCandidates <-
                 colnames(env$data)[!colnames(env$data) %in% env$ignoreVars]
-            warning("You did not specify any target variables, so I will impute \
-the missing data on\nevery variable in 'data' that is not listed in \
-'ignoreVars'.\n")        
+            warning("You did not specify any target variables, so I will impute the missing data on\nevery variable in 'data' that is not listed in 'ignoreVars'.\n")        
         } else {
             stop("Please specify a DV.")
         }
@@ -416,44 +414,37 @@ the missing data on\nevery variable in 'data' that is not listed in \
     ## Make sure 'data' contains missing data that we can find:
     if(env$doImp) {
         if(is.null(env$missCode)) {
-            if(length(targetCandidates) > 1) {
-                completeTargets <-
-                    colMeans(is.na(env$data[ , targetCandidates])) == 0
-            } else {
-                completeTargets <-
-                    mean(is.na(env$data[ , targetCandidates])) == 0
-            }
-            if(all(completeTargets)) {
-                stop("Your target variables appear to be fully observed. Did \
-you forget to provide a\nvalue for 'missCode'?\n")
-            }
+            rMat <- is.na(env$dat)
         } else {
             rMat <- env$data == env$missCode
-            if(!any(rMat, na.rm = TRUE)) {
+            
+            if(!any(rMat, na.rm = TRUE))
                 stop(paste0("The value you provided for 'missCode' (i.e., ",
                             env$missCode,
-                            ") does not appear anywhere in 'data'.\n",
-                            "Are you sure that ",
+                            ") does not appear anywhere in 'data'.\nAre you sure that ",
                             env$missCode,
                             " encodes your missing data?\n")
                      )
-            } else {
-                env$data[rMat] <- NA
-            }
         }
+        
+        if(length(targetCandidates) > 1) 
+            completeTargets <- colMeans(rMat[ , targetCandidates]) == 0
+        else 
+            completeTargets <- mean(rMat[ , targetCandidates]) == 0
+        
+        if(all(completeTargets)) 
+            stop("Your target variables appear to be fully observed. Did you forget to provide a\nvalue for 'missCode'?\n")
     }
     
     ## Select the final set of target variables:
     if(env$doImp) {
         env$targetVars <- targetCandidates[!completeTargets]
-        if(any(completeTargets)) {
-            warning(paste0("The potential target variables {",
-                           paste(targetCandidates[completeTargets],
-                                 collapse = ", "),
-                           "} are fully observed.\n",
-                           "These items will not be imputed.\n")
-                    )
-        }
+        if(any(completeTargets))
+            warning(
+                paste0("The potential target variables {",
+                       paste(targetCandidates[completeTargets], collapse = ", "),
+                       "} are fully observed.\nThese items will not be imputed.\n")
+            )
     }
 }# END checkInputs()
 
@@ -700,8 +691,8 @@ simulateData <- function(nObs,
 ##### OPTIMIZATION FUNCTIONS #####
 
 
-### The conditional loglikelihood function of Lambda
-### for use during the empirical bayes updating.
+### The conditional loglikelihood function of Lambda for use during the
+### empirical bayes updating.
 eNetLL <- function(lambdaVec, gibbsState) {
     l1 <- lambdaVec[1]
     l2 <- lambdaVec[2]
@@ -710,19 +701,16 @@ eNetLL <- function(lambdaVec, gibbsState) {
     sigmas <- gibbsState$sigma
     betas  <- gibbsState$beta
     
-    nPreds <- ncol(taus)
+    p <- ncol(taus)
     
-    w1 <- nPreds * log(l1)
-    w2 <- l2 / (2 * sigmas)
-    w3 <- l1^2 / (8 * sigmas * l2)
+    e1 <- mean(
+        log(pgamma(l1^2 / (8 * sigmas * l2), 0.5, lower = FALSE) * gamma(0.5))
+    )
+    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
+    e3 <- mean(rowSums(taus) / sigmas)
     
-    term1 <- log( pgamma(weight3, 0.5, lower = FALSE) * gamma(0.5) )
-    
-    term2 <- rowSums( ( taus / (taus - 1) ) * betas[ , -1]^2 )
-    
-    mean(w1 - nPreds * term1 - w2 * term2 - w3 * rowSums(taus))
-}# END eNetCondLL()
-
+    p * log(l1) - p * e1 - (l2 / 2) * e2 - (l1^2 / (8 * l2)) * e3 # LL
+}# END eNetLL()
 
 
 ### The gradient function for the conditional LL of Lambda:
@@ -735,30 +723,60 @@ eNetGrad <- function(lambdaVec, gibbsState)
     sigmas <- gibbsState$sigma
     betas  <- gibbsState$beta
     
-    nPreds <- ncol(taus)
+    p   <- ncol(taus)
+    tmp <- l1^2 / (8 * sigmas * l2)
     
-    w11 <- nPreds / l1
-    w12 <- (nPreds * l1) / (4.0 * l2)
-    w13 <- l1 / (4.0 * sigmas * l2)
-    w21 <- (nPreds * l1^2) / (8.0 * l2^2)
-    w22 <- 1 / (2 * sigmas)
-    w23 <- l1^2 / (8.0 * sigmas * l2^2)
+    e1 <- mean(
+    (1 / pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5)) *
+    (1 / (sqrt(tmp) * exp(tmp))) * (1 / sigmas)
+    )
+    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
+    e3 <- mean(rowSums(taus) / sigmas)
+
+    w1 <- l1 / (4 * l2)
+    w2 <- l1^2 / (8 * l2^2)
     
-    tmp <- l1^2 / (8.0 * sigmas * l2)
-    
-    term1 <- (1 / (pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5))) *
-        (1 / sqrt(tmp)) * exp(-tmp) * (1 / sigmas)
-    
-    term2 <- rowSums((taus / (taus - 1)) * betas[ , -1]^2)
-    
-    c(mean(w11 + (w12 * term1) - (w13 * rowSums(taus))),
-      mean(-(w21 * term1) - (w22 * term2) + (w23 * rowSums(taus)))
-      )
+    c((p / l1) + (p * w1 * e1) - (w1 * e3),  # dLL / dl1
+    (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
 }# END eNetGrad()
 
 
-## Optimize the penalty parameters via numerical
-## maximization of eNetCondLL():
+## Wrapper to allow optimx to run within lapply():
+optWrap <- function(targetIndex,
+                    lambdaMat,
+                    optFun,
+                    optGrad,
+                    optMethod,
+                    optLower,
+                    optHessian,
+                    optControl,
+                    myGibbs)
+{
+    optOut <- optimx(par        = lambdaMat[targetIndex, ],
+                     fn         = optFun,
+                     gr         = optGrad,
+                     method     = optMethod,
+                     lower      = optLower,
+                     hessian    = optHessian,
+                     control    = optControl,
+                     gibbsState = myGibbs[[targetIndex]])
+    
+    if(length(optMethod) > 1) optOut <- optOut[nrow(optOut), ]
+    
+    tmpList <- list()
+    if(optHessian) {
+        hessMat      <- attr(optOut, "details")[ , "nhatend"][[1]]
+        tmpList$vcov <- solve(-hessMat)
+    }
+    
+    if(optControl$kkt) tmpList$kktFlags <- c(optOut$kkt1, optOut$kkt2)
+    
+    tmpList$lambda <- c(optOut[[1]], optOut[[2]])
+    tmpList
+}# END optWrap()
+
+
+## Optimize the penalty parameters via numerical maximization of eNetLL():
 optimizeLambda <- function(lambdaMat,
                            gibbsState,
                            printFlag  = TRUE,
@@ -766,55 +784,19 @@ optimizeLambda <- function(lambdaMat,
                            controlParms)
 {
     optMethod <- controlParms$method
-    useSeqOpt <- controlParms$useSeqOpt
-
+    useSeqOpt <- length(optMethod) > 1
+    
     if(controlParms$boundLambda) {
         lowBounds <- c(0, 0)
         optMethod <- "L-BFGS-B"
     } else {
         lowBounds <- -Inf
     }
-
-    useSeqOpt <- ifelse(length(optMethod) > 1, useSeqOpt, FALSE)
-
+    
     options(warn = ifelse(controlParms$showWarns, 0, -1))
-
+    
     if(!printFlag) sink("/dev/null")
-
-    ## Wrapper to allow optimx to run within lapply():
-    optWrap <- function(targetIndex,
-                        lambdaMat,
-                        optFun,
-                        optGrad,
-                        optMethod,
-                        optLower,
-                        optHessian,
-                        optControl,
-                        myGibbs)
-        {
-            optOut <- optimx(par        = lambdaMat[targetIndex, ],
-                             fn         = optFun,
-                             gr         = optGrad,
-                             method     = optMethod,
-                             lower      = optLower,
-                             hessian    = optHessian,
-                             control    = optControl,
-                             gibbsState = myGibbs[[targetIndex]])
-
-            if(length(optMethod) > 1) optOut <- optOut[nrow(optOut), ]
-            
-            tmpList <- list()
-            if(optHessian) {
-                hessMat      <- attr(optOut, "details")[ , "nhatend"][[1]]
-                tmpList$vcov <- solve(-hessMat)
-            }
-            
-            if(optControl$kkt) tmpList$kktFlags <- c(optOut$kkt1, optOut$kkt2)
-                       
-            tmpList$lambda <- c(optOut[[1]], optOut[[2]])
-            tmpList
-        }
-
+    
     optList <- lapply(c(1 : nrow(lambdaMat)),
                       FUN        = optWrap,
                       lambdaMat  = lambdaMat,

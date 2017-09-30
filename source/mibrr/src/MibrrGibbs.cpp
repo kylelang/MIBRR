@@ -6,7 +6,7 @@
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //
@@ -30,18 +30,13 @@
   
 MibrrGibbs::MibrrGibbs() 
 {
-  // _beta, _tau, _nEmIters, and _nDraws need user-supplied starting values
+  // _beta, _tau, and _nDraws need user-supplied starting values
   _sigma             = 0.0;
   _lambdas           = VectorXd(2);
-  //_emConvTol         = 1.0e-5;
-  //_lambdaWindow      = 1;
   _drawNum           = 0;
-  //_emIterNum         = 0;
-  //_optIterCount      = 0;
   _storeGibbsSamples = false;
   _verbose           = true;
   _useElasticNet     = true;
-  //_twoPhaseOpt       = true;
 }
 
 
@@ -56,12 +51,10 @@ MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;              
 ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;               }
 VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;             }
 MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;               }
-MatrixXd MibrrGibbs::getLambdaHistory()   const { return _lambdaHistory;        }
 int      MibrrGibbs::getNDraws()          const { return _nDraws;               }
-//int      MibrrGibbs::getNEmIters()        const { return _nEmIters;             }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
-bool     MibrrGibbs::getDoImp()           const { return _doImp       ;         }
+bool     MibrrGibbs::getDoImp()           const { return _doImp;                }
 bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;      }
 
 
@@ -86,7 +79,6 @@ double MibrrGibbs::getLambdas(int index) const
 void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas = betas;            }
 void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus = taus;              }
 void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;            }
-//void MibrrGibbs::setNEmIters   (int nEmIters)      { _nEmIters = nEmIters;      }
 void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;      }
 void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;          }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;            }
@@ -110,18 +102,6 @@ void MibrrGibbs::setLambdas(double lambda)
 }
 
 
-//void MibrrGibbs::setLambdas() 
-//{  
-//  int      startRow      = _emIterNum - _lambdaWindow;
-//  int      nCols         = _useElasticNet ? 2 : 1;
-//  VectorXd pooledLambdas = 
-//    _lambdaHistory.block(startRow, 0, _lambdaWindow, nCols).colwise().mean();
-//
-//  if(_useElasticNet) _lambdas = pooledLambdas.transpose();
-//  else               _lambdas[0] = pooledLambdas[0];
-//}
-
-
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 ArrayXd  &tauStarts,
 				 double   sigmaStart,
@@ -133,8 +113,6 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _sigma         = sigmaStart;
   _lambdas[0]    = lambda1Start;
   _lambdas[1]    = lambda2Start;
-  //int lamNum     = _useElasticNet ? 2 : 1;
-  //_lambdaHistory = MatrixXd(_nEmIters, lamNum);
 }
 
 
@@ -147,21 +125,7 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _taus          = tauStarts;
   _sigma         = sigmaStart;
   _lambdas       = lambdaStartVec;
-  //int lamNum     = _useElasticNet ? 2 : 1;
-  //_lambdaHistory = MatrixXd(_nEmIters, lamNum);
 }
-
-
-//void MibrrGibbs::setupOptimizer(int    nEmIters,
-//				int    lambdaWindow,
-//				double emConvTol,
-//				bool   twoPhaseOpt)
-//{
-//  _emConvTol    = emConvTol;
-//  _nEmIters     = nEmIters;
-//  _lambdaWindow = lambdaWindow;
-//  _twoPhaseOpt  = twoPhaseOpt;
-//}
 
 
 void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
@@ -179,19 +143,6 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   _sigmaSam = VectorXd(_nDraws);
   
   _storeGibbsSamples = true;
-}
-
-
-void MibrrGibbs::restartParameters(MibrrData &mibrrData)
-{
-  _betas = _betaSam.bottomRows(_betaSam.rows() - 1).colwise().mean().transpose();
-  _taus  = _tauSam.bottomRows(_tauSam.rows() - 1).colwise().mean().transpose();
-  _sigma = _sigmaSam.tail(_sigmaSam.size() - 1).mean();
-
-  if(_doImp) {
-    VectorXd meanImps = _impSam.bottomRows(_impSam.rows() - 1).colwise().mean();
-    mibrrData.fillMissing(meanImps, _targetIndex);
-  }
 }
 
 
@@ -435,220 +386,16 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {  
-  updateTaus       (mibrrData);
-  updateBetas      (mibrrData);
-  updateSigma      (mibrrData);
+  updateTaus (mibrrData);
+  updateBetas(mibrrData);
+  updateSigma(mibrrData);
   if(_doImp) updateImputations(mibrrData);
   
   if(_storeGibbsSamples) _drawNum++;
 }// END doGibbsIteration()
 
 
-
-//double MibrrGibbs::lambdaObjective(const std::vector<double> &lambdas,
-//				   std::vector<double>       &grad,
-//				   void                      *extras)
-//{
-//  // Check for finite, well-defined lambda values:
-//  bool nanLam1 = std::isnan(lambdas[0]) | lambdas[0] != lambdas[0];
-//  bool nanLam2 = std::isnan(lambdas[1]) | lambdas[1] != lambdas[1];
-//  
-//  if(nanLam1 & nanLam2) 
-//    throw invalid_argument("Both elastic net penalty parameters are NaN.");  
-//  else if(nanLam1) 
-//    throw invalid_argument("The LASSO penalty parameter is NaN.");  
-//  else if(nanLam2) 
-//    throw invalid_argument("The ridge penalty parameter is NaN.");  
-//  
-//  _optIterCount++; // Track the number of function evaluations
-//  
-//  int nPreds = _tauSam.cols();
-// int nSams  = _tauSam.rows();
-//
-//  // BEGIN compute LL and gradient terms.
-//  ArrayXd tmpArray = 2.0 * _sigmaSam;
-//  double  w1       = nPreds * log(lambdas[0]);
-//  ArrayXd w2       = lambdas[1] / tmpArray;
-//  ArrayXd w3       = 1 / tmpArray;
-//  
-//  tmpArray   = 8.0 * _sigmaSam * lambdas[1];
-//  ArrayXd w4 = pow(lambdas[0], 2) / tmpArray;
-//  double  w5 = nPreds / lambdas[0];
-//  double  w6 = (nPreds * lambdas[0]) / (4.0 * lambdas[1]);
-//  
-//  tmpArray   = 4.0 * _sigmaSam * lambdas[1];
-//  ArrayXd w7 = lambdas[0] / tmpArray;
-//  double  w8 = (nPreds * pow(lambdas[0], 2)) / (8.0 * pow(lambdas[1], 2));
-//  
-//  tmpArray   = 8.0 * _sigmaSam * pow(lambdas[1], 2);
-//  ArrayXd w9 = pow(lambdas[0], 2) / tmpArray;
-//  
-//  ArrayXd igArray(nSams); 
-//  for(int i = 0; i < nSams; i++)
-//    igArray[i] = calcIncGamma(0.5, w4[i], false);
-//  
-//  ArrayXd term1 = igArray.log();
-//  ArrayXd term2 =
-//    ((_tauSam / (_tauSam - 1)) *
-//     _betaSam.rightCols(nPreds).array().square()).rowwise().sum();
-//  // END compute LL and gradient terms.
-//  
-//  if(!grad.empty()) {// Calculate the gradient vector:
-//    ArrayXd term3 = (1 / igArray) * (1 / w4.sqrt()) * (-1.0 * w4).exp() *
-//      (1 / _sigmaSam.array());
-//    grad[0] = (w5 + (w6 * term3) - w7 * _tauSam.rowwise().sum()).mean();
-//    grad[1] =
-//      (-1.0 * (w8 * term3) - (w3 * term2) + w9 * _tauSam.rowwise().sum()).mean();
-//  }
-//  
-//  // Return the objective value:
-//  return (w1 - (nPreds * term1) - (w2 * term2) -
-//	  (w4 * _tauSam.rowwise().sum())).mean();
-//}// END lambdaObjective()
-
-
-
-//// As suggested by the nlopt authors, specify a simple  wrapper function for
-//// lambdaObjective() so that nlopt will run inside the MibrrGibbs class:
-//double objectiveWrap(const std::vector<double> &lambdas, 
-//		     std::vector<double>       &grad, 
-//		     void                      *extras) 
-//{
-//  MibrrGibbs *obj = static_cast<MibrrGibbs *>(extras);   
-//  return obj -> lambdaObjective(lambdas, grad, extras);
-//}// END objectiveWrap()
-
-
-
-//void MibrrGibbs::optimizeMibenLambdas(const bool preOptimize) 
-//{
-//  string              algName, outPrefix; 
-//  bool                optimized = false;
-//  std::vector<double> lambdas(2), grad(2), lamBounds(2);
-//  nlopt::algorithm    optAlg;
-//  
-//  lambdas[0]   = _lambdas[0];
-//  lambdas[1]   = _lambdas[1];
-//  grad[0]      = 0.0;
-//  grad[1]      = 0.0;
-//  lamBounds[0] = 1.0e-4; // Set low bounds slightly above zero to avoid dividing 
-//  lamBounds[1] = 1.0e-4; // by zero when no regularization is needed.
-//  _optMethod   = 0;
-//  
-//  while(!optimized) {//Try different algorithms until convergence
-//    if(preOptimize) {
-//      _optPrefix = "pre-";
-//      if(_optMethod == 0) {
-//	optAlg   = nlopt::LN_BOBYQA;
-//	_algName = "BOBYQA";
-//      }
-//      else if(_optMethod == 1) {
-//	optAlg   = nlopt::LN_COBYLA;
-//	_algName = "COBYLA";
-//      }
-//      else if(_optMethod == 2) {
-//	optAlg   = nlopt::LN_SBPLX;
-//	_algName = "SBPLX";
-//      }
-//      else if(_optMethod == 3) {
-//	optAlg   = nlopt::LN_PRAXIS;
-//	_algName = "PRAXIS";
-//      }
-//    }
-//    else {
-//      _optPrefix = "";
-//      if(_optMethod == 0) {
-//	optAlg   = nlopt::LD_MMA;
-//	_algName = "MMA";
-//      }
-//     else if(_optMethod == 1) {
-//	optAlg   = nlopt::LD_VAR2;
-//	_algName = "VAR2";
-//      }
-//      else if(_optMethod == 2) {
-//	optAlg   = nlopt::LD_VAR1;
-//	_algName = "VAR1";
-//      }
-//      else if(_optMethod == 3) {
-//	optAlg   = nlopt::LD_LBFGS;
-//	_algName = "LBFGS";
-//      }
-//    }// END if(preOptimize}
-//    
-//    nlopt::opt myOptimizer(optAlg, 2);       // Initialize the optimizer object
-//    myOptimizer.set_max_objective(objectiveWrap, this);
-//    myOptimizer.set_ftol_rel(_emConvTol);    // Stopping criterion
-//    myOptimizer.set_lower_bounds(lamBounds); // Force positive Lambdas	
-//    
-//    double        maxLL = 0.0;
-//    nlopt::result myResult;
-//    try {
-//      myResult = myOptimizer.optimize(lambdas, maxLL);  
-//      if(myResult < 0) {          // Catch nlopt failure codes
-//	_optMethod ++;            // Try the next algorithm
-//	lambdas[0] = _lambdas[0]; // Reset the lambdas
-//	lambdas[1] = _lambdas[1];
-//	lambdaError();
-//     }
-//      else if(myResult > 0) {// Successful convergence!
-//	if(_verbose) {
-//	  cout << "Lambdas " << _optPrefix << "optimized with " << _algName;
-//	  cout << " in " << _optIterCount << " iterations" << endl;
-//	}	
-//	optimized = true;
-//     } 
-//    }
-//    catch(int &e) {
-//      throw e;
-//    }
-//    catch(exception &e) {       // Catch Lambdas == NaN
-//      _optMethod ++;            // Try the next algorithm
-//      lambdas[0] = _lambdas[0]; // Reset the lambdas
-//      lambdas[1] = _lambdas[1]; 
-//      lambdaError(e);
-//    }  
-//    _optIterCount = 0;
-//  }// END while(!optimized)      
-//  // Store the updated penalty parameters:
-//  _lambdas[0]                    = lambdas[0];
-//  _lambdas[1]                    = lambdas[1];
-//  _lambdaHistory.row(_emIterNum) = _lambdas.transpose();
-//}// END optimizeMibenLambdas()
-
-
-
-//void MibrrGibbs::updateLambdas()
-//{
-//  if(_useElasticNet) {// MIBEN version
-//    // For MIBEN, optimization can be done in two stages:
-//    // 1) A rough, gradient-free, pre-optimization is done to move the estimates
-//    //    into the neighborhood of the MLE.
-//    // 2) Gradient-based optimization is used to fine-tune the estimates from
-//    //    Step (1).
-//    if(_twoPhaseOpt) optimizeMibenLambdas(true);  // Pre-optimization
-//    optimizeMibenLambdas(false);                  // Optimization    
-//  }
-//  else {// MIBL version:
-//    int nPreds = _tauSam.cols();
-//    
-//    // For MIBL, optimization is done via the closed-form update rule given by
-//    // Park and Casella (2008).
-//    double lambdaDenom = (_tauSam.colwise().mean()).sum();
-//    double newLambda   = sqrt((2.0 * double(nPreds)) / lambdaDenom); 
-//    _lambdas[0]                   = newLambda;
-//    _lambdaHistory(_emIterNum, 0) = _lambdas[0];
-//  }
-//  
-//  // Do some housekeeping:
-//  _emIterNum++;
-//  _storeGibbsSamples = false;
-//  _drawNum           = 0;
-//}// END updateLambdas()
-
-
-
 ///////////////////////// EXCEPTION HANDLING FUNCTIONS //////////////////////////
-
 
 
 void MibrrGibbs::tauError(int errorCode) const
@@ -673,46 +420,3 @@ void MibrrGibbs::betaError(exception &e) const
   Rcpp::stop("Something terrible has occured while updating Beta.\nAbove this \
 message, I've printed the that exception I caught.\nBeta luck next time.");
 }
-
-
-
-//void MibrrGibbs::lambdaError() const
-//{
-//  if(_optMethod > 3) {
-//    if(_verbose) {
-//      Rcpp::Rcerr << "Lambda " << _optPrefix << "optimization failed with "; 
-//      Rcpp::Rcerr << _algName << ".\nNo further optimization algorithms ";
-//      Rcpp::Rcerr << "are available." << endl;
-//    }
-//    Rcpp::stop("Lambda cannot be optimized.");
-//  }
-//  else {
-//    if(_verbose) {
-//      Rcpp::Rcout << "Lambda " << _optPrefix << "optimization failed with ";
-//      Rcpp::Rcout << _algName << "\nRetrying with a different algorithm" << endl;
-//    }
-//  }
-//}
-
-
-
-//void MibrrGibbs::lambdaError(exception &e) const
-//{
-//  if(_optMethod > 3) {
-//    if(_verbose) {
-//      Rcpp::Rcerr << e.what();
-//      Rcpp::Rcerr << "Lambda " << _optPrefix << "optimization failed with "; 
-//      Rcpp::Rcerr << _algName << ", and returned the preceding exception.\nNo";
-//      Rcpp::Rcerr << "no further optimization algorithms are available." << endl;
-//    }
-//    Rcpp::stop("Lambda cannot be optimized.");
-//  }
-//  else {
-//    if(_verbose) {
-//      cerr << e.what();
-//      Rcpp::Rcout << "Lambda " << _optPrefix << "optimization failed with ";
-//      Rcpp::Rcout << _algName << ", and returned the preceding exception.\n";
-//      Rcpp::Rcout << "Retrying with a different algorithm" << endl;
-//    }
-//  }
-//}

@@ -140,27 +140,24 @@ mibrr <- function(doBl,
                      betaStarts      = betaStarts,
                      burnIters       = iterations[2],
                      totalIters      = iterations[3],
-                                        #nApproxBurn     = control$approxBurn,
-                                        #nApproxGibbs    = sampleSizes[1],
-                                        #nTuneBurn       = control$tuneBurn,
-                                        #nTuneGibbs      = sampleSizes[2],
-                                        #nPostBurn       = control$postBurn,
-                                        #nPostGibbs      = sampleSizes[3],
-                                        #emConvTol       = control$mcemEpsilon, # Ignored for BL
-                                        #lambdaWindow    = control$smoothingWindow,
                      verbose         = verbose,
                      doBl            = doBl,
-                     doImputation    = doImp,
                      adaptScales     = control$adaptScales,
                      simpleIntercept = control$simpleIntercept,
-                                        #twoPhaseOpt     = control$twoPhaseOpt, # Ignored for BL
                      noMiss          = noMiss)
 
         if(i < iterations[1]) {
             ## Conduct the MCEM update of the lambdas:
             optOut <-
-                optimizeLambda(lambdaMat = lambdaMat, gibbsState = gibbsOut)
-
+                optimizeLambda(lambdaMat    = lambdaMat,
+                               gibbsState   = gibbsOut,
+                               controlParms = list(method      = "BFGS",
+                                                   boundLambda = FALSE,
+                                                   showWarns   = TRUE,
+                                                   traceLevel  = 1,
+                                                   checkKKT    = TRUE)
+                               )
+            
             ## Update parameter starting values:
             betaStarts  <- colMeans(gibbsOut$betaSams)
             sigmaStarts <- mean(gibbsOut$sigmaSams)

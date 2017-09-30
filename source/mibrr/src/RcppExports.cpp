@@ -59,8 +59,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnIters, int totalIters, //int nApproxBurn, //int nApproxGibbs, //int nTuneBurn, //int nTuneGibbs, //int nPostBurn, //int nPostGibbs, //int lambdaWindow, //double emConvTol, bool verbose, bool doBl, bool doImputation, bool adaptScales, bool simpleIntercept, //bool twoPhaseOpt, bool noMiss);
-RcppExport SEXP _mibrr_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnItersSEXP, SEXP totalItersSEXP, SEXP nApproxBurnSEXP, SEXP nApproxGibbsSEXP, SEXP nTuneBurnSEXP, SEXP nTuneGibbsSEXP, SEXP nPostBurnSEXP, SEXP nPostGibbsSEXP, SEXP lambdaWindowSEXP, SEXP emConvTolSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP doImputationSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP twoPhaseOptSEXP, SEXP noMissSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnIters, int totalIters, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss);
+RcppExport SEXP _mibrr_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnItersSEXP, SEXP totalItersSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -76,22 +76,12 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type betaStarts(betaStartsSEXP);
     Rcpp::traits::input_parameter< int >::type burnIters(burnItersSEXP);
     Rcpp::traits::input_parameter< int >::type totalIters(totalItersSEXP);
-    Rcpp::traits::input_parameter< //int >::type nApproxBurn(nApproxBurnSEXP);
-    Rcpp::traits::input_parameter< //int >::type nApproxGibbs(nApproxGibbsSEXP);
-    Rcpp::traits::input_parameter< //int >::type nTuneBurn(nTuneBurnSEXP);
-    Rcpp::traits::input_parameter< //int >::type nTuneGibbs(nTuneGibbsSEXP);
-    Rcpp::traits::input_parameter< //int >::type nPostBurn(nPostBurnSEXP);
-    Rcpp::traits::input_parameter< //int >::type nPostGibbs(nPostGibbsSEXP);
-    Rcpp::traits::input_parameter< //int >::type lambdaWindow(lambdaWindowSEXP);
-    Rcpp::traits::input_parameter< //double >::type emConvTol(emConvTolSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< bool >::type doBl(doBlSEXP);
-    Rcpp::traits::input_parameter< bool >::type doImputation(doImputationSEXP);
     Rcpp::traits::input_parameter< bool >::type adaptScales(adaptScalesSEXP);
     Rcpp::traits::input_parameter< bool >::type simpleIntercept(simpleInterceptSEXP);
-    Rcpp::traits::input_parameter< //bool >::type twoPhaseOpt(twoPhaseOptSEXP);
     Rcpp::traits::input_parameter< bool >::type noMiss(noMissSEXP);
-    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnIters, totalIters, nApproxBurn, nApproxGibbs, nTuneBurn, nTuneGibbs, nPostBurn, nPostGibbs, lambdaWindow, emConvTol, verbose, doBl, doImputation, adaptScales, simpleIntercept, twoPhaseOpt, noMiss));
+    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnIters, totalIters, verbose, doBl, adaptScales, simpleIntercept, noMiss));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -101,7 +91,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mibrr_drawMVN", (DL_FUNC) &_mibrr_drawMVN, 3},
     {"_mibrr_calcIncGamma", (DL_FUNC) &_mibrr_calcIncGamma, 3},
     {"_mibrr_drawInvGauss", (DL_FUNC) &_mibrr_drawInvGauss, 3},
-    {"_mibrr_runGibbs", (DL_FUNC) &_mibrr_runGibbs, 27},
+    {"_mibrr_runGibbs", (DL_FUNC) &_mibrr_runGibbs, 17},
     {NULL, NULL, 0}
 };
 
