@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-SEP-30
+### Modified: 2017-OCT-01
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -595,17 +595,7 @@ simpleImpute <- function() {
 nameOutput <- function() {
     env <- parent.frame()
     
-    if(env$returnConvInfo) {
-        names(env$rHatList) <- env$targetVars
-
-        if(ncol(env$gibbsOut[[1]]$lambdaHistory) == 2)
-            lamNames <- c("lambda1", "lambda2")
-        else
-            lamNames <- "lambda"
-        
-        for(v in env$targetVars)
-            colnames(env$gibbsOut[[v]]$lambdaHistory) <- lamNames
-    }
+    if(env$returnConvInfo) names(env$rHatList) <- env$targetVars
     
     if(env$returnParams)
         for(v in env$targetVars) {

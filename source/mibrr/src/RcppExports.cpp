@@ -59,8 +59,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnIters, int totalIters, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss);
-RcppExport SEXP _mibrr_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnItersSEXP, SEXP totalItersSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss);
+RcppExport SEXP _mibrr_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -74,14 +74,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type sigmaStarts(sigmaStartsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type tauStarts(tauStartsSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type betaStarts(betaStartsSEXP);
-    Rcpp::traits::input_parameter< int >::type burnIters(burnItersSEXP);
-    Rcpp::traits::input_parameter< int >::type totalIters(totalItersSEXP);
+    Rcpp::traits::input_parameter< int >::type burnSams(burnSamsSEXP);
+    Rcpp::traits::input_parameter< int >::type totalSams(totalSamsSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< bool >::type doBl(doBlSEXP);
     Rcpp::traits::input_parameter< bool >::type adaptScales(adaptScalesSEXP);
     Rcpp::traits::input_parameter< bool >::type simpleIntercept(simpleInterceptSEXP);
     Rcpp::traits::input_parameter< bool >::type noMiss(noMissSEXP);
-    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnIters, totalIters, verbose, doBl, adaptScales, simpleIntercept, noMiss));
+    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss));
     return rcpp_result_gen;
 END_RCPP
 }

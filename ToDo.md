@@ -1,17 +1,27 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2017-SEP-30
+## Last Update: 2017-OCT-01
+
+# 2017-OCT-30:
+## Find a good way to compute data centers with missing values
+
+- Need to center data for the BEN to work, but center computed from incomplete data will be biased.
+- How can we get unbiased centers to use for correctly re-centering the imputed data?
+
+## Implement MCEM for MIBL
+
+- Still need to add the deterministic update step for BL lambda
 
 # 2017-SEP-30:
 ## Assess the current state of the package
 
 - What works, what does not?
 
-## Remove Nlopt
+## Remove Nlopt - DONE (2017-OCT-01)
 
 - Installing `NLopt` is proving to be a huge barrier to portability
 
-## Replace NLopt with the initial R-based `optimx` optimization
+## Replace NLopt with the initial R-based `optimx` optimization - DONE (2017-OCT-01)
 
 - We may see a perfomance hit, but we'll probably fold the MCEM tasks into the Gibss sampler in the future, anyway
 - Using `optimx` won't induce any portabi

@@ -23,6 +23,7 @@ tmp2              <- complete(miceOut)
 tmp2[is.na(tmp2)] <- -99999
 
 debug(mibrr)
+undebug(mibrr)
 
 out1 <- mibrr(doBl           = FALSE,
               doImp          = TRUE,
@@ -30,12 +31,35 @@ out1 <- mibrr(doBl           = FALSE,
               nImps          = 5,
               targetVars     = c("y", paste0("x", c(1 : 3))),
               ignoreVars     = "idNum",
-              iterations     = c(5, 500, 1000),
+              iterations     = c(20, 10),
+              sampleSizes    = list(c(100, 50), c(1000, 500), c(10000, 5000)),
               missCode       = -99999,
               returnConvInfo = TRUE,
               returnParams   = TRUE,
               verbose        = TRUE,
-              seed           = 235711)
+              seed           = 235711,
+              control        = list(optTraceLevel = 0)
+              )
+
+out1 <- miben(data           = tmp2,
+              nImps          = 100,
+              targetVars     = c("y", paste0("x", c(1 : 3))),
+              ignoreVars     = "idNum",
+              iterations     = c(20, 10),
+              sampleSizes    = list(c(100, 50), c(1000, 500), c(10000, 5000)),
+              missCode       = -99999,
+              returnConvInfo = TRUE,
+              returnParams   = TRUE,
+              verbose        = TRUE,
+              seed           = 235711,
+              control        = list(optTraceLevel = 0)
+              )
+
+ls(out1)
+
+out1$lambdaHistory
+out1$params
+out1$imps
 
 optOut <- readRDS("optOut.rds")
 

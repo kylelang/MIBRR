@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-SEP-30
+// Modified: 2017-OCT-01
 // Purpose:  This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
 //           the Bayesian LASSO (MIBL).
@@ -44,8 +44,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    Eigen::VectorXd sigmaStarts,
 		    Eigen::MatrixXd tauStarts,
 		    Eigen::MatrixXd betaStarts,
-		    int             burnIters,
-		    int             totalIters,
+		    int             burnSams,
+		    int             totalSams,
 		    bool            verbose,
 		    bool            doBl,
 		    bool            adaptScales,
@@ -75,26 +75,31 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
     
     mibrrGibbs[j].setTargetIndex(j);
     mibrrGibbs[j].setDoImp(!noMiss);
-    mibrrGibbs[j].setNDraws(totalIters - burnIters);
+    mibrrGibbs[j].setNDraws(totalSams - burnSams);
     
     if(!verbose)        mibrrGibbs[j].beQuiet(); 
     if(simpleIntercept) mibrrGibbs[j].useSimpleInt();   
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
-  for(int i = 0; i < totalIters; i++) {// LOOP over Gibbs iterations
-    if(verbose & (i % (totalIters / 10) == 0)) {
-      int iterOut = i + 1;
-      Rcpp::Rcout << "Doing Gibbs iteration " << (i + 1);
-      Rcpp::Rcout << " of " << totalIters << endl;
-      // Improve the output's aesthetics:
-      if(i == totalIters - (totalIters / 10)) Rcpp::Rcout << "\n";
+  for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
+    if(verbose & (i % (totalSams / 10) == 0)) {
+      if(i < burnSams) {
+	Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
+	Rcpp::Rcout << " of " << burnSams << endl;
+      }
+      else {
+	Rcpp::Rcout << "Doing Gibbs sampling iteration " << (i + 1) - burnSams;
+	Rcpp::Rcout << " of " << totalSams - burnSams << endl;
+      }
     }
+    // Improve the output's aesthetics:
+    if(i == burnSams - 1 || i == totalSams - 1) Rcpp::Rcout << "\n";
     
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       // Start saving iterations after burn-in:
-      if ((i + 1) == burnIters) mibrrGibbs[j].startGibbsSampling(mibrrData);
+      if ((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
     }
     
     if(adaptScales) mibrrData.computeDataScales();

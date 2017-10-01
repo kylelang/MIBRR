@@ -17,7 +17,7 @@ drawInvGauss <- function(n, mu, lambda) {
     .Call('_mibrr_drawInvGauss', PACKAGE = 'mibrr', n, mu, lambda)
 }
 
-runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnIters, totalIters, verbose, doBl, adaptScales, simpleIntercept, noMiss) {
-    .Call('_mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnIters, totalIters, verbose, doBl, adaptScales, simpleIntercept, noMiss)
+runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss) {
+    .Call('_mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss)
 }
 
