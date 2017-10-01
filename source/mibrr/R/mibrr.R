@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2016-NOV-08
+### Modified: 2017-OCT-01
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -81,7 +81,7 @@ mibrr <- function(doBl,
     
     ## Replace missCode entries with NAs
     if(!is.null(missCode)) {
-        userMissCode <- TRUE
+        userMissCode           <- TRUE
         data[data == missCode] <- NA
     } else {
         userMissCode <- FALSE
@@ -98,7 +98,7 @@ mibrr <- function(doBl,
     if(noMiss) {
         ## Don't try to impute any data:
         doImp <- FALSE
-        ## Mean-center the data:
+        ## Mean-center the data (and compute initial data scales):
         scaleData()
     } else if(control$fimlStarts) {
         ## Singly impute any missing data on auxiliaries:
@@ -124,38 +124,108 @@ mibrr <- function(doBl,
 
     ## Fill remaining missing data with an integer code:
     if(control$fimlStarts & !noMiss) applyMissCode()
+
+    ## Calculate the total number of MCEM iterations:
+    totalIters <- sum(iterations)
     
-    ## Estimate the MIBEN/MIBL model:
-    gibbsOut <-
-        runGibbs(data            = as.matrix(data),
-                 dataScales      = dataScales,
-                 nTargets        = nTargets,
-                 missList        = missList[c(1 : nTargets)],
-                 respCounts      = respCounts[c(1 : nTargets)],
-                 lambda1Starts   = lambdaMat[ , 1], 
-                 lambda2Starts   = lambdaMat[ , 2],     # Ignored for BL
-                 sigmaStarts     = sigmaStarts,
-                 tauStarts       = tauStarts,
-                 betaStarts      = betaStarts,
-                 nApproxIters    = iterations[1],
-                 nTuneIters      = iterations[2],
-                 nApproxBurn     = control$approxBurn,
-                 nApproxGibbs    = sampleSizes[1],
-                 nTuneBurn       = control$tuneBurn,
-                 nTuneGibbs      = sampleSizes[2],
-                 nPostBurn       = control$postBurn,
-                 nPostGibbs      = sampleSizes[3],
-                 emConvTol       = control$mcemEpsilon, # Ignored for BL
-                 lambdaWindow    = control$smoothingWindow,
-                 verbose         = verbose,
-                 doBl            = doBl,
-                 doImputation    = doImp,
-                 adaptScales     = control$adaptScales,
-                 simpleIntercept = control$simpleIntercept,
-                 twoPhaseOpt     = control$twoPhaseOpt, # Ignored for BL
-                 noMiss          = noMiss)
-   
-    names(gibbsOut) <- targetVars
+    ## Create a container for Lambda's iteration history:
+    lambdaHistory <- lapply(targetVars,
+                            function(x) {
+                                tmp <- matrix(NA, totalIters, 2)
+                                colnames(tmp) <- c("lambda1", "lambda2")
+                                tmp
+                            }
+                            )
+    
+    for(i in 1 : totalIters) {
+        ## Print status update:
+        if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase.\n")
+        if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase.\n")
+        if(i == totalIters)          cat("\nSampling from the stationary posterior.\n")
+        
+        ## What Gibbs sample sizes should we use?:
+        if     (i <= iterations[1]) sams <- sampleSizes[[1]]
+        else if(i < totalIters    ) sams <- sampleSizes[[2]]
+        else                        sams <- sampleSizes[[3]]
+
+        cat("\n") # Beautify output
+        
+        ## Estimate the MIBEN/MIBL model:
+        gibbsOut <-
+            runGibbs(data            = as.matrix(data),
+                     dataScales      = dataScales,
+                     nTargets        = nTargets,
+                     missList        = missList[c(1 : nTargets)],
+                     respCounts      = respCounts[c(1 : nTargets)],
+                     lambda1         = lambdaMat[ , 1], 
+                     lambda2         = lambdaMat[ , 2],     # Ignored for BL
+                     sigmaStarts     = sigmaStarts,
+                     tauStarts       = tauStarts,
+                     betaStarts      = betaStarts,
+                     burnSams        = sams[2],
+                     totalSams       = sams[1],
+                     verbose         = verbose,
+                     doBl            = doBl,
+                     adaptScales     = control$adaptScales,
+                     simpleIntercept = control$simpleIntercept,
+                     noMiss          = noMiss)
+
+        if(i < totalIters) {
+            ## Conduct the MCEM update of the lambdas:
+            optOut <- optimizeLambda(lambdaMat    = lambdaMat,
+                                     gibbsState   = gibbsOut,
+                                     printFlag    = verbose,
+                                     returnACov   = control$optReturnACov,
+                                     controlParms = list(
+                                         method      = control$optMethod,
+                                         boundLambda = control$optBoundLambda,
+                                         showWarns   = verbose,
+                                         traceLevel  = control$optTraceLevel,
+                                         checkKkt    = control$optCheckKkt
+                                     )
+                                     )
+
+            if(control$optCheckKkt) {
+                optCols <- 4
+                optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+            } else {
+                optCols <- 2
+                optLabs <- c("lambda1", "lambda2")
+            }
+            
+            ## Organize the optimization output:
+            optMat <- matrix(unlist(optOut),
+                             ncol     = optCols,
+                             byrow    = TRUE,
+                             dimnames = list(NULL, optLabs)
+                             )
+            lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
+
+            ## Check optimality conditions:
+            if(control$optCheckKkt) {
+                kkt1Flag <- optMat[ , "kkt1"] == 0
+                kkt2Flag <- optMat[ , "kkt2"] == 0
+                
+                if(any(kkt1Flag))
+                    stop("First KKT optimality condition not satisfied when optimizing Lambda")
+                
+                if(any(kkt2Flag))
+                    stop("Second KKT optimality condition not satisfied when optimizing Lambda")
+            }
+                        
+            ## Update parameter starting values and Lambda iteration history:
+            for(j in 1 : nTargets) {
+                betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
+                sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)
+                tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
+
+                lambdaHistory[[j]][i, ] <- lambdaMat[j, ]
+            }
+        }
+    }# END for(i in 1 : totalIters)
+
+    ## Give some nicer names:
+    names(gibbsOut) <- rownames(lambdaMat) <- targetVars
 
     ## Uncenter the data:
     scaleData(revert = TRUE)
@@ -165,7 +235,7 @@ mibrr <- function(doBl,
         missFill <- ifelse(userMissCode, userMissCode, NA)
         for(v in colnames(data)) {
             ## Rebase indices as per R's preference :
-            missList[[v]] <- missList[[v]] + 1
+            missList[[v]]          <- missList[[v]] + 1
             data[missList[[v]], v] <- missFill
         }
     }
@@ -179,15 +249,13 @@ mibrr <- function(doBl,
                        critVal     = control$convThresh)
     
     ## Draw imputations from the convergent posterior predictive distribution:
-    if(doImp) {
-        outImps <- getImputedData(gibbsState  = gibbsOut,
-                                  nImps       = nImps,
-                                  data        = data,
-                                  targetMeans = dataMeans[targetVars],
-                                  targetVars  = targetVars,
-                                  missList    = missList)
-    }
-
+    if(doImp) outImps <- getImputedData(gibbsState  = gibbsOut,
+                                        nImps       = nImps,
+                                        data        = data,
+                                        targetMeans = dataMeans[targetVars],
+                                        targetVars  = targetVars,
+                                        missList    = missList)
+    
     ## Provide some pretty names for the output objects:
     nameOutput()
     
@@ -196,22 +264,17 @@ mibrr <- function(doBl,
     if(doImp) outList$imps <- outImps
     
     if(returnConvInfo) {
-        outList$rHats <- rHatList
-        lamHistList   <- list()
-        for(j in targetVars) {
-            lamHistList[[j]] <- gibbsOut[[j]]$lambdaHistory
-        }
-        outList$lambdaHistory <- lamHistList
+        outList$rHats         <- rHatList
+        outList$lambdaHistory <- lambdaHistory
     }
     
-    totalIters <- sum(iterations)
     if(returnParams) {
         paramList <- list()
         for(j in targetVars) {
             paramList[[j]]$beta   <- gibbsOut[[j]]$beta
             paramList[[j]]$tau    <- gibbsOut[[j]]$tau
             paramList[[j]]$sigma  <- gibbsOut[[j]]$sigma
-            paramList[[j]]$lambda <- gibbsOut[[j]]$lambdaHistory[totalIters, ]
+            paramList[[j]]$lambda <- lambdaMat[j, ]
         }
         outList$params <- paramList
     }
@@ -222,11 +285,11 @@ mibrr <- function(doBl,
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
 miben <- function(data,
-                  nImps          = 100,
+                  nImps,
                   targetVars     = NULL,
                   ignoreVars     = NULL,
                   iterations     = c(100, 10),
-                  sampleSizes    = c(25, 250, 500),
+                  sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
                   missCode       = NULL,
                   returnConvInfo = TRUE,
                   returnParams   = FALSE,
@@ -255,11 +318,11 @@ miben <- function(data,
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Lasso (MIBL):
 mibl <- function(data,
-                 nImps          = 100,
+                 nImps,
                  targetVars     = NULL,
                  ignoreVars     = NULL,
                  iterations     = c(100, 10),
-                 sampleSizes    = c(25, 250, 500),
+                 sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
                  missCode       = NULL,
                  returnConvInfo = TRUE,
                  returnParams   = FALSE,
@@ -290,7 +353,7 @@ ben <- function(data,
                 y              = NULL,
                 X              = NULL,
                 iterations     = c(100, 10),
-                sampleSizes    = c(25, 250, 500),
+                sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
                 returnConvInfo = TRUE,
                 verbose        = TRUE,
                 seed           = NULL,
@@ -313,12 +376,12 @@ ben <- function(data,
 }# END ben()
 
 
-### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
+### Specify a wrapper function to fit the Bayesian LASSO (BL):
 bl <- function(data,
                y              = NULL,
                X              = NULL,
                iterations     = c(100, 10),
-               sampleSizes    = c(25, 250, 500),
+               sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
                returnConvInfo = TRUE,
                verbose        = TRUE,
                seed           = NULL,
