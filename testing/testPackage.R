@@ -10,17 +10,101 @@ install.packages("mitools", repos = "http://cloud.r-project.org")
 
 library(mibrr)
 library(mitools)
+library(psych)
 
-data(mibrrExampleData)
+data(bfi)
+tmp <- na.omit(bfi)
 
-mibrr <- mibrr:::mibrr
+ed.d           <- model.matrix(~factor(tmp$educatio))[ , -1]
+colnames(ed.d) <- c("finish_hs", "some_college", "college_grad", "graduate_degree")
 
-tmp <- mibrrExampleData
+male <- tmp$gender
+male[male == 2] <- 0
 
-methVec <- rep("", 17)
-methVec[6 : 17] <- "pmm"
+cn   <- setdiff(colnames(bfi), c("gender", "education"))
+bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
-miceOut <- mice(tmp, m = 1, maxit = 10, method = methVec)
+rownames(bfi2) <- NULL
+
+imposeMar <- function(data, targets, marPreds, pm, snr, marType = "random") {
+    if(length(marPreds) == 1)
+        linPred <- data[ , marPreds]
+    else
+        linPred <- rowSums(data[ , marPreds])
+    
+    noise   <- sd(linPred) * (1 / snr)
+    linPred <- linPred + rnorm(length(linPred), 0, noise)
+    
+    probVec <- pnorm(linPred, mean(linPred), sd(linPred))
+    
+    if(marType == "random")
+        marType <- sample(c("low", "high", "tails", "center"),
+                          size    = length(targets),
+                          replace = TRUE)
+    
+    names(marType) <- targets
+    
+    for(i in targets) {
+        rVec <- switch(marType[i],
+                       low    = probVec <= pm,
+                       high   = probVec >= (1 - pm),
+                       tails  = probVec <= (pm / 2) | probVec >= (1 - (pm / 2)),
+                       center = probVec >= (0.5 - (pm / 2)) &
+                           probVec <= (0.5 + (pm / 2)),
+                       stop("Please provide a valid 'marType'")
+                       )
+        
+        data[rVec, i] <- NA
+    }
+    list(data = data, marType = marType)
+}# END imposeMar()
+
+
+marPreds <- c("age",
+              "male",
+              "finish_hs",
+              "some_college",
+              "college_grad",
+              "graduate_degree")
+
+targets <- setdiff(colnames(bfi2), marPreds)
+
+for(rp in 1 : nReps) {
+    dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), ]
+
+    dat2 <- imposeMar(data     = bfi2,
+                      targets  = targets,
+                      marPreds = marPreds,
+                      pm       = 0.25,
+                      snr      = 3)$data 
+    
+    miceOut <- mice(dat2, m = 25, maxit = 5, method = "norm")
+
+    dat3              <- dat2
+    dat3[is.na(dat3)] <- -999
+    
+    mibenOut <- miben(data           = dat3,
+                      nImps          = 25,
+                      targetVars     = targets,
+                      ignoreVars     = NULL,
+                      iterations     = c(50, 10),
+                      missCode       = -999,
+                      returnConvInfo = TRUE,
+                      returnParams   = TRUE,
+                      verbose        = TRUE)
+
+    miblOut <- mibl(data           = dat3,
+                    nImps          = 25,
+                    targetVars     = targets,
+                    ignoreVars     = NULL,
+                    iterations     = c(50, 10),
+                    missCode       = -999,
+                    returnConvInfo = TRUE,
+                    returnParams   = TRUE,
+                    verbose        = TRUE)
+}
+
+
 
 tmp2              <- complete(miceOut)
 tmp2[is.na(tmp2)] <- -99999
