@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-OCT-01
+### Modified: 2017-OCT-02
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -37,11 +37,9 @@
                    version,
                    ", Copyright (C) 2016 Kyle M. Lang. ",
                    pkgname,
-                   " is distributed under Version 3 of the GNU Lesser General",
-                   " Public License (LGPL-3); execute 'mibrrL()' for details. ",
+                   " is distributed under Version 3 of the GNU Lesser General Public License (LGPL-3); execute 'mibrrL()' for details. ",
                    pkgname,
-                   " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for",
-                   " details. ",
+                   " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for details. ",
                    pkgname,
                    " is beta software. Please report any bugs."),
             width = 81)
@@ -181,9 +179,7 @@ getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
         
     } else {# mice() isn't available    
         
-        warning("I cannot attach the mice package, so I cannot give lambda \
-starting values via\nthe Park and Casella (2008) rule. I am falling back to the \
-default values.")
+        warning("I cannot attach the mice package, so I cannot give lambda starting values via\nthe Park and Casella (2008) rule. I am falling back to the default values.")
         lambdaStarts <- rep(0.5, nTargets)  
         
     }# END if(require(mice))
@@ -313,9 +309,11 @@ initializeParams <- function(data, nTargets, doBl, control)
             ))
             
             betaStarts[ , j] <- rmvnorm(1, rep(0, nPreds), betaPriorCov)
-        } else {# We're doing MIBL
-            lam              <- lambdaMat[j, 1]
-            tauStarts[ , j]  <- rexp(nPreds, rate = (0.5 * lam^2))
+        } else {# We're doing BL
+            lam <- lambdaMat[j, 1]
+            
+            tauStarts[ , j] <- rexp(nPreds, rate = (0.5 * lam^2))
+
             betaPriorCov     <- sigmaStarts[j] * diag(tauStarts[ , j])
             betaStarts[ , j] <- rmvnorm(1, rep(0, nPreds), betaPriorCov)
         }
@@ -349,27 +347,22 @@ padControlList <- function()
     env <- parent.frame()
     ## Define the default control parameters:
     defaults = list(
-        approxBurn        = env$sampleSizes[1],
-        tuneBurn          = env$sampleSizes[2],
-        postBurn          = env$sampleSizes[3],
         convThresh        = 1.1,
         lambda1Starts     = rep(0.5, env$nTargets),
         lambda2Starts     = rep(env$nPreds / 10, env$nTargets),
         usePCStarts       = FALSE,
-                                        #mcemEpsilon       = 1.0e-5,
         smoothingWindow   = 1,
         center            = TRUE,
         scale             = TRUE,
         adaptScales       = TRUE,
         simpleIntercept   = FALSE,
-                                        #twoPhaseOpt       = TRUE,
         minPredCor        = 0.3,
         miceIters         = 10,
         miceRidge         = 1e-4,
         miceMethod        = "pmm",
         fimlStarts        = FALSE,
         preserveStructure = TRUE,
-        optTraceLevel     = 1,
+        optTraceLevel     = 0,
         optCheckKkt       = TRUE,
         optMethod         = "L-BFGS-B",
         optBoundLambda    = TRUE,
@@ -776,13 +769,29 @@ optWrap <- function(targetIndex,
 }# END optWrap()
 
 
-## Optimize the penalty parameters via numerical maximization of eNetLL():
+
+## Optimize the penalty parameter for the BL using the rule given in Park &
+## Casella (2008):
+updateBlLambda <- function(gibbsState) {
+    taus <- gibbsState$tau
+    p    <- ncol(taus)
+    
+    sqrt((2 * p) / sum(colMeans(taus)))
+}
+
+
+
+## Optimize the BEN or BL penalty parameters:
 optimizeLambda <- function(lambdaMat,
                            gibbsState,
+                           doBl       = FALSE,
                            printFlag  = TRUE,
                            returnACov = FALSE,
                            controlParms)
 {
+    ## Use simple update rule and return early when doing BL:
+    if(doBl) return(lapply(gibbsState, updateBlLambda))
+    
     optMethod <- controlParms$method
     useSeqOpt <- length(optMethod) > 1
     
@@ -817,4 +826,3 @@ optimizeLambda <- function(lambdaMat,
     
     optList
 }# END optimizeLambda()
-

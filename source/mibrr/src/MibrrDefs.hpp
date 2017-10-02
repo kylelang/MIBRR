@@ -1,10 +1,10 @@
 // Title:    Header file to hold my global parameter definitions
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-25
-// Modified: 2016-NOV-06
+// Modified: 2017-OCT-02
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //
@@ -30,7 +30,6 @@
 #include <cmath>
 #include <string>
 #include <Rmath.h>
-#include <nlopt.hpp>
 #include <algorithm>
 
 #ifndef MACHINE_PRECISION

@@ -6,7 +6,10 @@
 
 rm(list = ls(all = TRUE))
 
+install.packages("mitools", repos = "http://cloud.r-project.org")
+
 library(mibrr)
+library(mitools)
 
 data(mibrrExampleData)
 
@@ -45,15 +48,34 @@ out1 <- miben(data           = tmp2,
               nImps          = 100,
               targetVars     = c("y", paste0("x", c(1 : 3))),
               ignoreVars     = "idNum",
-              iterations     = c(20, 10),
-              sampleSizes    = list(c(100, 50), c(1000, 500), c(10000, 5000)),
+              #iterations     = c(20, 10),
+              #sampleSizes    = list(c(, 50), c(1000, 500), c(10000, 5000)),
               missCode       = -99999,
               returnConvInfo = TRUE,
               returnParams   = TRUE,
               verbose        = TRUE,
-              seed           = 235711,
-              control        = list(optTraceLevel = 0)
+              seed           = 235711#,
+              #control        = list(optTraceLevel = 0)
               )
+
+ls(out1)
+
+par(mfcol = c(2, 4))
+
+for(j in out1$lambdaHistory) {
+    plot(j[ , 1], type = "l")
+    plot(j[ , 2], type = "l")
+}
+
+fits <- lapply(out1$imps, function(x) lm(y ~ x1 + x2 + x3, data = x))
+
+tmp3 <- tmp2
+tmp3[tmp3 == -99999] <- NA
+
+out0 <- lm(y ~ x1 + x2 + x3, data = tmp3)
+summary(out0)
+
+MIcombine(fits)
 
 ls(out1)
 

@@ -1,22 +1,22 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-OCT-01
+### Modified: 2017-OCT-02
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
 ###           elementary imputation method.
-### Notes:    The mibrr function implements the imputation models. The R portions
-###           of mibrr take care of data pre- and post-processing, while the
-###           gibbs sampling and the MCEM optimization of the BEN and BL penalty
-###           parameters are done in C++ (see source in runGibbs.cpp). The
-###           miben and mibl functions are wrappers that parameterization mibrr
-###           as needed to run MIBEN or MIBL, respectively. The ben and bl
-###           functions simply fit the Bayesian elastic net and Bayesian LASSO
-###           models without any missing data imputation.
+### Notes:    - The mibrr function implements the imputation models.
+###           - The R layer of mibrr take care of data pre- and post-processing
+###             as well as the MCEM optimization of the BEN and BL penalty.
+###           - The gibbs sampling is done in C++ (see source in runGibbs.cpp).
+###           - The miben and mibl functions are wrappers that parameterization
+###             mibrr as needed to run MIBEN or MIBL, respectively.
+###           - The ben and bl functions simply fit the Bayesian elastic net and
+###             Bayesian LASSO models without any missing data imputation.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
+##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
 ##                                                                             ##
 ##  This file is part of mibrr.                                                ##
 ##                                                                             ##
@@ -162,8 +162,8 @@ mibrr <- function(doBl,
                      sigmaStarts     = sigmaStarts,
                      tauStarts       = tauStarts,
                      betaStarts      = betaStarts,
-                     burnSams        = sams[2],
-                     totalSams       = sams[1],
+                     burnSams        = sams[1],
+                     totalSams       = sum(sams),
                      verbose         = verbose,
                      doBl            = doBl,
                      adaptScales     = control$adaptScales,
@@ -174,6 +174,7 @@ mibrr <- function(doBl,
             ## Conduct the MCEM update of the lambdas:
             optOut <- optimizeLambda(lambdaMat    = lambdaMat,
                                      gibbsState   = gibbsOut,
+                                     doBl         = doBl,
                                      printFlag    = verbose,
                                      returnACov   = control$optReturnACov,
                                      controlParms = list(
@@ -185,45 +186,49 @@ mibrr <- function(doBl,
                                      )
                                      )
 
-            if(control$optCheckKkt) {
-                optCols <- 4
-                optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+            if(doBl) {
+                lambdaMat           <- cbind(unlist(optOut), NA)
+                colnames(lambdaMat) <- c("lambda", "dummy")
             } else {
-                optCols <- 2
-                optLabs <- c("lambda1", "lambda2")
+                if(control$optCheckKkt) {
+                    optCols <- 4
+                    optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+                } else {
+                    optCols <- 2
+                    optLabs <- c("lambda1", "lambda2")
+                }
+                
+                ## Organize the optimization output:
+                optMat <- matrix(unlist(optOut),
+                                 ncol     = optCols,
+                                 byrow    = TRUE,
+                                 dimnames = list(NULL, optLabs)
+                                 )
+                lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
+                
+                ## Check optimality conditions:
+                if(control$optCheckKkt) {
+                    kkt1Flag <- optMat[ , "kkt1"] == 0
+                    kkt2Flag <- optMat[ , "kkt2"] == 0
+                    
+                    if(any(kkt1Flag))
+                        stop("First KKT optimality condition not satisfied when optimizing Lambda")
+                    
+                    if(any(kkt2Flag))
+                        stop("Second KKT optimality condition not satisfied when optimizing Lambda")
+                }
             }
             
-            ## Organize the optimization output:
-            optMat <- matrix(unlist(optOut),
-                             ncol     = optCols,
-                             byrow    = TRUE,
-                             dimnames = list(NULL, optLabs)
-                             )
-            lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
-
-            ## Check optimality conditions:
-            if(control$optCheckKkt) {
-                kkt1Flag <- optMat[ , "kkt1"] == 0
-                kkt2Flag <- optMat[ , "kkt2"] == 0
-                
-                if(any(kkt1Flag))
-                    stop("First KKT optimality condition not satisfied when optimizing Lambda")
-                
-                if(any(kkt2Flag))
-                    stop("Second KKT optimality condition not satisfied when optimizing Lambda")
-            }
-                        
-            ## Update parameter starting values and Lambda iteration history:
             for(j in 1 : nTargets) {
                 betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
                 sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)
                 tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
-
+                
                 lambdaHistory[[j]][i, ] <- lambdaMat[j, ]
             }
         }
     }# END for(i in 1 : totalIters)
-
+    
     ## Give some nicer names:
     names(gibbsOut) <- rownames(lambdaMat) <- targetVars
 
@@ -289,7 +294,7 @@ miben <- function(data,
                   targetVars     = NULL,
                   ignoreVars     = NULL,
                   iterations     = c(100, 10),
-                  sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
+                  sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
                   missCode       = NULL,
                   returnConvInfo = TRUE,
                   returnParams   = FALSE,
@@ -322,7 +327,7 @@ mibl <- function(data,
                  targetVars     = NULL,
                  ignoreVars     = NULL,
                  iterations     = c(100, 10),
-                 sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
+                 sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
                  missCode       = NULL,
                  returnConvInfo = TRUE,
                  returnParams   = FALSE,
@@ -353,7 +358,7 @@ ben <- function(data,
                 y              = NULL,
                 X              = NULL,
                 iterations     = c(100, 10),
-                sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
+                sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
                 returnConvInfo = TRUE,
                 verbose        = TRUE,
                 seed           = NULL,
@@ -381,7 +386,7 @@ bl <- function(data,
                y              = NULL,
                X              = NULL,
                iterations     = c(100, 10),
-               sampleSizes    = list(c(50, 25), c(500, 250), c(1000, 500)),
+               sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
                returnConvInfo = TRUE,
                verbose        = TRUE,
                seed           = NULL,
