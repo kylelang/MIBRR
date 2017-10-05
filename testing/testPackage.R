@@ -26,11 +26,38 @@ bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
 
-imposeMar <- function(data, targets, marPreds, pm, snr, marType = "random") {
-    if(length(marPreds) == 1)
-        linPred <- data[ , marPreds]
-    else
-        linPred <- rowSums(data[ , marPreds])
+data = bfi2
+colnames(bfi2)
+
+targets <- list(mcar = paste0("A", c(1 : 5)),
+                mar  = paste0("C", c(1 : 5)),
+                mnar = paste0("E", c(1 : 5))
+                )
+pm      <- list(mcar = 0.2, mar = 0.3, mnar = 0.1)
+preds   <- paste0("age",
+                  "male",
+                  "finish_hs",
+                  "some_college",
+                  "college_grad",
+                  "graduate_degree")
+
+
+imposeMar <- function(data, targets, preds, pm, snr, marType = "random") {
+    ## Impose MCAR missing:
+    if(!is.na(targets$mcar)) {
+        rMcar <- matrix(
+            as.logical(
+                rbinom(n    = prod(dim(data[ , targets$mcar])),
+                       size = 1,
+                       prob = pm$mcar)
+            ),
+            ncol = length(targets$mcar)
+        )
+        data[ , targets$mcar][rMcar] <- NA
+    }
+    
+    if(length(marPreds) == 1) linPred <- data[ , marPreds]
+    else                      linPred <- rowSums(data[ , marPreds])
     
     noise   <- sd(linPred) * (1 / snr)
     linPred <- linPred + rnorm(length(linPred), 0, noise)
