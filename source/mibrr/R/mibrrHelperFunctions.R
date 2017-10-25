@@ -415,7 +415,7 @@ checkInputs <- function() {
     ## Make sure 'data' contains missing data that we can find:
     if(env$doImp) {
         if(is.null(env$missCode)) {
-            rMat <- is.na(env$dat)
+            rMat <- is.na(env$data)
         } else {
             rMat <- env$data == env$missCode
             

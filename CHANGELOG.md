@@ -17,6 +17,7 @@ undocumented.
 ### Fixed
 - Bug causing failures of penalty parameters' optimization in MIBEN when 
   lambda = 0 at some iterations
+- Bug triggered when missing data was coded as `NA`.
 
 ## 0.0.0.9001 - 2017-09-30
 

@@ -48,15 +48,11 @@ dat2 <- imposeMissing(data    = bfi2,
                       pm      = pm,
                       snr     = snr)$data 
 
-dat3              <- dat2
-dat3[is.na(dat3)] <- -999
-
-mibenOut <- miben(data           = dat3,
+mibenOut <- miben(data           = dat2,
                   nImps          = 25,
                   targetVars     = unlist(targets),
                   ignoreVars     = NULL,
                   iterations     = c(50, 10),
-                  missCode       = -999,
                   returnConvInfo = TRUE,
                   returnParams   = TRUE,
                   verbose        = TRUE)
@@ -71,7 +67,6 @@ miblOut <- mibl(data           = dat3,
                 targetVars     = unlist(targets),
                 ignoreVars     = NULL,
                 iterations     = c(50, 10),
-                missCode       = -999,
                 returnConvInfo = TRUE,
                 returnParams   = TRUE,
                 verbose        = TRUE)
