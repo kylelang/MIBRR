@@ -14,6 +14,10 @@ undocumented.
 ### Changed
 - Moved optimization of Bayesian LASSO's penalty paramter into the R layer
 
+### Fixed
+- Bug causing failures of penalty parameters' optimization in MIBEN when 
+  lambda = 0 at some iterations
+
 ## 0.0.0.9001 - 2017-09-30
 
 ### Added

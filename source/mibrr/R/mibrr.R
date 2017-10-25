@@ -131,11 +131,12 @@ mibrr <- function(doBl,
     ## Create a container for Lambda's iteration history:
     lambdaHistory <- lapply(targetVars,
                             function(x) {
-                                tmp <- matrix(NA, totalIters, 2)
+                                tmp <- matrix(NA, totalIters - 1, 2)
                                 colnames(tmp) <- c("lambda1", "lambda2")
                                 tmp
                             }
                             )
+    names(lambdaHistory) <- targetVars
     
     for(i in 1 : totalIters) {
         ## Print status update:

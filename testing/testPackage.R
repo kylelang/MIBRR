@@ -15,10 +15,9 @@ source("testingSupportFunctions.R")
 data(bfi)
 tmp <- na.omit(bfi)
 
-head(tmp)
-
 ed.d           <- model.matrix(~factor(tmp$education))[ , -1]
-colnames(ed.d) <- c("finish_hs", "some_college", "college_grad", "graduate_degree")
+colnames(ed.d) <-
+    c("finish_hs", "some_college", "college_grad", "graduate_degree")
 
 male            <- tmp$gender
 male[male == 2] <- 0
@@ -27,8 +26,6 @@ cn   <- setdiff(colnames(bfi), c("gender", "education"))
 bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
-
-colnames(bfi2)
 
 targets  <- list(mcar = paste0("A", c(1 : 5)),
                  mar  = paste0("C", c(1 : 5)),
@@ -43,43 +40,43 @@ marPreds <- c("age",
               "college_grad",
               "graduate_degree")
 
-nReps <- 5000
+dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), ]
 
-outList <- patList <- list()
-for(rp in 1 : nReps) {
-    dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), ]
+dat2 <- imposeMissing(data    = bfi2,
+                      targets = targets,
+                      preds   = marPreds,
+                      pm      = pm,
+                      snr     = snr)$data 
 
-    dat2 <- imposeMissing(data    = bfi2,
-                          targets = targets,
-                          preds   = marPreds,
-                          pm      = pm,
-                          snr     = snr)$data 
-    
-    miceOut <- mice(dat2, m = 25, maxit = 5, method = "norm")
-    
-    dat3              <- dat2
-    dat3[is.na(dat3)] <- -999
-    
-    mibenOut <- miben(data           = dat3,
-                      nImps          = 25,
-                      targetVars     = unlist(targets),
-                      ignoreVars     = NULL,
-                      iterations     = c(50, 10),
-                      missCode       = -999,
-                      returnConvInfo = TRUE,
-                      returnParams   = TRUE,
-                      verbose        = TRUE)
-    
-    miblOut <- mibl(data           = dat3,
-                    nImps          = 25,
-                    targetVars     = unlist(targets),
-                    ignoreVars     = NULL,
-                    iterations     = c(50, 10),
-                    missCode       = -999,
-                    returnConvInfo = TRUE,
-                    returnParams   = TRUE,
-                    verbose        = TRUE)
-}
+dat3              <- dat2
+dat3[is.na(dat3)] <- -999
+
+mibenOut <- miben(data           = dat3,
+                  nImps          = 25,
+                  targetVars     = unlist(targets),
+                  ignoreVars     = NULL,
+                  iterations     = c(50, 10),
+                  missCode       = -999,
+                  returnConvInfo = TRUE,
+                  returnParams   = TRUE,
+                  verbose        = TRUE)
+ls(mibenOut)
+
+mibenOut$lambdaHistory
+mibenOut$rHats
+mibenOut$imps[[1]]
+
+miblOut <- mibl(data           = dat3,
+                nImps          = 25,
+                targetVars     = unlist(targets),
+                ignoreVars     = NULL,
+                iterations     = c(50, 10),
+                missCode       = -999,
+                returnConvInfo = TRUE,
+                returnParams   = TRUE,
+                verbose        = TRUE)
+
+miceOut <- mice(dat2, m = 25, maxit = 5, method = "norm")
 
 
 

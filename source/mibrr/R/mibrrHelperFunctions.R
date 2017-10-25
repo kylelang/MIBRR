@@ -789,25 +789,27 @@ optimizeLambda <- function(lambdaMat,
                            returnACov = FALSE,
                            controlParms)
 {
+    if(printFlag) cat("Optimizing penalty parameters\n")
+    
     ## Use simple update rule and return early when doing BL:
-    if(doBl) {
-        cat("Optimizing Bayesian LASSO penalty parameters\n")
-        return(lapply(gibbsState, updateBlLambda))
-    }
+    if(doBl) return(lapply(gibbsState, updateBlLambda))
     
     optMethod <- controlParms$method
     useSeqOpt <- length(optMethod) > 1
     
     if(controlParms$boundLambda) {
-        lowBounds <- c(0, 0)
+        lowBounds <- c(1e-5, 1e-5)
         optMethod <- "L-BFGS-B"
     } else {
         lowBounds <- -Inf
     }
     
     options(warn = ifelse(controlParms$showWarns, 0, -1))
+
+    if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
+    else                            nullFile <- "nul"
     
-    if(!printFlag) sink("/dev/null")
+    sink(nullFile) # Don't show optimx output
     
     optList <- lapply(c(1 : nrow(lambdaMat)),
                       FUN        = optWrap,
@@ -824,7 +826,7 @@ optimizeLambda <- function(lambdaMat,
                                follow.on = useSeqOpt),
                       myGibbs    = gibbsState)
     
-    if(!printFlag) sink()
+    sink()
     options(warn = 0)
     
     optList
