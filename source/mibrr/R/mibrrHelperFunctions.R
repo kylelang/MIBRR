@@ -495,7 +495,7 @@ scaleDataWithFiml <- function(revert = FALSE) {
         )
     }
         
-}# END scaleData()
+}# END scaleDataWithFiml()
 
 
 
@@ -513,7 +513,7 @@ scaleData <- function(revert = FALSE) {
         ## Mean center data:
         if(env$control$center) {
             env$dataMeans <- colMeans(env$data)
-            env$data   <- as.data.frame(
+            env$data      <- as.data.frame(
                 scale(env$data, center = TRUE, scale = FALSE)
             )
         } else {
@@ -553,24 +553,24 @@ imputeCovs <- function() {
                     ridge           = env$control$miceRidge)
     
     ## Replace missing covariate values with their imputations:
-    env$data[ , covNames] <- complete(miceOut)[ , covNames]
+    env$data[ , covNames] <- complete(miceOut, 1)[ , covNames]
 }# END imputeCovs()
 
 
 
 ## Initially fill the missing values via single imputation:
 simpleImpute <- function() {
-    env  <- parent.frame()
-    rFlags <- colMeans(is.na(env$data)) > 0
+    env    <- parent.frame()
+    rFlags <- colSums(is.na(env$data)) > 0
    
     ## Construct a predictor matrix for mice() to use:
     predMat <- quickpred(env$data, mincor = env$control$minPredCor)
     
     ## Construct a vector of elementary imputation methods:
-    methVec       <- rep("", ncol(env$data))
+    methVec         <- rep("", ncol(env$data))
     methVec[rFlags] <- env$control$miceMethod
 
-    ## Singly impute the missing covariate values:
+    ## Singly impute the missing values:
     miceOut <- mice(data            = env$data,
                     m               = 1,
                     maxit           = env$control$miceIters,
@@ -580,7 +580,7 @@ simpleImpute <- function() {
                     ridge           = env$control$miceRidge)
     
     ## Replace missing values with their imputations:
-    env$data <- complete(miceOut)
+    env$data <- complete(miceOut, 1)
 }# END imputeCovs()
 
 
