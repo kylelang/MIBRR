@@ -9,6 +9,11 @@ approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9002 - 2017-10-25
+
+### Changed
+- Moved optimization of Bayesian LASSO's penalty paramter into the R layer
+
 ## 0.0.0.9001 - 2017-09-30
 
 ### Added

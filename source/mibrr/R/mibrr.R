@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-OCT-02
+### Modified: 2017-OCT-25
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -139,9 +139,9 @@ mibrr <- function(doBl,
     
     for(i in 1 : totalIters) {
         ## Print status update:
-        if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase.\n")
-        if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase.\n")
-        if(i == totalIters)          cat("\nSampling from the stationary posterior.\n")
+        if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase\n")
+        if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase\n")
+        if(i == totalIters)          cat("\nSampling from the stationary posterior\n")
         
         ## What Gibbs sample sizes should we use?:
         if     (i <= iterations[1]) sams <- sampleSizes[[1]]

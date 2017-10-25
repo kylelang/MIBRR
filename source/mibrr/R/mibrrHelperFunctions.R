@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-OCT-02
+### Modified: 2017-OCT-25
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -790,7 +790,10 @@ optimizeLambda <- function(lambdaMat,
                            controlParms)
 {
     ## Use simple update rule and return early when doing BL:
-    if(doBl) return(lapply(gibbsState, updateBlLambda))
+    if(doBl) {
+        cat("Optimizing Bayesian LASSO penalty parameters\n")
+        return(lapply(gibbsState, updateBlLambda))
+    }
     
     optMethod <- controlParms$method
     useSeqOpt <- length(optMethod) > 1
