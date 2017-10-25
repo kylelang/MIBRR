@@ -1,24 +1,26 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-SEP-30
+### Modified: 2017-OCT-25
 ### Purpose:  Script to help test the MIBRR package
 
 rm(list = ls(all = TRUE))
-
-install.packages("mitools", repos = "http://cloud.r-project.org")
 
 library(mibrr)
 library(mitools)
 library(psych)
 
+source("testingSupportFunctions.R")
+
 data(bfi)
 tmp <- na.omit(bfi)
 
-ed.d           <- model.matrix(~factor(tmp$educatio))[ , -1]
+head(tmp)
+
+ed.d           <- model.matrix(~factor(tmp$education))[ , -1]
 colnames(ed.d) <- c("finish_hs", "some_college", "college_grad", "graduate_degree")
 
-male <- tmp$gender
+male            <- tmp$gender
 male[male == 2] <- 0
 
 cn   <- setdiff(colnames(bfi), c("gender", "education"))
@@ -26,67 +28,14 @@ bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
 
-data = bfi2
 colnames(bfi2)
 
-targets <- list(mcar = paste0("A", c(1 : 5)),
-                mar  = paste0("C", c(1 : 5)),
-                mnar = paste0("E", c(1 : 5))
-                )
-pm      <- list(mcar = 0.2, mar = 0.3, mnar = 0.1)
-preds   <- paste0("age",
-                  "male",
-                  "finish_hs",
-                  "some_college",
-                  "college_grad",
-                  "graduate_degree")
-
-
-imposeMar <- function(data, targets, preds, pm, snr, marType = "random") {
-    ## Impose MCAR missing:
-    if(!is.na(targets$mcar)) {
-        rMcar <- matrix(
-            as.logical(
-                rbinom(n    = prod(dim(data[ , targets$mcar])),
-                       size = 1,
-                       prob = pm$mcar)
-            ),
-            ncol = length(targets$mcar)
-        )
-        data[ , targets$mcar][rMcar] <- NA
-    }
-    
-    if(length(marPreds) == 1) linPred <- data[ , marPreds]
-    else                      linPred <- rowSums(data[ , marPreds])
-    
-    noise   <- sd(linPred) * (1 / snr)
-    linPred <- linPred + rnorm(length(linPred), 0, noise)
-    
-    probVec <- pnorm(linPred, mean(linPred), sd(linPred))
-    
-    if(marType == "random")
-        marType <- sample(c("low", "high", "tails", "center"),
-                          size    = length(targets),
-                          replace = TRUE)
-    
-    names(marType) <- targets
-    
-    for(i in targets) {
-        rVec <- switch(marType[i],
-                       low    = probVec <= pm,
-                       high   = probVec >= (1 - pm),
-                       tails  = probVec <= (pm / 2) | probVec >= (1 - (pm / 2)),
-                       center = probVec >= (0.5 - (pm / 2)) &
-                           probVec <= (0.5 + (pm / 2)),
-                       stop("Please provide a valid 'marType'")
-                       )
-        
-        data[rVec, i] <- NA
-    }
-    list(data = data, marType = marType)
-}# END imposeMar()
-
-
+targets  <- list(mcar = paste0("A", c(1 : 5)),
+                 mar  = paste0("C", c(1 : 5)),
+                 mnar = paste0("E", c(1 : 5))
+                 )
+pm       <- list(mcar = 0.2, mar = 0.3, mnar = 0.1)
+snr      <- list(mar = 5, mnar = 5)
 marPreds <- c("age",
               "male",
               "finish_hs",
@@ -94,35 +43,36 @@ marPreds <- c("age",
               "college_grad",
               "graduate_degree")
 
-targets <- setdiff(colnames(bfi2), marPreds)
+nReps <- 5000
 
+outList <- patList <- list()
 for(rp in 1 : nReps) {
     dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), ]
 
-    dat2 <- imposeMar(data     = bfi2,
-                      targets  = targets,
-                      marPreds = marPreds,
-                      pm       = 0.25,
-                      snr      = 3)$data 
+    dat2 <- imposeMissing(data    = bfi2,
+                          targets = targets,
+                          preds   = marPreds,
+                          pm      = pm,
+                          snr     = snr)$data 
     
     miceOut <- mice(dat2, m = 25, maxit = 5, method = "norm")
-
+    
     dat3              <- dat2
     dat3[is.na(dat3)] <- -999
     
     mibenOut <- miben(data           = dat3,
                       nImps          = 25,
-                      targetVars     = targets,
+                      targetVars     = unlist(targets),
                       ignoreVars     = NULL,
                       iterations     = c(50, 10),
                       missCode       = -999,
                       returnConvInfo = TRUE,
                       returnParams   = TRUE,
                       verbose        = TRUE)
-
+    
     miblOut <- mibl(data           = dat3,
                     nImps          = 25,
-                    targetVars     = targets,
+                    targetVars     = unlist(targets),
                     ignoreVars     = NULL,
                     iterations     = c(50, 10),
                     missCode       = -999,
