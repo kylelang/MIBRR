@@ -12,4 +12,7 @@ export(mibl,
        ben,
        bl,
        simulateData,
-       predictMibrr)
+       imposeMissing,
+       predictMibrr,
+       printObsIndices,
+       printMissIndices)

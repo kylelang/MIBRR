@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-OCT-01
+// Modified: 2017-OCT-27
 // Purpose:  This function will do the Gibbs sampling for Multiple Imputation
 //           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
 //           the Bayesian LASSO (MIBL).
@@ -82,7 +82,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
-    if(verbose & (i % (totalSams / 10) == 0)) {
+    bool check0 = verbose & (i % (totalSams / 10) == 0); 
+    if(check0) {
       if(i < burnSams) {
 	Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
 	Rcpp::Rcout << " of " << burnSams << endl;
@@ -93,13 +94,14 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
       }
     }
     // Improve the output's aesthetics:
-    if(i == burnSams - 1 || i == totalSams - 1) Rcpp::Rcout << "\n";
+    bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
+    if(check1) Rcpp::Rcout << "\n";
     
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       // Start saving iterations after burn-in:
-      if ((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
+      if((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
     }
     
     if(adaptScales) mibrrData.computeDataScales();

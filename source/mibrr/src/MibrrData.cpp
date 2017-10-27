@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-SEP-30
+// Modified: 2017-OCT-27
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //
@@ -146,10 +146,13 @@ double MibrrData::getDataScales(int targetIndex) const
   return _dataScales[targetIndex];
 }
 
+vector<int> MibrrData::getMissIndices(int targetIndex) const
+{
+  return _missIndices[targetIndex];
+}
 
 MatrixXd MibrrData::getData()       const { return _data;                       }
 VectorXd MibrrData::getDataScales() const { return _dataScales;                 }
-
 
 ///////////////////////////////// MUTATORS //////////////////////////////////////
 
@@ -216,7 +219,7 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 
 int MibrrData::nObs  ()                const { return _data.rows();             }
 int MibrrData::nPreds()                const { return _data.cols() - 1;         }
-int MibrrData::nResp (int targetIndex) const {return _respCounts[targetIndex];  }
+int MibrrData::nResp (int targetIndex) const { return _respCounts[targetIndex]; }
 
 int MibrrData::nMiss (int targetIndex) const
 {
@@ -235,7 +238,7 @@ VectorXd MibrrData::drawMVN(VectorXd &meanVec, MatrixXd &covMat) const
   
   covCholesky = covMat.llt().matrixL();
   for(int i = 0; i < nVars; i++) normDraws[i] = norm_rand();
-  VectorXd testVec = covCholesky * normDraws;
+  //VectorXd testVec = covCholesky * normDraws;
   
   return meanVec + (covCholesky * normDraws);
 }// END drawMVN()

@@ -1,16 +1,18 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-OCT-25
+### Modified: 2017-OCT-27
 ### Purpose:  Script to help test the MIBRR package
 
 rm(list = ls(all = TRUE))
 
-library(mibrr)
 library(mitools)
 library(psych)
+library(mibrr)
 
-source("testingSupportFunctions.R")
+###---------------------------------------------------------------------------###
+
+### Prepare Data for Testing ###
 
 data(bfi)
 tmp <- na.omit(bfi)
@@ -27,12 +29,11 @@ bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
 
-targets  <- list(mcar = paste0("A", c(1 : 5)),
-                 mar  = paste0("C", c(1 : 5)),
-                 mnar = paste0("E", c(1 : 5))
-                 )
-pm       <- list(mcar = 0.2, mar = 0.3, mnar = 0.1)
-snr      <- list(mar = 5, mnar = 5)
+targets  <- list(mar = paste0(c("A", "E"), rep(c(1 : 5), each = 2)),
+                 mcar = NA,
+                 mnar = NA)
+pm       <- list(mar = 0.3)
+snr      <- list(mar = 5)
 marPreds <- c("age",
               "male",
               "finish_hs",
@@ -40,251 +41,174 @@ marPreds <- c("age",
               "college_grad",
               "graduate_degree")
 
-dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), ]
+cn <- c(targets$mar, marPreds)
 
-dat2 <- imposeMissing(data    = bfi2,
-                      targets = targets,
-                      preds   = marPreds,
-                      pm      = pm,
-                      snr     = snr)$data 
+dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
 
-mibenOut <- miben(data           = dat2,
-                  nImps          = 25,
-                  targetVars     = unlist(targets),
-                  ignoreVars     = NULL,
-                  iterations     = c(50, 10),
-                  returnConvInfo = TRUE,
-                  returnParams   = TRUE,
-                  verbose        = TRUE)
-ls(mibenOut)
+dat2 <- mibrr::imposeMissing(data    = dat1,
+                             targets = targets,
+                             preds   = marPreds,
+                             pm      = pm,
+                             snr     = snr)$data 
 
-mibenOut$lambdaHistory
-mibenOut$rHats
-mibenOut$imps[[1]]
+###---------------------------------------------------------------------------###
 
-miblOut <- mibl(data           = dat3,
-                nImps          = 25,
-                targetVars     = unlist(targets),
-                ignoreVars     = NULL,
-                iterations     = c(50, 10),
-                returnConvInfo = TRUE,
-                returnParams   = TRUE,
-                verbose        = TRUE)
+### Check Missing Data Indexing ###
 
-miceOut <- mice(dat2, m = 25, maxit = 5, method = "norm")
+missIndices <- lapply(dat2, function(x) which(is.na(x)) - 1)
+scales      <- unlist(lapply(dat2, sd, na.rm = TRUE))
+respCounts  <- colSums(!is.na(dat2))
 
+dat3              <- dat2
+dat3[is.na(dat2)] <- -9999
 
+for(v in 1 : ncol(dat3)) {
+    poiOut <- printObsIndices(data        = as.matrix(dat3),
+                              scales      = scales,
+                              missIndices = missIndices,
+                              respCounts  = respCounts,
+                              noMiss      = FALSE,
+                              targetIndex = v - 1)
 
-tmp2              <- complete(miceOut)
-tmp2[is.na(tmp2)] <- -99999
+    pmiOut <- printMissIndices(data        = as.matrix(dat3),
+                               scales      = scales,
+                               missIndices = missIndices,
+                               respCounts  = respCounts,
+                               noMiss      = FALSE,
+                               targetIndex = v - 1)
 
-debug(mibrr)
-undebug(mibrr)
+    cat(paste0("Checking column number ", v, "\n"))
+    
+    ## Any overlap?
+    t1 <- intersect(pmiOut, poiOut)
+    if(length(t1) > 0) stop("Miss and obs indices are not disjoint")
+    
+    ## All rows maintained?
+    outInds <- c(pmiOut, poiOut)
+    t2 <- setdiff(c(1 : nrow(dat3)), outInds + 1)
+    if(length(t2) > 0) stop("Some rows dropped")
+    
+    ## In == Out?
+    t3 <- setdiff(pmiOut, missIndices[[v]])
+    if(length(t3) > 0) stop("Miss indices broken")
+}# END for(v in 1 : ncol(dat3))
 
-out1 <- mibrr(doBl           = FALSE,
-              doImp          = TRUE,
-              data           = tmp2,
-              nImps          = 5,
-              targetVars     = c("y", paste0("x", c(1 : 3))),
-              ignoreVars     = "idNum",
-              iterations     = c(20, 10),
-              sampleSizes    = list(c(100, 50), c(1000, 500), c(10000, 5000)),
-              missCode       = -99999,
-              returnConvInfo = TRUE,
-              returnParams   = TRUE,
-              verbose        = TRUE,
-              seed           = 235711,
-              control        = list(optTraceLevel = 0)
-              )
+###---------------------------------------------------------------------------###
 
-out1 <- miben(data           = tmp2,
-              nImps          = 100,
-              targetVars     = c("y", paste0("x", c(1 : 3))),
-              ignoreVars     = "idNum",
-              #iterations     = c(20, 10),
-              #sampleSizes    = list(c(, 50), c(1000, 500), c(10000, 5000)),
-              missCode       = -99999,
-              returnConvInfo = TRUE,
-              returnParams   = TRUE,
-              verbose        = TRUE,
-              seed           = 235711#,
-              #control        = list(optTraceLevel = 0)
-              )
+### Check MIBEN and MIBL ###
 
-ls(out1)
+nImps <- 25
+nReps <- 40
 
-par(mfcol = c(2, 4))
+keys <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
+             extra = c("-E1", "-E2", "E3", "E4", "E5")
+             )
 
-for(j in out1$lambdaHistory) {
-    plot(j[ , 1], type = "l")
-    plot(j[ , 2], type = "l")
+mibenRes <- miblRes <- miceRes <- list() 
+for(rp in 1 : nReps) {
+    cat(paste0("Doing rep ", rp, "\n\n"))
+    
+    dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
+    dat2 <- mibrr::imposeMissing(data    = dat1,
+                                 targets = targets,
+                                 preds   = marPreds,
+                                 pm      = pm,
+                                 snr     = snr)$data
+
+    cat("Doing MIBEN...")
+    mibenOut <- miben(data           = dat2,
+                      nImps          = nImps,
+                      targetVars     = targets$mar,
+                      ignoreVars     = NULL,
+                      iterations     = c(50, 10),
+                      returnConvInfo = FALSE,
+                      returnParams   = FALSE,
+                      verbose        = FALSE)
+    cat("Done\n")
+
+    cat("Doing MIBL...")
+    miblOut <- mibl(data           = dat2,
+                    nImps          = nImps,
+                    targetVars     = targets$mar,
+                    ignoreVars     = NULL,
+                    iterations     = c(50, 10),
+                    returnConvInfo = FALSE,
+                    returnParams   = FALSE,
+                    verbose        = FALSE)
+    cat("Done\n")
+
+    cat("Doing MICE...")
+    miceOut <-
+        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
+    cat("Done\n")
+
+    cat("Fitting models...")
+    mibenList <- miblList <- miceList <- list()
+    for(m in 1 : nImps) {
+        ## MIBEN estimates:
+        scores         <- scoreItems(keys  = keys,
+                                     items = mibenOut$imps[[m]])$scores
+        mibenList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                            mA = mean(scores[ , "agree"]),
+                            mE = mean(scores[ , "extra"])
+                            )
+        ## MIBL estimates:
+        scores        <- scoreItems(keys  = keys,
+                                    items = miblOut$imps[[m]])$scores
+        miblList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                           mA = mean(scores[ , "agree"]),
+                           mE = mean(scores[ , "extra"])
+                           )
+        ## MICE estimates:
+        scores        <- scoreItems(keys  = keys,
+                                    items = complete(miceOut, m))$scores
+        miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                           mA = mean(scores[ , "agree"]),
+                           mE = mean(scores[ , "extra"])
+                           )
+    }
+
+    mibenRes[[rp]] <- colMeans(do.call(rbind, mibenList))
+    miblRes[[rp]]  <- colMeans(do.call(rbind, miblList))
+    miceRes[[rp]]  <- colMeans(do.call(rbind, miceList))
+    cat("Done\n\n")
 }
 
-fits <- lapply(out1$imps, function(x) lm(y ~ x1 + x2 + x3, data = x))
+mibenFrame <- do.call(rbind, mibenRes)
+miblFrame  <- do.call(rbind, miblRes)
+miceFrame  <- do.call(rbind, miceRes)
 
-tmp3 <- tmp2
-tmp3[tmp3 == -99999] <- NA
+mibenFrame <- rbind(firstRun$miben, mibenFrame)
+miblFrame  <- rbind(firstRun$mibl, miblFrame)
+miceFrame  <- rbind(firstRun$mice, miceFrame)
 
-out0 <- lm(y ~ x1 + x2 + x3, data = tmp3)
-summary(out0)
+simOut <- list(miben = mibenFrame,
+               mibl  = miblFrame,
+               mice  = miceFrame)
 
-MIcombine(fits)
+saveRDS(simOut, "miniSimOut.rds")
 
-ls(out1)
+## Complete data result:
+scores  <- scoreItems(keys = keys, items = bfi2)$scores
+compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
+             mA = mean(scores[ , "agree"]),
+             mE = mean(scores[ , "extra"])
+             )
 
-out1$lambdaHistory
-out1$params
-out1$imps
+100 * (colMeans(mibenFrame) - compRes) / compRes
+100 * (colMeans(miblFrame) - compRes) / compRes
+100 * (colMeans(miceFrame) - compRes) / compRes
 
-optOut <- readRDS("optOut.rds")
-
-do.call(rbind, optOut)
-
-control <- list(optCheckKkt = TRUE)
-
-
-lapply(optOut, function(x) 
-
-##### DEGUB OPTIMIZATION #####
-
-### The conditional loglikelihood function of Lambda for use during the
-### empirical bayes updating.
-eNetLL <- function(lambdaVec, gibbsState) {
-    l1 <- lambdaVec[1]
-    l2 <- lambdaVec[2]
-    
-    taus   <- gibbsState$tau
-    sigmas <- gibbsState$sigma
-    betas  <- gibbsState$beta
-    
-    p <- ncol(taus)
-    
-    e1 <- mean(
-        log(pgamma(l1^2 / (8 * sigmas * l2), 0.5, lower = FALSE) * gamma(0.5))
-    )
-    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
-    e3 <- mean(rowSums(taus) / sigmas)
-    
-    p * log(l1) - p * e1 - (l2 / 2) * e2 - (l1^2 / (8 * l2)) * e3 # LL
-}# END eNetLL()
+apply(mibenFrame, 2, sd)
+apply(miblFrame, 2, sd)
+apply(miceFrame, 2, sd)
 
 
-### The gradient function for the conditional LL of Lambda:
-eNetGrad <- function(lambdaVec, gibbsState)
-{
-    l1 <- lambdaVec[1]
-    l2 <- lambdaVec[2]
+###---------------------------------------------------------------------------###
 
-    taus   <- gibbsState$tau
-    sigmas <- gibbsState$sigma
-    betas  <- gibbsState$beta
-    
-    p   <- ncol(taus)
-    tmp <- l1^2 / (8 * sigmas * l2)
-    
-    e1 <- mean(
-    (1 / (pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5))) *
-    (1 / (sqrt(tmp) * exp(tmp))) * (1 / sigmas)
-    )
-    e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
-    e3 <- mean(rowSums(taus) / sigmas)
+### Test Random Variate Samplers ###
 
-    w1 <- l1 / (4 * l2)
-    w2 <- l1^2 / (8 * l2^2)
-    
-    c((p / l1) + (p * w1 * e1) - (w1 * e3),  # dLL / dl1
-    (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
-}# END eNetGrad()
-
-
-## Wrapper to allow optimx to run within lapply():
-optWrap <- function(targetIndex,
-                    lambdaMat,
-                    optFun,
-                    optGrad,
-                    optMethod,
-                    optLower,
-                    optHessian,
-                    optControl,
-                    myGibbs)
-{
-    optOut <- optimx(par        = lambdaMat[targetIndex, ],
-                     fn         = optFun,
-                     gr         = optGrad,
-                     method     = optMethod,
-                     lower      = optLower,
-                     hessian    = optHessian,
-                     control    = optControl,
-                     gibbsState = myGibbs[[targetIndex]])
-    
-    if(length(optMethod) > 1) optOut <- optOut[nrow(optOut), ]
-    
-    tmpList <- list()
-    if(optHessian) {
-        hessMat      <- attr(optOut, "details")[ , "nhatend"][[1]]
-        tmpList$vcov <- solve(-hessMat)
-    }
-    
-    if(optControl$kkt) tmpList$kktFlags <- c(optOut$kkt1, optOut$kkt2)
-    
-    tmpList$lambda <- c(optOut[[1]], optOut[[2]])
-    tmpList
-}# END optWrap()
-
-
-## Optimize the penalty parameters via numerical maximization of eNetLL():
-optimizeLambda <- function(lambdaMat,
-                           gibbsState,
-                           printFlag  = TRUE,
-                           returnVCOV = FALSE,
-                           controlParms)
-{
-    optMethod <- controlParms$method
-    useSeqOpt <- length(optMethod) > 1
-    
-    if(controlParms$boundLambda) {
-        lowBounds <- c(0, 0)
-        optMethod <- "L-BFGS-B"
-    } else {
-        lowBounds <- -Inf
-    }
-    
-    options(warn = ifelse(controlParms$showWarns, 0, -1))
-    
-    if(!printFlag) sink("/dev/null")
-    
-    optList <- lapply(c(1 : nrow(lambdaMat)),
-                      FUN        = optWrap,
-                      lambdaMat  = lambdaMat,
-                      optFun     = eNetLL,
-                      optGrad    = eNetGrad,
-                      optMethod  = optMethod,
-                      optLower   = lowBounds,
-                      optHessian = returnVCOV,
-                      optControl =
-                          list(trace     = controlParms$traceLevel,
-                               maximize  = TRUE,
-                               kkt       = controlParms$checkKKT,
-                               follow.on = useSeqOpt),
-                      myGibbs    = gibbsState)
-    
-    if(!printFlag) sink()
-    options(warn = 0)
-    
-    optList
-}# END optimizeLambda()
-
-
-gibbsOut   <- readRDS("gibbsOut3.rds")
-gibbsState <- gibbsOut[[1]]
-
-grad(func = eNetLL, x = c(0.5, 1.5), gibbsState = gibbsState)
-eNetGrad(c(0.5, 1.5), gibbsState)
-
-ls(gibbsOut[[1]])
-
-
-## Test MVN sampler:
+## MVN sampler:
 nObs <- 500000
 mvnMu <- rep(10, 3)
 mvnSigma <- matrix(5, 3, 3)
@@ -299,7 +223,7 @@ for(i in 1 : length(mvnMu)) {
     lines(density(out1.2[ , i]), col = "blue")
 }
 
-## Test inverse gamma sampler:
+## Inverse gamma sampler:
 gamShape <- 10
 gamScale <- 10
 
@@ -309,7 +233,7 @@ out2.2 <- rinvgamma(nObs, gamShape, gamScale)
 plot(density(out2.1), col = "red")
 lines(density(out2.2), col = "blue")
 
-## Test inverse gaussian sampler:
+## Inverse gaussian sampler:
 igMu = 1
 igLam = 2
 
@@ -319,7 +243,7 @@ out3.2 <- rinvgauss(nObs, igMu, igLam)
 plot(density(out3.1), col = "red")
 lines(density(out3.2), col = "blue")
 
-## Test the incomplte gamma calculation:
+## Incomplte gamma calculation:
 incGamShape <- 10
 incGamCut <- 5
 
@@ -330,51 +254,9 @@ out4.2 <- pgamma(q = incGamCut,
 
 out4.1 - out4.2
 
-## Test MIBEN and MIBL:
-data(mibrrExampleData)
+###---------------------------------------------------------------------------###
 
-miceOut <- mice(mibrrExampleData,
-                m = 1,
-                maxit = 100)
-
-dat0 <- complete(miceOut)
-dat1 <- data.frame(mibrrExampleData[ , 1 : 5], dat0[ , 6 : 17])
-
-debug(miben)
-undebug(miben)
-
-testOut <- miben(rawData      = dat1,
-                 targetVars   = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars   = "idNum",
-                                        #iterations   = c(2, 1),
-                                        #sampleSizes  = c(100, 500, 1000),
-                 returnParams = TRUE,
-                 verbose      = TRUE,
-                 control      = list(simpleIntercept = TRUE,
-                                     adaptScales     = TRUE)
-                 )
-
-fitOut <- lapply(testOut$imps,
-                 FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                 )
-MIcombine(fitOut)
-
-summary(lm(y ~ x1 + x2 + x3, data = dat1))
-
-
-testOut2 <- mibl(rawData      = mibrrExampleData,
-                 targetVars   = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars   = "idNum",
-                 returnParams = TRUE)
-
-fitOut2 <- lapply(testOut2$imps,
-                  FUN = function(x) lm(y ~ x1 + x2 + x3, data = x)
-                  )
-MIcombine(fitOut2)
-
-
-## Test BEN and BL:
-library(mibrr)
+### Test BEN and BL ###
 
 alpha  <- 0.5
 nPreds <- 175
@@ -505,39 +387,3 @@ lines(dens3, col = "green")
 ls(testOut)
 
 plot(testOut2$lambdaHistory[[1]][ , 1], type = "l")
-
-
-
-
-
-
-
-
-
-mod1 <- paste(
-    paste0("F",
-           colnames(dat1),
-           " =~ 1*",
-           colnames(dat1),
-           "\n"),
-    collapse = "")
-
-cat(mod1)
-
-## Estimate the sufficient statistics with FIML:
-out1 <- lavaan(model           = mod1,
-               data            = dat1,
-               int.ov.free     = FALSE,
-               int.lv.free     = TRUE,
-               auto.var        = TRUE,
-               auto.fix.single = TRUE,
-               missing         = "fiml")
-        
-## Store the item means and scales:
-dataMeans  <- as.vector(inspect(out1, "coef")$alpha)
-dataScales <- sqrt(diag(inspect(out1, "coef")$psi))
-
-(dataMeans - colMeans(dat1)) / colMeans(dat1)
-(dataScales - apply(dat1, 2, sd)) / apply(dat1, 2, sd)
-
-names(env$dataMeans) <- names(env$dataScales) <- colnames(env$rawData)

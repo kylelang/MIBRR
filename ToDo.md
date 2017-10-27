@@ -36,7 +36,7 @@
 - Using `optimx` won't induce any portability problems
 
 # 2016-NOV-07:
-## Check that we didn't break anything when moving to the new way of indexing missing data
+## Check that we didn't break anything when moving to the new way of indexing missing data - DONE (2017-OCT-27)
 
 - The results are looking dubious--we need to find out why
     - The initial missing data treatment is a prime suspect

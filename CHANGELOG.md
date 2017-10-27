@@ -9,6 +9,15 @@ approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9003 - 2017-10-27
+
+### Changed
+- Updated copyright holder's email address in the source code
+
+### Added
+- Exported functions to examine missing data indexing
+- Confirmed that the missing data are being indexed correctly
+
 ## 0.0.0.9002 - 2017-10-25
 
 ### Changed

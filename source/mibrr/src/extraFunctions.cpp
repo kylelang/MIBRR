@@ -1,10 +1,10 @@
 // Title:    Additional C++ Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2016-NOV-05
+// Modified: 2017-OCT-27
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2016 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //
@@ -59,4 +59,30 @@ Eigen::VectorXd drawInvGauss(int n, double mu, double lambda)
   VectorXd   out(n);
   for(int i = 0; i < n; i++) out[i] = mibrrGibbs.drawInvGauss(mu, lambda);
   return out;
+}
+
+// [[Rcpp::export]]
+std::vector<int>
+printObsIndices(Eigen::MatrixXd                 data,
+		Eigen::VectorXd                 scales,
+		std::vector< std::vector<int> > missIndices,
+		Eigen::VectorXi                 respCounts,
+		bool                            noMiss,
+		int                             targetIndex)
+{
+  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  return(mibrrData.getObsRows(targetIndex));
+}
+
+// [[Rcpp::export]]
+std::vector<int>
+printMissIndices(Eigen::MatrixXd                 data,
+		 Eigen::VectorXd                 scales,
+		 std::vector< std::vector<int> > missIndices,
+		 Eigen::VectorXi                 respCounts,
+		 bool                            noMiss,
+		 int                             targetIndex)
+{
+  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  return(mibrrData.getMissIndices(targetIndex));
 }

@@ -1,8 +1,8 @@
 Package: mibrr
 Type: Package
 Title: Multiple Imputation with Bayesian Regularized Regression
-Version: 0.0.0.9002
-Date: 2017-10-25
+Version: 0.0.0.9003
+Date: 2017-10-27
 Author: Kyle M. Lang
 Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 Description: This package implements a multiple imputation method that uses Bayesian regularized regression models as the elementary imputation methods.

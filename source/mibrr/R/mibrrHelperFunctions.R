@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-OCT-25
+### Modified: 2017-OCT-27
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -623,59 +623,6 @@ predictMibrr <- function(object,
         stop("nDraws must be non-negative.")
     }
     out
-}
-
-
-
-simulateData <- function(nObs,
-                         nPreds,
-                         r2,
-                         collin,
-                         beta,
-                         means           = 0,
-                         scales          = 1,
-                         latentStructure = FALSE,
-                         itemsPerFactor  = 1,
-                         itemReliability = NULL)
-{
-    if(length(means) == 1) means <- rep(means, nPreds)
-    
-    w1 <- matrix(scales, nPreds, nPreds)
-    w2 <- matrix(scales, nPreds, nPreds, byrow = TRUE)
-    
-    maxCov <- w1*w2
-    
-    sigma <- maxCov * collin
-    diag(sigma) <- scales^2
-    
-    X <- cbind(1, rmvnorm(nObs, means, sigma))
-
-    eta <- X %*% beta
-    sigmaY <- (var(eta) / r2) - var(eta)
-    y <- eta + rnorm(nObs, 0, sqrt(sigmaY))
-
-    if(latentStructure) {
-        nItems   <- nPreds * itemsPerFactor
-        loadings <- matrix(0, nItems, nPreds)
-        
-        for(m in 1 : nPreds) {
-            for(n in 1 : itemsPerFactor) {
-                offset <- (m - 1) * itemsPerFactor
-                loadings[n + offset, m] <- sqrt(itemReliability)
-            }
-        }
-
-        theta <- diag(rep(1 - itemReliability, nItems))
-    
-        X <- X[ , -1] %*% t(loadings) + rmvnorm(nObs, rep(0, nItems), theta)
-        
-        outDat <- data.frame(y, X)
-        colnames(outDat) <- c("y", paste0("x", c(1 : nItems)))
-    } else {
-        outDat <- data.frame(y, X[ , -1])
-        colnames(outDat) <- c("y", paste0("x", c(1 : nPreds)))
-    }
-    outDat
 }
 
 

@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-SEP-30
+// Modified: 2017-OCT-27
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        //  
+//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of mibrr.                                                //
 //                                                                             //

@@ -17,6 +17,14 @@ drawInvGauss <- function(n, mu, lambda) {
     .Call('_mibrr_drawInvGauss', PACKAGE = 'mibrr', n, mu, lambda)
 }
 
+printObsIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {
+    .Call('_mibrr_printObsIndices', PACKAGE = 'mibrr', data, scales, missIndices, respCounts, noMiss, targetIndex)
+}
+
+printMissIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {
+    .Call('_mibrr_printMissIndices', PACKAGE = 'mibrr', data, scales, missIndices, respCounts, noMiss, targetIndex)
+}
+
 runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss) {
     .Call('_mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss)
 }

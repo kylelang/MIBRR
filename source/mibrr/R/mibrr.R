@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-OCT-25
+### Modified: 2017-OCT-27
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -90,7 +90,7 @@ mibrr <- function(doBl,
     ## Create a list of missing elements in each target variable
     ## NOTE: Subtract 1 from each index vector to base indices at 0 for C++
     missList <- lapply(data, FUN = function(x) which(is.na(x)) - 1)
-
+      
     ## Create a vector of response counts:
     respCounts <- colSums(!is.na(data))
     noMiss     <- all(respCounts == nObs)
@@ -140,16 +140,18 @@ mibrr <- function(doBl,
     
     for(i in 1 : totalIters) {
         ## Print status update:
-        if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase\n")
-        if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase\n")
-        if(i == totalIters)          cat("\nSampling from the stationary posterior\n")
+        if(verbose) {
+            if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase\n")
+            if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase\n")
+            if(i == totalIters)          cat("\nSampling from the stationary posterior\n")
+        }
         
         ## What Gibbs sample sizes should we use?:
         if     (i <= iterations[1]) sams <- sampleSizes[[1]]
         else if(i < totalIters    ) sams <- sampleSizes[[2]]
         else                        sams <- sampleSizes[[3]]
-
-        cat("\n") # Beautify output
+        
+        if(verbose) cat("\n") # Beautify output
         
         ## Estimate the MIBEN/MIBL model:
         gibbsOut <-
