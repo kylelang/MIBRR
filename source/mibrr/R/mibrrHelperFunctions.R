@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-OCT-27
+### Modified: 2017-OCT-31
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -26,7 +26,7 @@
 
 ## Print startup message:
 .onAttach <- function(libname, pkgname) {
-    version <- read.dcf(file = system.file("DESCRIPTION", package = pkgname),
+    version <- read.dcf(file   = system.file("DESCRIPTION", package = pkgname),
                         fields = "Version")
     
     greet <-
@@ -35,7 +35,9 @@
                    pkgname,
                    " ",
                    version,
-                   ", Copyright (C) 2016 Kyle M. Lang. ",
+                   ", Copyright (C) ",
+                   format(Sys.time(), "%Y"),
+                   " Kyle M. Lang. ",
                    pkgname,
                    " is distributed under Version 3 of the GNU Lesser General Public License (LGPL-3); execute 'mibrrL()' for details. ",
                    pkgname,
