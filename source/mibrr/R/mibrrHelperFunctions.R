@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-OCT-31
+### Modified: 2017-NOV-01
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -536,6 +536,10 @@ scaleData <- function(revert = FALSE) {
 imputeCovs <- function() {
     env      <- parent.frame()
     covNames <- setdiff(colnames(env$data), env$targetVars)
+
+    ## Don't try to impute a fully observed covariate matrix:
+    check <- all(!is.na(env$data[ , covNames]))
+    if(check) return()
     
     ## Construct a predictor matrix for mice() to use:
     predMat <- quickpred(env$data, mincor  = env$control$minPredCor)
