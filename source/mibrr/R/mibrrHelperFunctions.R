@@ -145,13 +145,13 @@ getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
         
         ## Fill any missing data with rough guesses:
         micePreds <- quickpred(inData)
-        miceOut <- mice(data            = inData,
-                        m               = 1,
-                        method          = "norm",
-                        predictorMatrix = micePreds,
-                        printFlag       = FALSE)
+        miceOut   <- mice(data            = inData,
+                          m               = 1,
+                          method          = "norm",
+                          predictorMatrix = micePreds,
+                          printFlag       = FALSE)
         
-        impData <- as.matrix(complete(miceOut, 1))
+        impData     <- as.matrix(complete(miceOut, 1))
         lambdaStart <- vector("numeric", nTargets)
         
         for(i in 1 : nTargets) {
@@ -277,7 +277,7 @@ initializeParams <- function(data, nTargets, doBl, control)
         options(warn = 0)
         lambdaMat <- cbind(lambda1Starts, lambda2Starts)
     } else {
-        if(control$usePCStarts) {
+        if(control$usePcStarts) {
             ## Must call this before the NA's are replaced with missCode:
             lambdaVec <- getLambdaStarts(inData   = data,
                                          nTargets = nTargets,
@@ -352,7 +352,7 @@ padControlList <- function()
         convThresh        = 1.1,
         lambda1Starts     = rep(0.5, env$nTargets),
         lambda2Starts     = rep(env$nPreds / 10, env$nTargets),
-        usePCStarts       = FALSE,
+        usePcStarts       = FALSE,
         smoothingWindow   = 1,
         center            = TRUE,
         scale             = TRUE,
@@ -415,29 +415,28 @@ checkInputs <- function() {
     }
         
     ## Make sure 'data' contains missing data that we can find:
-    if(env$doImp) {
-        if(is.null(env$missCode)) {
-            rMat <- is.na(env$data)
-        } else {
-            rMat <- env$data == env$missCode
-            
-            if(!any(rMat, na.rm = TRUE))
-                stop(paste0("The value you provided for 'missCode' (i.e., ",
-                            env$missCode,
-                            ") does not appear anywhere in 'data'.\nAre you sure that ",
-                            env$missCode,
-                            " encodes your missing data?\n")
-                     )
-        }
+                                        #if(env$doImp) {
+    if(is.null(env$missCode)) {
+        rMat <- is.na(env$data)
+    } else {
+        rMat <- env$data == env$missCode
         
-        if(length(targetCandidates) > 1) 
-            completeTargets <- colMeans(rMat[ , targetCandidates]) == 0
-        else 
-            completeTargets <- mean(rMat[ , targetCandidates]) == 0
-        
-        if(all(completeTargets)) 
-            stop("Your target variables appear to be fully observed. Did you forget to provide a\nvalue for 'missCode'?\n")
+        if(!any(rMat, na.rm = TRUE))
+            stop(paste0("The value you provided for 'missCode' (i.e., ",
+                        env$missCode,
+                        ") does not appear anywhere in 'data'.\nAre you sure that ",
+                        env$missCode,
+                        " encodes your missing data?\n")
+                 )
     }
+        
+    if(length(targetCandidates) > 1) 
+        completeTargets <- colMeans(rMat[ , targetCandidates]) == 0
+    else 
+        completeTargets <- mean(rMat[ , targetCandidates]) == 0
+    
+    if(env$doImp & all(completeTargets)) 
+        stop("Your target variables appear to be fully observed. Did you forget to provide a\nvalue for 'missCode'?\n")
     
     ## Select the final set of target variables:
     if(env$doImp) {

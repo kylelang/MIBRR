@@ -5,14 +5,14 @@
 Example Dataset for the MIBRR package.
 }
 \description{
-These are toy data generated as in Experiment 1 of Lang (2015).
+Toy data generated as in Experiment 1 of Lang (2015).
 }
 \usage{data("mibrrExampleData")}
 \format{
   A data frame with 200 observations on the following 17 variables.
   \describe{
     \item{\code{idNum}}{
-      Participant ID Number.
+      \dQuote{Participant} ID Number.
     }
     \item{\code{y}}{
       Outcome Variable. Contains 20\% MAR missingness.
@@ -34,8 +34,8 @@ elements of \{Z\}, and half of the elements in \{Z\} have no association
 with \{y, X\} (see Lang, 2015, for more details). 
 }
 \source{
-  Lang, K. M. (2015). \emph{MIBEN: Multiple imputation with the
-    Bayesian elastic net} (Unpublished doctoral
-  dissertation). University of Kansas.
+  Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the Bayesian
+    elastic net} (Unpublished doctoral dissertation). University of
+  Kansas.
 }
 \keyword{datasets}

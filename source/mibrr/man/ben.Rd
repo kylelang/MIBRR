@@ -1,43 +1,36 @@
-\name{mibl}
-\alias{mibl}
+\name{ben}
+\alias{ben}
 \title{
-Multiple imputation with the Bayesian LASSO.
+Bayesian Elastic Net
 }
 \description{
-  This function will implement a MICE-based multiple imputation scheme that
-  employs the Bayesian LASSO as its elementary imputation method.
+  This function will fit the Bayesian elastic net to incomplete data.
 }
 \usage{
-mibl(data,
-     nImps,
-     targetVars     = NULL,
-     ignoreVars     = NULL,
-     iterations     = c(100, 10),
-     sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-     missCode       = NULL,
-     returnConvInfo = TRUE,
-     returnParams   = FALSE,
-     verbose        = TRUE,
-     seed           = NULL,
-     control        = list()
-)
+ben(data,
+    y,
+    X              = NULL,
+    iterations     = c(100, 10),
+    sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+    missCode       = NULL,
+    returnConvInfo = TRUE,
+    verbose        = TRUE,
+    seed           = NULL,
+    control        = list()
+)  
 }
 \arguments{
   \item{data}{
-    An incomplete, numeric data matrix or data frame for which to create the
-    imputations.
+    A, possibly incomplete, numeric data matrix or data frame to which the BEN
+    is to be fit.
   }
-  \item{nImps}{
-    An integer giving the number of imputations to create.
+  \item{y}{
+    The column label for the outcome variable.  
   }
-  \item{targetVars}{
-    An optional character vector giving the column labels for the variables to
-    be imputed. When \code{targetVars = NULL}, all variables not listed in
-    \code{ignoreVars} are imputed.  
-  }
-  \item{ignoreVars}{
-    An optional character vector giving the column labels for those variables
-    that should be excluded from the imputation model (e.g., ID variables).
+  \item{X}{
+    An optional character vector giving the column labels for the predictor
+    variables. When \code{X = NULL} the target variable is regressed onto all
+    other variables in \code{data}.
   }
   \item{iterations}{
     A two-element numeric vector giving the number of iterations to employ
@@ -60,10 +53,6 @@ mibl(data,
     (i.e., history of the optimized penalty parameters and R-Hat values for
     final parameter estimates) be returned? Defaults to \code{returnConvInfo =
       TRUE}. 
-  }
-  \item{returnParams}{
-    A logical switch: Should the final Gibbs samples of the imputation model's
-    parameters be returned? Defaults to \code{returnParams = FALSE}.
   }
   \item{verbose}{
     A logical switch: Should verbose output be printed to stdout? Defaults to
@@ -92,16 +81,23 @@ mibl(data,
       to populate a vector with \code{size = length(targetVars)}. Defaults to
       \code{rep(0.5, length(targetVars))}.
     }
+    \item{lambda2Starts:}{
+      An optional numeric vector giving starting values for
+      the ridge penalty parameter, \eqn{\lambda_2}{lambda2}. Values are recycled
+      to populate a vector with \code{size = length(targetVars)}. Defaults to
+      \code{rep(0.1 * nPreds, length(targetVars))}, where \code{nPreds} is the
+      number of predictors in the model.
+    }
     \item{usePcStarts:}{
       A logical switch: Use the starting values for \eqn{\lambda_1}{lambda1}
       suggested by Park and Casella (2008)? Defaults to \code{usePcStarts = FALSE}.
     }
     \item{smoothingWindow:}{
       An integer giving the number of approximation phase
-      \eqn{\lambda}{lambda} values to average over to get the starting
-      \eqn{\lambda's}{lambdas} for the MCEM tuning phase. Setting
+      \eqn{\Lambda}{Lambda} values to average over to get the starting
+      \eqn{\Lambda's}{Lambdas} for the MCEM tuning phase. Setting
       \code{smoothingWindow} > 1 can facilitate convergence of the MCEM tuning phase
-      when burn-in \eqn{\lambda}{lambda} estimates are very noisy. Defaults to
+      when burn-in \eqn{\Lambda}{Lambda} estimates are very noisy. Defaults to
       \code{smoothingWindow = 1}. 
     }
     \item{center:}{
@@ -153,33 +149,52 @@ mibl(data,
       saturated model is estimated using \pkg{lavaan}. Defaults to
       \code{fimlStarts = FALSE}.
     }
-    \item{preserveStructure:}{
-      A logical switch: Should the data columns be returned in the same order
-      as submitted? Defaults to \code{preserveStructure = TRUE}.
+    \item{optTraceLevel:}{
+      A non-negative integer passed to the \pkg{optimx} \code{trace}
+      argument. See \pkg{optimx} documentation for details. Defaults to
+      \code{optTraceLevel = 0}.
+    }
+    \item{optCheckKkt:}{
+      A logical flag: Should the Kuhn, Jarush, Tucker optimality conditions be
+      checked when optimizing the penalty parameters? Defaults to
+      \code{optCheckKkt = TRUE}.
+    }
+    \item{optMethod:}{
+      A character vector giving the optimization method(s) used by \pkg{optimx}
+      to estimate the penalty paramters. Possible options are
+      \dQuote{Nelder-Mead}, \dQuote{BFGS}, \dQuote{CG}, \dQuote{L-BFGS-B},
+      \dQuote{nlm}, \dQuote{nlminb}, \dQuote{spg}, \dQuote{ucminf},
+      \dQuote{newuoa}, \dQuote{bobyqa}, \dQuote{nmkb}, \dQuote{hjkb},
+      \dQuote{Rcgmin}, or \dQuote{Rvmmin}. When \code{length(optMethod) > 1},
+      \pkg{optimx}'s follow-on optimization is employed. See the \pkg{optimx}
+      documentation for details. Defaults to \code{optMethod = "L-BFGS-B"}.
+    }
+    \item{optBoundLambda:}{
+      A logical switch: Should the penalty paramters be bounded below by zero?
+      Defaults to \code{optBoundLambda = TRUE}.
+    }
+    \item{optReturnACov:}{
+      A logical switch: Should the asymptotic covariance matrix of the penalty
+      parameters be returned? Defaults to \code{optReturnACov = FALSE}.
     }
   }
 }
 \value{
-  A list containing \code{nImps} imputed versions of \code{data} and
-  whatever additional output is requested via \code{returnConvInfo} and
-  \code{returnParams}. 
+  A list containing \code{nImps} imputed versions of \code{data} and whatever
+  additional output is requested via \code{returnConvInfo} and
+  \code{returnParams}.
 }
-
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
     Bayesian elastic net} (Unpublished doctoral dissertation). University of
   Kansas.
   
-  Park, T. and Casella, G. (2008) The Bayesian Lasso. \emph{Journal of
-    the American Statistical Association}, \bold{103}, 681--686.
-  
-  Zhao, Y., and Long, Q. (2013) Multiple imputation in the presence of
-  high-dimensional data. \emph{Statistical Methods in Medical Research},
-  \bold{0}(0), 1--15.
+  Li, Q. and Lin, N. (2010) The Bayesian Elastic Net. \emph{Bayesian
+    Analysis}, \bold{5}(1), 151--170.
 }
 \author{
   Kyle M. Lang
-  
+
   Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 }
 \note{
@@ -190,15 +205,14 @@ mibl(data,
   You have been granted access to this package for evaluation purposes, only. This
   function is \strong{absolutely not} ready for use in real-world analyses!
 }
-
 \seealso{
-\code{\link{miben}}
+\code{\link{bl}}, \code{\link{optimx}}
 }
 \examples{
 data(mibrrExampleData)
 
-mibl(data       = mibrrExampleData,
-     nImps      = 100,
-     targetVars = c("y", paste0("x", c(1 : 3))),
-     ignoreVars = "idNum")
+ben(data = mibrrExampleData,
+    y    = "y",
+    X    = paste0("x", c(1 : 3))
+)
 }

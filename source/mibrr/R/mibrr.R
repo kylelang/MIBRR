@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-OCT-27
+### Modified: 2017-NOV-01
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -13,7 +13,8 @@
 ###           - The miben and mibl functions are wrappers that parameterization
 ###             mibrr as needed to run MIBEN or MIBL, respectively.
 ###           - The ben and bl functions simply fit the Bayesian elastic net and
-###             Bayesian LASSO models without any missing data imputation.
+###             Bayesian LASSO models to (possibly) incomplete data without
+###             returning any missing data imputations.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -52,7 +53,7 @@ mibrr <- function(doBl,
                   control)
 {
     if(!is.null(seed)) set.seed(seed)
-    
+   
     ## Check the user inputs and resolve a set of target variables:
     checkInputs()
     
@@ -96,8 +97,6 @@ mibrr <- function(doBl,
     noMiss     <- all(respCounts == nObs)
 
     if(noMiss) {
-        ## Don't try to impute any data:
-        doImp <- FALSE
         ## Mean-center the data (and compute initial data scales):
         scaleData()
     } else if(control$fimlStarts) {
@@ -179,7 +178,7 @@ mibrr <- function(doBl,
                                      gibbsState   = gibbsOut,
                                      doBl         = doBl,
                                      printFlag    = verbose,
-                                     returnACov   = control$optReturnACov,
+                                     returnACov   = FALSE, # Do we ever care?
                                      controlParms = list(
                                          method      = control$optMethod,
                                          boundLambda = control$optBoundLambda,
@@ -358,16 +357,19 @@ mibl <- function(data,
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
 ben <- function(data,
-                y              = NULL,
+                y,
                 X              = NULL,
                 iterations     = c(100, 10),
                 sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+                missCode       = NULL,
                 returnConvInfo = TRUE,
                 verbose        = TRUE,
                 seed           = NULL,
                 control        = list()
                 )
 {
+    if(length(y) > 1) stop("Only one outcome variable is allowed.")
+    
     mibrr(doBl           = FALSE,
           doImp          = FALSE,
           data           = data,
@@ -375,7 +377,7 @@ ben <- function(data,
           ignoreVars     = setdiff(colnames(data), c(y, X)),
           iterations     = iterations,
           sampleSizes    = sampleSizes,
-          missCode       = NULL,
+          missCode       = missCode,
           returnConvInfo = returnConvInfo,
           returnParams   = TRUE,
           verbose        = verbose,
@@ -386,16 +388,19 @@ ben <- function(data,
 
 ### Specify a wrapper function to fit the Bayesian LASSO (BL):
 bl <- function(data,
-               y              = NULL,
+               y,
                X              = NULL,
                iterations     = c(100, 10),
                sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+               missCode       = NULL,
                returnConvInfo = TRUE,
                verbose        = TRUE,
                seed           = NULL,
                control        = list()
                )
 {
+    if(length(y) > 1) stop("Only one outcome variable is allowed.")
+    
     mibrr(doBl           = TRUE,
           doImp          = FALSE,
           data           = data,
@@ -403,7 +408,7 @@ bl <- function(data,
           ignoreVars     = setdiff(colnames(data), c(y, X)),
           iterations     = iterations,
           sampleSizes    = sampleSizes,
-          missCode       = NULL,
+          missCode       = missCode,
           returnConvInfo = returnConvInfo,
           returnParams   = TRUE,
           verbose        = verbose,

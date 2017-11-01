@@ -9,7 +9,7 @@ Multiple imputation with the Bayesian elastic net.
 }
 \usage{
 miben(data,
-      nImps          = 100,
+      nImps,
       targetVars     = NULL,
       ignoreVars     = NULL,
       iterations     = c(100, 10),
@@ -19,7 +19,8 @@ miben(data,
       returnParams   = FALSE,
       verbose        = TRUE,
       seed           = NULL,
-      control)  
+      control        = list()
+)  
 }
 \arguments{
   \item{data}{
@@ -27,8 +28,7 @@ miben(data,
     imputations.
   }
   \item{nImps}{
-    An integer giving the number of imputations to create. Defaults to
-    \code{nImps = 100}.
+    An integer giving the number of imputations to create.
   }
   \item{targetVars}{
     An optional character vector giving the column labels for the variables to
@@ -52,26 +52,26 @@ miben(data,
   }
   \item{missCode}{
     An optional integer-valued code used to flag the missing data in
-    \code{rawData}. Should take a value that cannot naturally occur in
-    \code{rawData}. Not needed when the missing data are coded as \code{NA}.
+    \code{data}. Should take a value that cannot naturally occur in
+    \code{data}. Not needed when the missing data are coded as \code{NA}.
   }
   \item{returnConvInfo}{
-    A logical switch: should convergence information for the imputation model
+    A logical switch: Should convergence information for the imputation model
     (i.e., history of the optimized penalty parameters and R-Hat values for
     final parameter estimates) be returned? Defaults to \code{returnConvInfo =
       TRUE}. 
   }
   \item{returnParams}{
-    A logical switch: should the final Gibbs samples of the imputation model's
+    A logical switch: Should the final Gibbs samples of the imputation model's
     parameters be returned? Defaults to \code{returnParams = FALSE}.
   }
   \item{verbose}{
-    A logical switch: should verbose output be printed to stdout? Defaults to
+    A logical switch: Should verbose output be printed to stdout? Defaults to
     \code{verbose = TRUE}.
   }
   \item{seed}{
     An integer-valued seed for the pseudorandom number generator. When
-    \code{seed = NULL} R's default PRNG and seed are left alone.
+    \code{seed = NULL} \R's default PRNG and seed are left alone.
   }
   \item{control}{
     A list of control parameters for the Gibbs sampler and penalty parameter
@@ -79,48 +79,119 @@ miben(data,
   }
 }
 \details{
-  \code{control} is a list containing six elements:
-  \itemize{
-    \item convThresh = The R-Hat value used to judge convergence. R-Hat
-    values < convThresh arising during the MCEM tuning phase will trigger a
-    warning. Defaults to \code{convThres = 1.1}. 
-    \item lambda1Starts = An optional numeric vector giving starting values for
-    the LASSO penalty parameter. Values are recycled to populate a vector with
-    \code{size = length(targetVars)}. Defaults to \code{rep(0.5,
-      length(targetVars))}.
-    \item lambda2Starts = An optional numeric vector giving starting values for
-    the ridge penalty parameter. Values are recycled to populate a vector with
-    \code{size = length(targetVars)}. Defaults to \code{rep(0.1 * nPreds,
-      length(targetVars))}, where nPreds is the number of predictors in the
-    imputation model.
-    \item usePcStarts = A logical switch: use the starting values for lambda1
-    suggested by Park and Casella (2009)? Defaults to \code{usePcStarts = FALSE}.
-    \item smoothingWindow = An integer giving the number of approximation phase
-    lambda values to average over to get the starting lambdas for the MCEM
-    tuning phase. Setting smoothingWindow > 1 can facilitate convergence of the
-    MCEM tuning phase when burn-in lambda estimates are very noisy. Defaults to
-    \code{smoothingWindow = 1}.
-    \item center = A logical switch: Should the data be centered before
-    estimating the imputation model? When \code{center = TRUE} imputed data are
-    un-centered when returned. Defaults to \code{center = TRUE}.
-    \item scale = A logical switch: Should the predictor data be scaled to have
-    unit variance before estimating the imputation model? When \code{scale =
-      TRUE} imputed data are un-scaled when returned. Defaults to \code{scale =
-      TRUE}.
-    \item adaptScales = A logical switch: Should the target variables' scales be
-    actively updated as part of imputation model estimation? Defaults to
-    \code{adaptScales = TRUE}.
-    \item simpleIntercept
-    \item minPredCor
-    \item miceIters
-    \item miceMethod
-    \item fimlStarts
-    \item preserveStructure
-    \item optTraceLevel
-    \item optCheckKkt
-    \item optMethod
-    \item optBoundLambda
-    \item optReturnAcov
+  \code{control} is a list containing the following named elements:
+  \describe{
+    \item{convThresh:}{
+      The R-Hat value used to judge convergence. R-Hat
+      values < \code{convThresh} arising during the MCEM tuning phase will
+      trigger a warning. Defaults to \code{convThres = 1.1}.
+    }
+    \item{lambda1Starts:}{
+      An optional numeric vector giving starting values for
+      the LASSO penalty parameter, \eqn{\lambda_1}{lambda1}. Values are recycled
+      to populate a vector with \code{size = length(targetVars)}. Defaults to
+      \code{rep(0.5, length(targetVars))}.
+    }
+    \item{lambda2Starts:}{
+      An optional numeric vector giving starting values for
+      the ridge penalty parameter, \eqn{\lambda_2}{lambda2}. Values are recycled
+      to populate a vector with \code{size = length(targetVars)}. Defaults to
+      \code{rep(0.1 * nPreds, length(targetVars))}, where \code{nPreds} is the
+      number of predictors in the imputation model.
+    }
+    \item{usePcStarts:}{
+      A logical switch: Use the starting values for \eqn{\lambda_1}{lambda1}
+      suggested by Park and Casella (2008)? Defaults to \code{usePcStarts = FALSE}.
+    }
+    \item{smoothingWindow:}{
+      An integer giving the number of approximation phase
+      \eqn{\Lambda}{Lambda} values to average over to get the starting
+      \eqn{\Lambda's}{Lambdas} for the MCEM tuning phase. Setting
+      \code{smoothingWindow} > 1 can facilitate convergence of the MCEM tuning phase
+      when burn-in \eqn{\Lambda}{Lambda} estimates are very noisy. Defaults to
+      \code{smoothingWindow = 1}. 
+    }
+    \item{center:}{
+      A logical switch: Should the data be centered before
+      estimating the imputation model? When \code{center = TRUE} the data
+      centers are added back to the imputed data before the function
+      returns. Defaults to \code{center = TRUE}.
+    }
+    \item{scale:}{
+      A logical switch: Should the predictor data be scaled to have
+      unit variance before estimating the imputation model? When \code{scale =
+	TRUE} imputed data are reverted to their original scaling before the
+      function returns. Defaults to \code{scale = TRUE}.
+    }
+    \item{adaptScales:}{
+      A logical switch: Should the target variables' scales be
+      actively updated as part of imputation model estimation? Defaults to
+      \code{adaptScales = TRUE}.
+    }
+    \item{simpleIntercept:}{
+      A logical switch: When \code{simpleIntercept =
+	TRUE}, the mean of each intercept's posterior distribution is taken as
+      \eqn{bar{y}}{\code{mean(y)}}, otherwise it equals \eqn{\bar{y} -
+	\bar{\mathbf{X}}\hat{\beta}}{\code{mean(y) - colMeans(X) \%*\% Beta}}.
+    }
+    \item{minPredCor:}{
+      The minimum correlation used by \code{mice::quickpred}
+      when temporarily filling missing data before scaling or when filling
+      missing data on covariates. Defaults to \code{minPredCor = 0.3}.
+    }
+    \item{miceIters:}{
+      The number of iterations used by the \pkg{mice} package when temporarily
+      filling missing data before scaling or filling missing data on
+      covariates. Defaults to \code{miceIters = 10}.
+    }
+    \item{miceRidge:}{
+      The ridge penalty used by the \pkg{mice} package when temporarily
+      filling missing data before scaling or filling missing data on
+      covariates. Defaults to \code{miceRidge = 1e-4}.
+    }
+    \item{miceMethod:}{
+      The elementary imputation method used by the \pkg{mice} package when
+      temporarily filling missing data before scaling or filling missing data on
+      covaraites. Defaults to \code{miceMethod = "pmm"}.
+    }
+    \item{fimlStarts:}{
+      A logical switch: Should the model moments from a saturated FIML model be
+      used to scale the target variables? When \code{fimlStarts = TRUE}, the
+      saturated model is estimated using \pkg{lavaan}. Defaults to
+      \code{fimlStarts = FALSE}.
+    }
+    \item{preserveStructure:}{
+      A logical switch: Should the data columns be returned in the same order
+      as submitted? Defaults to \code{preserveStructure = TRUE}.
+    }
+    \item{optTraceLevel:}{
+      A non-negative integer passed to the \pkg{optimx} \code{trace}
+      argument. See \pkg{optimx} documentation for details. Defaults to
+      \code{optTraceLevel = 0}.
+    }
+    \item{optCheckKkt:}{
+      A logical flag: Should the Kuhn, Jarush, Tucker optimality conditions be
+      checked when optimizing the penalty parameters? Defaults to
+      \code{optCheckKkt = TRUE}.
+    }
+    \item{optMethod:}{
+      A character vector giving the optimization method(s) used by \pkg{optimx}
+      to estimate the penalty paramters. Possible options are
+      \dQuote{Nelder-Mead}, \dQuote{BFGS}, \dQuote{CG}, \dQuote{L-BFGS-B},
+      \dQuote{nlm}, \dQuote{nlminb}, \dQuote{spg}, \dQuote{ucminf},
+      \dQuote{newuoa}, \dQuote{bobyqa}, \dQuote{nmkb}, \dQuote{hjkb},
+      \dQuote{Rcgmin}, or \dQuote{Rvmmin}. When \code{length(optMethod) > 1},
+      \pkg{optimx}'s follow-on optimization is employed. See the \pkg{optimx}
+      documentation for details. Defaults to \code{optMethod = "L-BFGS-B"}.
+    }
+    \item{optBoundLambda:}{
+      A logical switch: Should the penalty paramters be bounded below by zero?
+      Defaults to \code{optBoundLambda = TRUE}.
+    }
+    \item{optReturnACov:}{
+      A logical switch: Should the asymptotic covariance matrix of the penalty
+      parameters be returned? Defaults to \code{optReturnACov = FALSE}.
+    }
   }
 }
 \value{
@@ -129,12 +200,12 @@ miben(data,
   \code{returnParams}.
 }
 \references{
-  Lang, K. M. (2015). \emph{MIBEN: Multiple imputation with the
+  Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
     Bayesian elastic net} (Unpublished doctoral dissertation). University of
   Kansas.
   
-  Li, Q., & Lin, N. (2010). The Bayesian Elastic Net. \emph{Bayesian
-    Analysis, 5}(1), 151--170.
+  Li, Q. and Lin, N. (2010) The Bayesian Elastic Net. \emph{Bayesian
+    Analysis}, \bold{5}(1), 151--170.
 }
 \author{
   Kyle M. Lang
@@ -142,15 +213,21 @@ miben(data,
   Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 }
 \note{
-You are not a wombat...or are you???
+  This function is in a highly unstable \emph{alpha} level of development. Please
+  anticipate frequent---and dramatic---changes to the functionality and user
+  interface.
+  
+  You have been granted access to this package for evaluation purposes, only. This
+  function is \strong{absolutely not} ready for use in real-world analyses!
 }
 \seealso{
-\code{\link{mibl}}
+\code{\link{mibl}}, \code{\link{optimx}}
 }
 \examples{
 data(mibrrExampleData)
 
 miben(data       = mibrrExampleData,
+      nImps      = 100,
       targetVars = c("y", paste0("x", c(1 : 3))),
       ignoreVars = "idNum")
 }
