@@ -10,5 +10,5 @@ License: GPL-3 | file LICENSE
 Depends: mvtnorm, lavaan, mice, optimx
 Imports: Rcpp (>= 0.11.2), RcppEigen (>= 0.3.2.2.0)
 LinkingTo: Rcpp, RcppEigen
-URL: http://github.com/mibrr
-BugReports: https://github.com/mibrr/issues
+URL: http://github.com/kylelang/mibrr
+BugReports: https://github.com/kylelang/mibrr/issues

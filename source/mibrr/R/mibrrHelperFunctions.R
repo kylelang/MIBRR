@@ -367,8 +367,8 @@ padControlList <- function()
         optTraceLevel     = 0,
         optCheckKkt       = TRUE,
         optMethod         = "L-BFGS-B",
-        optBoundLambda    = TRUE,
-        optReturnACov     = FALSE
+        optBoundLambda    = TRUE #,
+        #optReturnACov     = FALSE
     )
     
     ## Pad the user-provided control list with default values:

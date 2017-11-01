@@ -11,17 +11,17 @@ Toy data generated as in Experiment 1 of Lang (2015).
 \format{
   A data frame with 200 observations on the following 17 variables.
   \describe{
-    \item{\code{idNum}}{
+    \item{idNum:}{
       \dQuote{Participant} ID Number.
     }
-    \item{\code{y}}{
+    \item{y:}{
       Outcome Variable. Contains 20\% MAR missingness.
     }
-    \item{\code{x1--x3}}{
+    \item{x1--x3:}{
       Substantive predictors. Contain 20\% MAR missingness.
     }
-    \item{\code{z1--z12}}{
-      Exogeneous auxiliary variables. Contain 10\% MCAR missingness. 
+    \item{z1--z12:}{
+      Exogenous auxiliary variables. Contain 10\% MCAR missingness. 
     }
   }
 }

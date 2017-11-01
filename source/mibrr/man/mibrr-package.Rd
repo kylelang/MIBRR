@@ -42,5 +42,15 @@ mibl(data       = mibrrExampleData,
      nImps      = 100,
      targetVars = c("y", paste0("x", c(1 : 3))),
      ignoreVars = "idNum")
+
+ben(data = mibrrExampleData,
+    y    = "y",
+    X    = paste0("x", c(1 : 3))
+    )
+
+bl(data = mibrrExampleData,
+   y    = "y",
+   X    = paste0("x", c(1 : 3))
+   )
 }
 \keyword{ package }
