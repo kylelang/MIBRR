@@ -11,9 +11,23 @@ undocumented.
 
 ## 0.0.0.9004 - 2017-11-01
 
+### Added
+- Included a "documentation" directory
+- Put the .pdf package doc in the "documentation" directory
+- Help files for the `ben` and `bl` functions
+
 ### Changed
 - Updated documentation
+- Changed license from LGPL-3 to GPL-3 since `mibrr` no longer uses `nlopt` 
 
+    - `nlopt` is distributed under the LGPL, which precluded releasing `mibrr` 
+	  under the GPL.
+	   
+- Tweaked the implementation of `ben` and `bl` functions.
+
+    - Both functions now work with incomplete data
+	- Both functions only allow one DV per call
+	
 ### Fixed
 - Bug caused by trying to impute fully observed covariate matrices
 
