@@ -9,6 +9,14 @@ approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9004 - 2017-11-01
+
+### Changed
+- Updated documentation
+
+### Fixed
+- Bug caused by trying to impute fully observed covariate matrices
+
 ## 0.0.0.9003 - 2017-10-27
 
 ### Changed
