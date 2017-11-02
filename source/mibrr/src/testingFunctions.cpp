@@ -1,4 +1,4 @@
-// Title:    Additional C++ Function to Export in MIBRR
+// Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
 // Modified: 2017-OCT-27

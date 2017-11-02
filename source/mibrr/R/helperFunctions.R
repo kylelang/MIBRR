@@ -353,7 +353,7 @@ padControlList <- function()
         lambda1Starts     = rep(0.5, env$nTargets),
         lambda2Starts     = rep(env$nPreds / 10, env$nTargets),
         usePcStarts       = FALSE,
-        smoothingWindow   = 1,
+        smoothingWindow   = min(10, ceiling(env$iterations[1] / 10)),
         center            = TRUE,
         scale             = TRUE,
         adaptScales       = TRUE,

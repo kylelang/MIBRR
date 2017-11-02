@@ -1,4 +1,4 @@
-### Title:    Testing Support Functions for the MIBRR Package
+### Title:    Debugging/Testing Functions for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-OCT-25
 ### Modified: 2017-NOV-02

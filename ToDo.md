@@ -1,6 +1,11 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2017-OCT-25
+## Last Update: 2017-NOV-02
+
+# 2017-NOV-02:
+## Update docs to reflect new default for smoothingWindow
+
+## Add missing docs
 
 # 2017-OCT-25:
 ## Make sure we're dealing with missing data on predictors in a sensible way

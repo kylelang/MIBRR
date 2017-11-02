@@ -247,6 +247,11 @@ mibrr <- function(doBl,
                 tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
                 
                 lambdaHistory[[j]][i, ] <- lambdaMat[j, ]
+
+                if(i == iterations[1]) {
+                    smoothRange    <- (i - control$smoothingWindow + 1) : i
+                    lambdaMat[j, ] <- colMeans(lambdaHistory[[j]][smoothRange, ])
+                }
             }
         }
     }# END for(i in 1 : totalIters)

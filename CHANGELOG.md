@@ -9,6 +9,22 @@ approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9005 - 2017-11-02
+
+### Changed
+- Tweaked the iteration output printed to stdout
+- Updated the README.md file
+- Renamed 'testingSupportFunctions.R' to 'testingFunctions.R'
+- Renamed 'mibrrHelperFunction.R' to 'helperFunctions.R'
+- Renamed 'extraFunctions.cpp' to 'testingFunctions.cpp'
+- Removed debugging/testing functions from the exports
+- Updated default for 'smoothingWindow' control parameter
+
+### Fixed
+- A bug triggered by malformed lambda matrices in models with only 1 DV
+- Added back support for lambda smoothing windows that was inadvertanlty lost 
+  when moving optimization to the R layer
+
 ## 0.0.0.9004 - 2017-11-01
 
 ### Added
