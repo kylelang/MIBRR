@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-NOV-01
+### Modified: 2017-NOV-02
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -607,27 +607,36 @@ nameOutput <- function() {
 
 predictMibrr <- function(object,
                          newData,
-                         targetVar,
-                         nDraws = 0)
+                         targetVar = NULL,
+                         nDraws    = 0)
 {
-    if(nDraws == 0) {
-        beta  <- matrix(colMeans(object$params[[targetVar]]$beta))
-        sigma <- mean(object$params[[targetVar]]$sigma)
-        
-        out <- cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
-    } else if(nDraws > 0) {
-        index <- sample(c(1 : length(object$params[[targetVar]]$sigma)), nDraws)
-        beta  <- object$params[[targetVar]]$beta[index, ]
-        sigma <- object$params[[targetVar]]$sigma[index]
-        
-        out <- matrix(NA, nrow(newData), nDraws)
-        for(j in 1 : nDraws)
-            out[ , j] <- cbind(1, newData) %*% matrix(beta[j, ]) +
-                rnorm(1, 0, sqrt(sigma[j]))
-    } else {
-        stop("nDraws must be non-negative.")
+    if(!is.null(targetVar)) object$params <- object$params[targetVar]
+    
+    outList <- list()
+    outInd  <- 0
+    for(obj in object$params) {
+        outInd <- outInd + 1
+        if(nDraws == 0) {
+            beta  <- matrix(colMeans(obj$beta))
+            sigma <- mean(obj$sigma)
+            
+            out <- cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
+        } else if(nDraws > 0) {
+            index <- sample(c(1 : length(obj$sigma)), nDraws)
+            beta  <- obj$beta[index, ]
+            sigma <- obj$sigma[index]
+            
+            out <- matrix(NA, nrow(newData), nDraws)
+            for(j in 1 : nDraws)
+                out[ , j] <- cbind(1, newData) %*% matrix(beta[j, ]) +
+                    rnorm(1, 0, sqrt(sigma[j]))
+        } else {
+            stop("nDraws must be non-negative.")
+        }
+        outList[[outInd]] <- out
     }
-    out
+    names(outList) <- names(object$params)
+    outList
 }
 
 
@@ -737,12 +746,9 @@ updateBlLambda <- function(gibbsState) {
 optimizeLambda <- function(lambdaMat,
                            gibbsState,
                            doBl       = FALSE,
-                           printFlag  = TRUE,
                            returnACov = FALSE,
                            controlParms)
-{
-    if(printFlag) cat("Optimizing penalty parameters\n")
-    
+{    
     ## Use simple update rule and return early when doing BL:
     if(doBl) return(lapply(gibbsState, updateBlLambda))
     

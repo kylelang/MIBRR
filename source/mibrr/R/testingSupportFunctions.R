@@ -1,22 +1,22 @@
 ### Title:    Testing Support Functions for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-OCT-25
-### Modified: 2017-OCT-27
+### Modified: 2017-NOV-02
 
 
-simulateData <- function(nObs,
-                         nPreds,
-                         r2,
-                         collin,
-                         beta,
-                         means           = 0,
-                         scales          = 1,
-                         latentStructure = FALSE,
-                         itemsPerFactor  = 1,
-                         itemReliability = NULL)
+simRegData <- function(nObs,
+                       nPreds,
+                       r2,
+                       collin,
+                       beta,
+                       means           = 0,
+                       scales          = 1,
+                       itemsPerPred    = 1,
+                       predReliability = 0.8)
 {
     if(length(means) == 1) means <- rep(means, nPreds)
-    
+
+    ## Generate a covariance matrix from 'scales' and 'collin':
     w1 <- matrix(scales, nPreds, nPreds)
     w2 <- matrix(scales, nPreds, nPreds, byrow = TRUE)
     
@@ -24,26 +24,33 @@ simulateData <- function(nObs,
     
     sigma       <- maxCov * collin
     diag(sigma) <- scales^2
-    
+
+    ## Simulate predictor data:
     X <- cbind(1, rmvnorm(nObs, means, sigma))
 
+    ## Simulate the outcome:
     eta    <- X %*% beta
     sigmaY <- (var(eta) / r2) - var(eta)
     y      <- eta + rnorm(nObs, 0, sqrt(sigmaY))
 
-    if(latentStructure) {
-        nItems   <- nPreds * itemsPerFactor
+    ## Generate a latent structure wherein each predictor is indicated by
+    ## 'itemsPerPred' observed variables:
+    if(itemsPerPred > 1) {
+        nItems   <- nPreds * itemsPerPred
         loadings <- matrix(0, nItems, nPreds)
-        
+
+        ## Populate loading matrix:
         for(m in 1 : nPreds) {
-            for(n in 1 : itemsPerFactor) {
-                offset                  <- (m - 1) * itemsPerFactor
-                loadings[n + offset, m] <- sqrt(itemReliability)
+            for(n in 1 : itemsPerPred) {
+                offset                  <- (m - 1) * itemsPerPred
+                loadings[n + offset, m] <- sqrt(predReliability)
             }
         }
 
-        theta <- diag(rep(1 - itemReliability, nItems))
-    
+        ## Populate error variance matrix:
+        theta <- diag(rep(1 - predReliability, nItems))
+
+        ## Generate observed items:
         X <- X[ , -1] %*% t(loadings) + rmvnorm(nObs, rep(0, nItems), theta)
         
         outDat           <- data.frame(y, X)
@@ -83,7 +90,7 @@ makeRVec <- function(linPred, pm, snr, pattern) {
 
         
 
-imposeMissing <- function(data, targets, preds, pm, snr, pattern = "random") {
+imposeMissData <- function(data, targets, preds, pm, snr, pattern = "random") {
     ## Which mechanisms should be simulated?
     mechFlag <- !is.na(targets)
 

@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-NOV-01
+### Modified: 2017-NOV-02
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -140,9 +140,15 @@ mibrr <- function(doBl,
     for(i in 1 : totalIters) {
         ## Print status update:
         if(verbose) {
-            if(i == 1)                   cat("\nBeginning MCEM 'Warm-Up' phase\n")
-            if(i == (iterations[1] + 1)) cat("\nBeginning MCEM 'Tuning' phase\n")
-            if(i == totalIters)          cat("\nSampling from the stationary posterior\n")
+            if(i == 1) {
+                cat("\nBeginning MCEM 'Warm-Up' phase\n")
+                mcemStage <- "'Warm-Up'"
+            }
+            if(i == (iterations[1] + 1)){
+                cat("\nBeginning MCEM 'Tuning' phase\n")
+                mcemStage <- "'Tuning'"
+            }
+            if(i == totalIters) cat("\nSampling from the stationary posterior\n")
         }
         
         ## What Gibbs sample sizes should we use?:
@@ -160,7 +166,7 @@ mibrr <- function(doBl,
                      missList        = missList[c(1 : nTargets)],
                      respCounts      = respCounts[c(1 : nTargets)],
                      lambda1         = lambdaMat[ , 1], 
-                     lambda2         = lambdaMat[ , 2],     # Ignored for BL
+                     lambda2         = lambdaMat[ , 2], # Ignored for BL
                      sigmaStarts     = sigmaStarts,
                      tauStarts       = tauStarts,
                      betaStarts      = betaStarts,
@@ -173,11 +179,22 @@ mibrr <- function(doBl,
                      noMiss          = noMiss)
 
         if(i < totalIters) {
+            if(verbose) {
+                check <- i > iterations[1]
+                cat(paste0("Doing MCEM ",
+                           ifelse(check, "'Tuning'", "'Warm-Up'"),
+                           " iteration ",
+                           ifelse(check, i - iterations[1], i),
+                           " of ",
+                           iterations[as.numeric(check) + 1],
+                           "\n")
+                    )
+            }
+            
             ## Conduct the MCEM update of the lambdas:
             optOut <- optimizeLambda(lambdaMat    = lambdaMat,
                                      gibbsState   = gibbsOut,
                                      doBl         = doBl,
-                                     printFlag    = verbose,
                                      returnACov   = FALSE, # Do we ever care?
                                      controlParms = list(
                                          method      = control$optMethod,
@@ -187,7 +204,7 @@ mibrr <- function(doBl,
                                          checkKkt    = control$optCheckKkt
                                      )
                                      )
-
+            
             if(doBl) {
                 lambdaMat           <- cbind(unlist(optOut), NA)
                 colnames(lambdaMat) <- c("lambda", "dummy")
@@ -207,6 +224,9 @@ mibrr <- function(doBl,
                                  dimnames = list(NULL, optLabs)
                                  )
                 lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
+
+                ## Hack for models with single DV:
+                if(length(targetVars) == 1) lambdaMat <- matrix(lambdaMat, 1, 2)
                 
                 ## Check optimality conditions:
                 if(control$optCheckKkt) {
