@@ -10,7 +10,7 @@
 	
 ## Update docs to reflect new default for smoothingWindow - DONE (2017-NOV-03)
 
-## Add missing docs
+## Add missing docs - DONE (2017-NOV-03)
 
 ## Make sure we're dealing with missing data on predictors in a sensible way
 
