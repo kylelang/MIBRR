@@ -221,8 +221,8 @@ ben(data,
 \examples{
 data(mibrrExampleData)
 
-ben(data = mibrrExampleData,
-    y    = "y",
-    X    = paste0("x", c(1 : 3))
-    )
+benOut <- ben(data = mibrrExampleData,
+              y    = "y",
+              X    = paste0("x", c(1 : 3))
+              )
 }

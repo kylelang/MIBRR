@@ -208,8 +208,8 @@ mibl(data,
 \examples{
 data(mibrrExampleData)
 
-mibl(data       = mibrrExampleData,
-     nImps      = 100,
-     targetVars = c("y", paste0("x", c(1 : 3))),
-     ignoreVars = "idNum")
+miblOut <- mibl(data       = mibrrExampleData,
+                nImps      = 100,
+                targetVars = c("y", paste0("x", c(1 : 3))),
+                ignoreVars = "idNum")
 }

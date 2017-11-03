@@ -238,8 +238,8 @@ miben(data,
 \examples{
 data(mibrrExampleData)
 
-miben(data       = mibrrExampleData,
-      nImps      = 100,
-      targetVars = c("y", paste0("x", c(1 : 3))),
-      ignoreVars = "idNum")
+mibenOut <- miben(data       = mibrrExampleData,
+                  nImps      = 100,
+                  targetVars = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars = "idNum")
 }

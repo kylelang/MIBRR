@@ -1,14 +1,23 @@
 # Change Log
 All notable changes to the **mibrr** project will be documented in this file.
 
-The format is based on [Keep a Changelog][kacl], and this project adheres to
-[Semantic Versioning][sv].
+The format is based on [Keep a Changelog][kacl], and this project (attempts to ) 
+adhere to [Semantic Versioning][sv].
 
 NOTE: As of version 0.0.0.9000, I am returning to this project after
 approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9006 - 2017-11-03
+
+### Added
+- Help files for `predictMibrr`, `mibrrW`, and `mibrrL`
+
+### Changed
+- Updated docs to accurately reflect new default for the `smoothingWindow` 
+  control parameter
+  
 ## 0.0.0.9005 - 2017-11-02
 
 ### Changed
@@ -22,7 +31,7 @@ undocumented.
 
 ### Fixed
 - A bug triggered by malformed lambda matrices in models with only 1 DV
-- Added back support for lambda smoothing windows that was inadvertanlty lost 
+- Added back support for lambda smoothing windows that was inadvertently lost 
   when moving optimization to the R layer
 
 ## 0.0.0.9004 - 2017-11-01
@@ -59,7 +68,7 @@ undocumented.
 ## 0.0.0.9002 - 2017-10-25
 
 ### Changed
-- Moved optimization of Bayesian LASSO's penalty paramter into the R layer
+- Moved optimization of Bayesian LASSO's penalty parameter into the R layer
 
 ### Fixed
 - Bug causing failures of penalty parameters' optimization in MIBEN when 
@@ -71,7 +80,7 @@ undocumented.
 ### Added
 - *archive* directory to hold frozen source files
 - froze the current *src* directory and stored it as "archive/frozen_src-20170930.tar.gz"
-- froze the current *R* directory adn stored it as "archive/frozen_R-20170930.tar.gz"
+- froze the current *R* directory and stored it as "archive/frozen_R-20170930.tar.gz"
 
 ### Changed
 - Removed `NLopt`-based optimization for the MCEM steps

@@ -188,8 +188,8 @@ bl(data,
 \examples{
 data(mibrrExampleData)
 
-bl(data = mibrrExampleData,
-   y    = "y",
-   X    = paste0("x", c(1 : 3))
-   )
+blOut <- bl(data = mibrrExampleData,
+            y    = "y",
+            X    = paste0("x", c(1 : 3))
+            )
 }

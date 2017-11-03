@@ -33,24 +33,24 @@ Maintainer: \packageMaintainer{mibrr}
 \examples{
 data(mibrrExampleData)
 
-miben(data       = mibrrExampleData,
-      nImps      = 100,
-      targetVars = c("y", paste0("x", c(1 : 3))),
-      ignoreVars = "idNum")
+mibenOut <- miben(data       = mibrrExampleData,
+                  nImps      = 100,
+                  targetVars = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars = "idNum")
 
-mibl(data       = mibrrExampleData,
-     nImps      = 100,
-     targetVars = c("y", paste0("x", c(1 : 3))),
-     ignoreVars = "idNum")
+miblOut <- mibl(data       = mibrrExampleData,
+                nImps      = 100,
+                targetVars = c("y", paste0("x", c(1 : 3))),
+                ignoreVars = "idNum")
 
-ben(data = mibrrExampleData,
-    y    = "y",
-    X    = paste0("x", c(1 : 3))
-    )
+benOut <- ben(data = mibrrExampleData,
+              y    = "y",
+              X    = paste0("x", c(1 : 3))
+              )
 
-bl(data = mibrrExampleData,
-   y    = "y",
-   X    = paste0("x", c(1 : 3))
-   )
+blOut <- bl(data = mibrrExampleData,
+            y    = "y",
+            X    = paste0("x", c(1 : 3))
+            )
 }
 \keyword{ package }

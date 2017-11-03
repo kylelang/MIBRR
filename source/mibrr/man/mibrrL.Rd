@@ -1,5 +1,5 @@
-\name{mibrrW}
-\alias{mibrrW}
+\name{mibrrL}
+\alias{mibrrL}
 \title{Print License for \pkg{mibrr}}
 \description{
   Print the license under which \pkg{mibrr} is distibuted (i.e., the GPL-3). 
