@@ -1,19 +1,22 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2017-NOV-02
+## Last Update: 2017-NOV-03
 
-# 2017-NOV-02:
-## Update docs to reflect new default for smoothingWindow
+## Tweak the implementation of `predictMibrr`
+- Need to make the *newData* specification more robust
+    - Accept a data.frame
+	- Can rely on user to keep track of the predictor ordering when we're 
+	  re-ordering the data columns before fitting
+	
+## Update docs to reflect new default for smoothingWindow - DONE (2017-NOV-03)
 
 ## Add missing docs
 
-# 2017-OCT-25:
 ## Make sure we're dealing with missing data on predictors in a sensible way
 
 - Zero imputation will only work with MCAR missingness
 - Can we implement a reasonably efficient single imputation-based treatment?
 
-# 2017-OCT-01:
 ## Find a good way to compute data centers with missing values
 
 - Need to center data for the BEN to work, but center computed from incomplete 
@@ -25,7 +28,6 @@
 
 - Still need to add the deterministic update step for BL lambda
 
-# 2017-SEP-30:
 ## Assess the current state of the package
 
 - What works, what does not?
@@ -40,7 +42,6 @@
   Gibbs sampler in the future, anyway
 - Using `optimx` won't induce any portability problems
 
-# 2016-NOV-07:
 ## Check that we didn't break anything when moving to the new way of indexing missing data - DONE (2017-OCT-27)
 
 - The results are looking dubious--we need to find out why
@@ -50,7 +51,6 @@
     - If we can get a stable version running, we need to start some simulations 
 	  before doing any more development work.
 
-# 2016-NOV-05:
 ## Remove intercept regularization option - DONE
 ## Use FIML to get means for centering - DONE (and partially reverted)
 
