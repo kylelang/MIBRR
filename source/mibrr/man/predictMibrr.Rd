@@ -19,8 +19,8 @@ predictMibrr(object,
     \code{bl}.  
   }
   \item{newData}{
-    A data.frame containing new predictor data from which to generate the
-    posterior predictions.  
+    A matrix containing new predictor data from which to generate the
+    posterior predictions.   
   }
   \item{targetVar}{
     An optional character vector giving the column labels for the outcome
@@ -37,6 +37,16 @@ predictMibrr(object,
   A list containing the posterior predictive draws for each target variable
   defined in \code{targetVar} or for all target variables in \code{object} when
   \code{targetVar = NULL}.
+}
+\note{
+  The columns of \code{newData} must be in the same order as the predictor
+  columns in the model represented by \code{object}. When \code{object} was
+  produced by \code{ben} or \code{bl}, this requirement simply amounts to
+  ensuring that the column ordering is equivelent to the ordering for the
+  \code{X} argument provided to those functions. When \code{object} was returned
+  by \code{miben} or \code{mibl} note that those functions re-order the columns
+  so that the \code{targetVars} are leftmost followed by all variables not
+  listed in \code{ignoreVars}.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
