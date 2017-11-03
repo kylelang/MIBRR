@@ -101,11 +101,12 @@ mibl(data,
     }
     \item{smoothingWindow:}{
       An integer giving the number of approximation phase
-      \eqn{\lambda}{lambda} values to average over to get the starting
-      \eqn{\lambda's}{lambdas} for the MCEM tuning phase. Setting
+      \eqn{\Lambda}{Lambda} values to average over to get the starting
+      \eqn{\Lambda's}{Lambdas} for the MCEM tuning phase. Setting
       \code{smoothingWindow} > 1 can facilitate convergence of the MCEM tuning phase
-      when burn-in \eqn{\lambda}{lambda} estimates are very noisy.\cr
-      Defaults to \code{smoothingWindow = 1}. 
+      when burn-in \eqn{\Lambda}{Lambda} estimates are very noisy.\cr
+      Defaults to \code{smoothingWindow = min(10, ceiling(nApprox / 10))} where
+      \code{nApprox} is the number of MCEM approximation iterations. 
     }
     \item{center:}{
       A logical switch: Should the data be centered before
