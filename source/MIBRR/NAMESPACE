@@ -1,4 +1,4 @@
-useDynLib(mibrr)
+useDynLib(MIBRR)
 import(RcppEigen)
 importFrom(Rcpp, evalCpp)
 export(mibl,

@@ -1,15 +1,14 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-OCT-27
-// Purpose:  This function will do the Gibbs sampling for Multiple Imputation
-//           with the Bayesian Elastic Net (MIBEN) and Multiple Impution with
-//           the Bayesian LASSO (MIBL).
+// Modified: 2017-NOV-06
+// Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
+//           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
 //  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
-//  This file is part of mibrr.                                                //
+//  This file is part of MIBRR.                                                //
 //                                                                             //
 //  This program is free software: you can redistribute it and/or modify it    //
 //  under the terms of the GNU Lesser General Public License as published by   //

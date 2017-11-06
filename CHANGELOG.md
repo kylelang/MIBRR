@@ -1,13 +1,29 @@
 # Change Log
-All notable changes to the **mibrr** project will be documented in this file.
+All notable changes to the **MIBRR** project will be documented in this file.
 
-The format is based on [Keep a Changelog][kacl], and this project (attempts to ) 
+The format is based on [Keep a Changelog][kacl], and this project (attempts to) 
 adhere to [Semantic Versioning][sv].
 
-NOTE: As of version 0.0.0.9000, I am returning to this project after
-approximately 2.5 years away because I was unable to devote any attention to
-this project during my postdoc. All initial development, therefore, is largely
-undocumented.
+NOTE: 
+
+- As of `mibrr` version 0.0.0.9000, I am returning to this project after
+  approximately 2.5 years away because I was unable to devote any attention to
+  this project during my postdoc. All initial development, therefore, is largely
+  undocumented.
+- On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
+  version number was reset to 0.0.0.9000, as well
+
+## 0.0.0.9000 - 2017-11-06
+
+### Changed
+- Changed package name from `mibrr` to `MIBRR`
+- Reset version number
+
+### Added
+- A subdirectory: */builds/oldName* to hold the builds generated under the old 
+  naming scheme
+
+## RE-NAME and VERSION RESET
 
 ## 0.0.0.9007 - 2017-11-06
 

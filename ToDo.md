@@ -1,8 +1,11 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2017-NOV-03
+## Last Update: 2017-NOV-06
 
-## Tweak the implementation of `predictMibrr`
+## Add a check for completely empty rows
+- Check for fully missing rows, remove them, and add back after model fitting
+
+## Tweak the implementation of `predictMibrr` - DONE (2017-NOV-06)
 - Need to make the *newData* specification more robust
     - Accept a data.frame
 	- Can rely on user to keep track of the predictor ordering when we're 

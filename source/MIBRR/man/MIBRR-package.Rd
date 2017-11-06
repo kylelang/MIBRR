@@ -1,19 +1,19 @@
-\name{mibrr-package}
-\alias{mibrr-package}
+\name{MIBRR-package}
+\alias{MIBRR-package}
 \docType{package}
 \title{
-\packageTitle{mibrr}
+\packageTitle{MIBRR}
 }
 \description{
-\packageDescription{mibrr}
+\packageDescription{MIBRR}
 }
 \details{
-\packageIndices{mibrr}
+\packageIndices{MIBRR}
 }
 \author{
-\packageAuthor{mibrr}
+\packageAuthor{MIBRR}
 
-Maintainer: \packageMaintainer{mibrr}
+Maintainer: \packageMaintainer{MIBRR}
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the Bayesian
@@ -35,22 +35,26 @@ data(mibrrExampleData)
 
 mibenOut <- miben(data       = mibrrExampleData,
                   nImps      = 100,
+                  iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
 
 miblOut <- mibl(data       = mibrrExampleData,
                 nImps      = 100,
+                iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
 
-benOut <- ben(data = mibrrExampleData,
-              y    = "y",
-              X    = paste0("x", c(1 : 3))
+benOut <- ben(data       = mibrrExampleData,
+              y          = "y",
+              X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+              iterations = c(30, 10)
               )
 
-blOut <- bl(data = mibrrExampleData,
-            y    = "y",
-            X    = paste0("x", c(1 : 3))
+blOut <- bl(data       = mibrrExampleData,
+            y          = "y",
+            X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            iterations = c(50, 10)
             )
 }
 \keyword{ package }

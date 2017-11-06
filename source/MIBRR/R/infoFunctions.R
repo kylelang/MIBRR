@@ -1,12 +1,12 @@
 ### Title:    License/Warranty Information Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2016-MAY-09
-### Modified: 2017-NOV-01
+### Modified: 2017-NOV-06
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
 ##                                                                             ##
-##  This file is part of mibrr.                                                ##
+##  This file is part of MIBRR                                                ##
 ##                                                                             ##
 ##  This program is free software: you can redistribute it and/or modify it    ##
 ##  under the terms of the GNU Lesser General Public License as published by   ##

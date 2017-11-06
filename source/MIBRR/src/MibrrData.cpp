@@ -1,14 +1,14 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-OCT-27
+// Modified: 2017-NOV-06
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
 //  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
-//  This file is part of mibrr.                                                //
+//  This file is part of MIBRR.                                                //
 //                                                                             //
 //  This program is free software: you can redistribute it and/or modify it    //
 //  under the terms of the GNU Lesser General Public License as published by   //
