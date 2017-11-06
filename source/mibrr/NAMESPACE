@@ -5,12 +5,16 @@ export(mibl,
        miben,
        mibrrW,
        mibrrL,
-       #drawInvGamma,
-       #drawMVN,
-       #calcIncGamma,
-       #drawInvGauss,
        ben,
        bl,
-       predictMibrr) #,
-       #printObsIndices,
-       #printMissIndices)
+       predictMibrr)
+   
+### NOTE: The following non-exported, undocumented functions are available for
+###       testing/debugging. See the relevant source code for details of their
+###       implementation. 
+## drawInvGamma
+## drawMVN
+## calcIncGamma
+## drawInvGauss
+## printObsIndices
+## printMissIndices

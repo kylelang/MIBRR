@@ -240,7 +240,7 @@ mibrr <- function(doBl,
                         stop("Second KKT optimality condition not satisfied when optimizing Lambda")
                 }
             }
-            
+
             for(j in 1 : nTargets) {
                 betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
                 sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)

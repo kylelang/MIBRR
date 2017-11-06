@@ -366,24 +366,56 @@ mseList <- mclapply(c(1 : nReps),
 
 mseList
 
-?predict.lm
+###---------------------------------------------------------------------------###
 
+### Check Documentation Examples ###
 
-testFun(2, parms)
-?predict.lm
+## Datasets:
+data(mibrrExampleData)
+data(predictData)
 
-dens0 <- density(dat3$y)
-dens1 <- density(rowMeans(predOut1))
-dens2 <- density(rowMeans(predOut2))
-dens3 <- density(predOut3)
+## MIBEN:
+mibenOut <- miben(data       = mibrrExampleData,
+                  nImps      = 100,
+                  iterations = c(30, 10),
+                  targetVars = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars = "idNum")
 
-yLim <- c(0, max(dens0$y, dens1$y, dens2$y, dens3$y))
+## MIBL:
+miblOut <- mibl(data       = mibrrExampleData,
+                nImps      = 100,
+                iterations = c(50, 10),
+                targetVars = c("y", paste0("x", c(1 : 3))),
+                ignoreVars = "idNum")
 
-plot(dens0, ylim = yLim)
-lines(dens1, col = "red")
-lines(dens2, col = "blue")
-lines(dens3, col = "green")
+## BEN:
+benOut <- ben(data       = mibrrExampleData,
+              y          = "y",
+              X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+              iterations = c(30, 10)
+              )
 
-ls(testOut)
+## BL:
+blOut <- bl(data       = mibrrExampleData,
+            y          = "y",
+            X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            iterations = c(50, 10)
+            )
 
-plot(testOut2$lambdaHistory[[1]][ , 1], type = "l")
+## predictMibrr:
+benOut <- ben(data       = predictData$train,
+              y          = "agree",
+              X          = setdiff(colnames(predictData$train), "agree"),
+              iterations = c(30, 10)
+              )
+benPred <- predictMibrr(object = benOut, newData = predictData$test)
+
+mibenOut <- miben(data         = predictData$incomplete,
+                  nImps        = 100,
+                  iterations   = c(30, 10),
+                  returnParams = TRUE)
+mibenPred <- predictMibrr(object = mibenOut, newData = predictData$test)
+
+## Info Functions:
+mibrrL()
+mibrrW()

@@ -19,7 +19,7 @@ predictMibrr(object,
     \code{bl}.  
   }
   \item{newData}{
-    A matrix containing new predictor data from which to generate the
+    A data.frame containing new predictor data from which to generate the
     posterior predictions.   
   }
   \item{targetVar}{
@@ -39,14 +39,8 @@ predictMibrr(object,
   \code{targetVar = NULL}.
 }
 \note{
-  The columns of \code{newData} must be in the same order as the predictor
-  columns in the model represented by \code{object}. When \code{object} was
-  produced by \code{ben} or \code{bl}, this requirement simply amounts to
-  ensuring that the column ordering is equivelent to the ordering for the
-  \code{X} argument provided to those functions. When \code{object} was returned
-  by \code{miben} or \code{mibl} note that those functions re-order the columns
-  so that the \code{targetVars} are leftmost followed by all variables not
-  listed in \code{ignoreVars}.
+  The column names of \code{newData} must contain the column names of
+  all variables used to estimate the model represented by \code{object}.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -55,8 +49,6 @@ predictMibrr(object,
 }
 \author{
   Kyle M. Lang
-
-  Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 }
 \section{Warning}{
   This function is in a highly unstable \emph{alpha} level of development. Please
@@ -70,14 +62,24 @@ predictMibrr(object,
 \code{\link{miben}}, \code{\link{mibl}}, \code{\link{ben}}, \code{\link{bl}}
 }
 \examples{
-data(mibrrExampleData)
+data(predictData)
 
 ## Fit a Bayesian elastic net model:
-benOut <- ben(data = mibrrExampleData,
-              y    = "y",
-              X    = paste0("x", c(1 : 3))
+benOut <- ben(data       = predictData$train,
+              y          = "agree",
+              X          = setdiff(colnames(predictData$train), "agree"),
+              iterations = c(30, 10)
               )
 
-## Generate posteior predictions for 'y':
-benPred <- predictMibrr(benOut)
+## Generate posterior predictions for 'y':
+benPred <- predictMibrr(object = benOut, newData = predictData$test)
+
+## Fit chained Bayesian elastic net models to support MI:
+mibenOut <- miben(data         = predictData$incomplete,
+                  nImps        = 100,
+                  iterations   = c(30, 10),
+                  returnParams = TRUE)
+
+## Generate posterior predictions from elementary imputation models:
+benPred <- predictMibrr(object = mibenOut, newData = predictData$test)
 }

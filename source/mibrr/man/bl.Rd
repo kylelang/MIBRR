@@ -171,8 +171,6 @@ bl(data,
 }
 \author{
   Kyle M. Lang
-
-  Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 }
 \section{Warning}{
   This function is in a highly unstable \emph{alpha} level of development. Please
@@ -188,8 +186,9 @@ bl(data,
 \examples{
 data(mibrrExampleData)
 
-blOut <- bl(data = mibrrExampleData,
-            y    = "y",
-            X    = paste0("x", c(1 : 3))
+blOut <- bl(data       = mibrrExampleData,
+            y          = "y",
+            X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            iterations = c(50, 10)
             )
 }

@@ -190,8 +190,6 @@ mibl(data,
 }
 \author{
   Kyle M. Lang
-  
-  Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
 }
 \section{Warning}{
   This function is in a highly unstable \emph{alpha} level of development. Please
@@ -210,6 +208,7 @@ data(mibrrExampleData)
 
 miblOut <- mibl(data       = mibrrExampleData,
                 nImps      = 100,
+                iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
 }

@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-NOV-02
+### Modified: 2017-NOV-06
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
@@ -610,32 +610,33 @@ predictMibrr <- function(object,
                          targetVar = NULL,
                          nDraws    = 0)
 {
-    if(!is.null(targetVar)) object$params <- object$params[targetVar]
+    if(!is.data.frame(newData)) stop("'newData' must be a data.frame")
+    if(!is.null(targetVar))     object$params <- object$params[targetVar]
     
     outList <- list()
-    outInd  <- 0
-    for(obj in object$params) {
-        outInd <- outInd + 1
+    for(nm in names(object$params)) {
+        obj      <- object$params[[nm]]
+        testData <- cbind(1, as.matrix(newData[ , colnames(obj$tau)]))
+        
         if(nDraws == 0) {
             beta  <- matrix(colMeans(obj$beta))
             sigma <- mean(obj$sigma)
             
-            out <- cbind(1, newData) %*% beta + rnorm(1, 0, sqrt(sigma))
+            out <- testData %*% beta + rnorm(1, 0, sqrt(sigma))
         } else if(nDraws > 0) {
             index <- sample(c(1 : length(obj$sigma)), nDraws)
             beta  <- obj$beta[index, ]
             sigma <- obj$sigma[index]
             
-            out <- matrix(NA, nrow(newData), nDraws)
+            out <- matrix(NA, nrow(testData), nDraws)
             for(j in 1 : nDraws)
-                out[ , j] <- cbind(1, newData) %*% matrix(beta[j, ]) +
+                out[ , j] <- testData %*% matrix(beta[j, ]) +
                     rnorm(1, 0, sqrt(sigma[j]))
         } else {
             stop("nDraws must be non-negative.")
         }
-        outList[[outInd]] <- out
+        outList[[nm]] <- out
     }
-    names(outList) <- names(object$params)
     outList
 }
 
