@@ -36,7 +36,7 @@ from source by executing the following lines:
 
 	install.packages(pkgs  = "/SAVE_PATH/mibrr_VERSION.tar.gz",
 	                 repos = NULL,
-					 type  = "source")
+                     type  = "source")
 
 Where *SAVE_PATH* is replaced by the (relative or absolute) file path to the
 location where you saved the tar-ball, and *VERSION* is replaced with the correct
@@ -60,51 +60,61 @@ The `mibrr` package contains four primary functions: `miben`, `mibl`, `ben`, and
 
 		## Create M = 100 multiply imputed datasets:
 		mibenOut <- miben(data       = mibrrExampleData,
-		                  nImps      = 100,
-						  targetVars = c("y", paste0("x", c(1 : 3))),
-						  ignoreVars = "idNum")
+                          nImps      = 100,
+                          targetVars = c("y", paste0("x", c(1 : 3))),
+                          ignoreVars = "idNum")
 			  
 		miblOut <- mibl(data       = mibrrExampleData,
-		                nImps      = 100,
-						targetVars = c("y", paste0("x", c(1 : 3))),
-						ignoreVars = "idNum")
+                        nImps      = 100,
+                        targetVars = c("y", paste0("x", c(1 : 3))),
+                        ignoreVars = "idNum")
 				
 		## Extract list of imputed datasets:
 		mibenImps <- mibenOut$imps
 		miblImps  <- miblOut$imps
 		
-- Use the follwing to fit models using `ben` or `bl`:
+- Use the following to fit models using `ben` or `bl`:
 
 		## Load some data:
-		data(mibrrExampleData)
+		data(predictData)
 
-		trainData <- mibrrExampleData[1 : 175, ]
-		testData  <- mibrrExampleData[176 : 200, ]
+		trainData <- predictData$train
+		testData  <- predictData$test
 		
 		## Estimate a Bayesian elastic net model:
 		benOut <- ben(data = trainData,
-		              y    = "y",
-					  X    = paste0("x", c(1 : 3))
-					  )
+                      y    = "agree",
+                      X    = setdiff(colnames(trainData), "agree")
+                      )
 		   
 		## Estimate a Bayesian LASSO model:
 		blOut <- bl(data = trainData,
-		            y    = "y",
-					X    = paste0("x", c(1 : 3))
-					)
+                    y    = "agree",
+                    X    = setdiff(colnames(trainData), "agree")
+                    )
 
 		## Generate out-of-sample predictions:
-	    benPred <- 
-			predictMibrr(object  = benOut,
-			             newData = as.matrix(testData[ , paste0("x", c(1 : 3))])
-						 )
+	    benPred <- predictMibrr(object = benOut, newData = testData)
+		blPred  <- predictMibrr(object = blOut, newData = testData)
+		
+- Posterior predictions can also be generated from `miben` and `mibl` models:
 
-		blPred <- 
-			predictMibrr(object  = blOut,
-			             newData = as.matrix(testData[ , paste0("x", c(1 : 3))])
-						 )
+		## Load some data:
+		data(predictData)
 
-[builds]:  https://github.com/kylelang/mibrr/tree/develop/builds/
-[docs]:    https://github.com/kylelang/mibrr/tree/develop/documentation/
-[src]:     https://github.com/kylelang/mibrr/tree/develop/source/mibrr
-[LICENSE]: https://github.com/kylelang/mibrr/blob/develop/LICENSE
+		missData <- predictData$incomplete
+		testData <- predictData$test
+		
+		## Create M = 100 multiply imputed datasets:
+		mibenOut <- miben(data = missData, nImps = 100)
+		miblOut  <- mibl(data = missData, nImps  = 100)
+		
+		## Generate out-of-sample predictions:
+	    mibenPred <- predictMibrr(object = mibenOut, newData = testData)
+		miblPred  <- predictMibrr(object = miblOut, newData = testData)
+		
+		
+[builds]:  https://github.com/kylelang/miben/tree/develop/builds/
+[docs]:    https://github.com/kylelang/miben/tree/develop/documentation/
+[src]:     https://github.com/kylelang/miben/tree/develop/source/miben
+[LICENSE]: https://github.com/kylelang/miben/blob/develop/LICENSE
