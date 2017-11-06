@@ -9,6 +9,15 @@ approximately 2.5 years away because I was unable to devote any attention to
 this project during my postdoc. All initial development, therefore, is largely
 undocumented.
 
+## 0.0.0.9007 - 2017-11-06
+
+### Added
+- New example data: `predictData`
+
+### Changed
+- Improved the `predictMibrr` function
+- Updated documentation examples
+
 ## 0.0.0.9006 - 2017-11-03
 
 ### Added
