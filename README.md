@@ -113,7 +113,7 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		miblPred  <- predictMibrr(object = miblOut, newData = testData)
 		
 		
-[builds]:  https://github.com/kylelang/MIBRR/tree/develop/builds/
-[docs]:    https://github.com/kylelang/MIBRR/tree/develop/documentation/
-[src]:     https://github.com/kylelang/MIBRR/tree/develop/source/MIBRR
-[LICENSE]: https://github.com/kylelang/MIBRR/blob/develop/LICENSE
+[builds]:  https://github.com/kylelang/MIBRR/tree/master/builds/
+[docs]:    https://github.com/kylelang/MIBRR/tree/master/documentation/
+[src]:     https://github.com/kylelang/MIBRR/tree/master/source/MIBRR
+[LICENSE]: https://github.com/kylelang/MIBRR/blob/master/LICENSE
