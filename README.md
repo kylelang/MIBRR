@@ -55,15 +55,15 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
   following:
 
 		## Load some data:
-		data(MIBRRExampleData)
+		data(mibrrExampleData)
 
 		## Create M = 100 multiply imputed datasets:
-		mibenOut <- miben(data       = MIBRRExampleData,
+		mibenOut <- miben(data       = mibrrExampleData,
                           nImps      = 100,
                           targetVars = c("y", paste0("x", c(1 : 3))),
                           ignoreVars = "idNum")
 			  
-		miblOut <- mibl(data       = MIBRRExampleData,
+		miblOut <- mibl(data       = mibrrExampleData,
                         nImps      = 100,
                         targetVars = c("y", paste0("x", c(1 : 3))),
                         ignoreVars = "idNum")
