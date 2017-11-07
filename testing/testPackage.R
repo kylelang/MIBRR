@@ -1,14 +1,18 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-OCT-27
-### Purpose:  Script to help test the MIBRR package
+### Modified: 2017-NOV-07
 
 rm(list = ls(all = TRUE))
 
 library(mitools)
 library(psych)
-library(mibrr)
+library(MIBRR)
+library(devtools)
+library(parallel)
+
+install_github("kylelang/SURF/source/SURF")
+library(SURF)
 
 ###---------------------------------------------------------------------------###
 
@@ -24,7 +28,7 @@ colnames(ed.d) <-
 male            <- tmp$gender
 male[male == 2] <- 0
 
-cn   <- setdiff(colnames(bfi), c("gender", "education"))
+parms$cn <- cn <- setdiff(colnames(bfi), c("gender", "education"))
 bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
@@ -45,11 +49,11 @@ cn <- c(targets$mar, marPreds)
 
 dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
 
-dat2 <- mibrr::imposeMissing(data    = dat1,
-                             targets = targets,
-                             preds   = marPreds,
-                             pm      = pm,
-                             snr     = snr)$data 
+dat2 <- imposeMissData(data    = dat1,
+                       targets = targets,
+                       preds   = marPreds,
+                       pm      = pm,
+                       snr     = snr)$data 
 
 ###---------------------------------------------------------------------------###
 
@@ -63,19 +67,19 @@ dat3              <- dat2
 dat3[is.na(dat2)] <- -9999
 
 for(v in 1 : ncol(dat3)) {
-    poiOut <- printObsIndices(data        = as.matrix(dat3),
-                              scales      = scales,
-                              missIndices = missIndices,
-                              respCounts  = respCounts,
-                              noMiss      = FALSE,
-                              targetIndex = v - 1)
+    poiOut <- MIBRR:::printObsIndices(data        = as.matrix(dat3),
+                                      scales      = scales,
+                                      missIndices = missIndices,
+                                      respCounts  = respCounts,
+                                      noMiss      = FALSE,
+                                      targetIndex = v - 1)
 
-    pmiOut <- printMissIndices(data        = as.matrix(dat3),
-                               scales      = scales,
-                               missIndices = missIndices,
-                               respCounts  = respCounts,
-                               noMiss      = FALSE,
-                               targetIndex = v - 1)
+    pmiOut <- MIBRR:::printMissIndices(data        = as.matrix(dat3),
+                                       scales      = scales,
+                                       missIndices = missIndices,
+                                       respCounts  = respCounts,
+                                       noMiss      = FALSE,
+                                       targetIndex = v - 1)
 
     cat(paste0("Checking column number ", v, "\n"))
     
@@ -97,25 +101,24 @@ for(v in 1 : ncol(dat3)) {
 
 ### Check MIBEN and MIBL ###
 
-nImps <- 25
-nReps <- 40
-
-keys <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
-             extra = c("-E1", "-E2", "E3", "E4", "E5")
-             )
-
-mibenRes <- miblRes <- miceRes <- list() 
-for(rp in 1 : nReps) {
-    cat(paste0("Doing rep ", rp, "\n\n"))
+testFun <- function(rp, data, parms) {
+    print(paste0("Doing rep ", rp))
     
-    dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
-    dat2 <- mibrr::imposeMissing(data    = dat1,
-                                 targets = targets,
-                                 preds   = marPreds,
-                                 pm      = pm,
-                                 snr     = snr)$data
+    cn       <- parms$cn
+    targets  <- parms$targets
+    marPreds <- parms$marPreds
+    pm       <- parms$pm
+    snr      <- parms$snr
+    nImps    <- parms$nImps
+    keys     <- parms$keys
+    
+    dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
+    dat2 <- imposeMissData(data    = dat1,
+                           targets = targets,
+                           preds   = marPreds,
+                           pm      = pm,
+                           snr     = snr)$data
 
-    cat("Doing MIBEN...")
     mibenOut <- miben(data           = dat2,
                       nImps          = nImps,
                       targetVars     = targets$mar,
@@ -124,9 +127,7 @@ for(rp in 1 : nReps) {
                       returnConvInfo = FALSE,
                       returnParams   = FALSE,
                       verbose        = FALSE)
-    cat("Done\n")
 
-    cat("Doing MIBL...")
     miblOut <- mibl(data           = dat2,
                     nImps          = nImps,
                     targetVars     = targets$mar,
@@ -135,14 +136,10 @@ for(rp in 1 : nReps) {
                     returnConvInfo = FALSE,
                     returnParams   = FALSE,
                     verbose        = FALSE)
-    cat("Done\n")
-
-    cat("Doing MICE...")
+    
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
-    cat("Done\n")
 
-    cat("Fitting models...")
     mibenList <- miblList <- miceList <- list()
     for(m in 1 : nImps) {
         ## MIBEN estimates:
@@ -168,11 +165,29 @@ for(rp in 1 : nReps) {
                            )
     }
 
-    mibenRes[[rp]] <- colMeans(do.call(rbind, mibenList))
-    miblRes[[rp]]  <- colMeans(do.call(rbind, miblList))
-    miceRes[[rp]]  <- colMeans(do.call(rbind, miceList))
-    cat("Done\n\n")
-}
+    list(miben = colMeans(do.call(rbind, mibenList)),
+         mibl  = colMeans(do.call(rbind, miblList)),
+         mice  = colMeans(do.call(rbind, miceList))
+         )
+} # END testFun()
+
+nReps <- 10
+
+parms          <- list()
+parms$cn       <- cn
+parms$targets  <- targets
+parms$marPreds <- marPreds
+parms$snr      <- snr
+parms$nImps    <- 25
+parms$keys     <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
+                       extra = c("-E1", "-E2", "E3", "E4", "E5")
+                       )
+
+simOut <- mclapply(X        = c(1 : nReps),
+                   FUN      = testFun,
+                   data     = bfi2,
+                   parms    = parms,
+                   mc.cores = 1)
 
 mibenFrame <- do.call(rbind, mibenRes)
 miblFrame  <- do.call(rbind, miblRes)
@@ -188,7 +203,7 @@ simOut <- list(miben = mibenFrame,
 
 saveRDS(simOut, "miniSimOut.rds")
 
-## Complete data result:
+## Complete data result: 
 scores  <- scoreItems(keys = keys, items = bfi2)$scores
 compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
              mA = mean(scores[ , "agree"]),
@@ -214,7 +229,7 @@ mvnMu <- rep(10, 3)
 mvnSigma <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- mibrr::drawMVN(nObs, mvnMu, mvnSigma)
+out1.1 <- MIBRR::drawMVN(nObs, mvnMu, mvnSigma)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -227,7 +242,7 @@ for(i in 1 : length(mvnMu)) {
 gamShape <- 10
 gamScale <- 10
 
-out2.1 <- mibrr::drawInvGamma(nObs, gamShape, gamScale)
+out2.1 <- MIBRR::drawInvGamma(nObs, gamShape, gamScale)
 out2.2 <- rinvgamma(nObs, gamShape, gamScale)
 
 plot(density(out2.1), col = "red")
@@ -237,7 +252,7 @@ lines(density(out2.2), col = "blue")
 igMu = 1
 igLam = 2
 
-out3.1 <- mibrr::drawInvGauss(nObs, igMu, igLam)
+out3.1 <- MIBRR::drawInvGauss(nObs, igMu, igLam)
 out3.2 <- rinvgauss(nObs, igMu, igLam)
 
 plot(density(out3.1), col = "red")
@@ -247,7 +262,7 @@ lines(density(out3.2), col = "blue")
 incGamShape <- 10
 incGamCut <- 5
 
-out4.1 <- mibrr::calcIncGamma(incGamShape, incGamCut, FALSE)
+out4.1 <- MIBRR::calcIncGamma(incGamShape, incGamCut, FALSE)
 out4.2 <- pgamma(q = incGamCut,
                  shape = incGamShape,
                  lower = FALSE) * gamma(incGamShape)

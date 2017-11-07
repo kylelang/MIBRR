@@ -1,15 +1,22 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-OCT-27
+### Modified: 2017-NOV-07
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-system("rm source/mibrr/src/RcppExports.cpp \
-        rm source/mibrr/R/RcppExports.R")
-Rcpp::compileAttributes("source/mibrr")
-system("R CMD build source/mibrr")
-install.packages("mibrr_0.0.0.9005.tar.gz", repos = NULL, type = "source")
+ver <- "0.0.0.9000"
+
+system("rm source/MIBRR/src/RcppExports.cpp \
+        rm source/MIBRR/R/RcppExports.R")
+Rcpp::compileAttributes("source/MIBRR")
+
+system("R CMD build source/MIBRR")
+install.packages(paste0("MIBRR_", ver, ".tar.gz"),
+                 repos = NULL,
+                 type  = "source")
+
+system(paste0("mv MIBRR_", ver, ".tar.gz builds/"))

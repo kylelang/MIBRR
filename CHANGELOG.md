@@ -13,7 +13,7 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9000 - 2017-11-06
+## 0.0.0.9000 - XXXX-XX-XX
 
 ### Changed
 - Changed package name from `mibrr` to `MIBRR`

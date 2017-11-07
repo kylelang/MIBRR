@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // runGibbs
 Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss);
-RcppExport SEXP _mibrr_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
+RcppExport SEXP _MIBRR_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -35,7 +35,7 @@ END_RCPP
 }
 // drawInvGamma
 Eigen::VectorXd drawInvGamma(int n, double shape, double scale);
-RcppExport SEXP _mibrr_drawInvGamma(SEXP nSEXP, SEXP shapeSEXP, SEXP scaleSEXP) {
+RcppExport SEXP _MIBRR_drawInvGamma(SEXP nSEXP, SEXP shapeSEXP, SEXP scaleSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -48,7 +48,7 @@ END_RCPP
 }
 // drawMVN
 Eigen::MatrixXd drawMVN(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat);
-RcppExport SEXP _mibrr_drawMVN(SEXP nSEXP, SEXP meanVecSEXP, SEXP covMatSEXP) {
+RcppExport SEXP _MIBRR_drawMVN(SEXP nSEXP, SEXP meanVecSEXP, SEXP covMatSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -61,7 +61,7 @@ END_RCPP
 }
 // calcIncGamma
 double calcIncGamma(double shape, double cutVal, bool lowerTail);
-RcppExport SEXP _mibrr_calcIncGamma(SEXP shapeSEXP, SEXP cutValSEXP, SEXP lowerTailSEXP) {
+RcppExport SEXP _MIBRR_calcIncGamma(SEXP shapeSEXP, SEXP cutValSEXP, SEXP lowerTailSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -74,7 +74,7 @@ END_RCPP
 }
 // drawInvGauss
 Eigen::VectorXd drawInvGauss(int n, double mu, double lambda);
-RcppExport SEXP _mibrr_drawInvGauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
+RcppExport SEXP _MIBRR_drawInvGauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -87,7 +87,7 @@ END_RCPP
 }
 // printObsIndices
 std::vector<int> printObsIndices(Eigen::MatrixXd data, Eigen::VectorXd scales, std::vector< std::vector<int> > missIndices, Eigen::VectorXi respCounts, bool noMiss, int targetIndex);
-RcppExport SEXP _mibrr_printObsIndices(SEXP dataSEXP, SEXP scalesSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP targetIndexSEXP) {
+RcppExport SEXP _MIBRR_printObsIndices(SEXP dataSEXP, SEXP scalesSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP targetIndexSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -103,7 +103,7 @@ END_RCPP
 }
 // printMissIndices
 std::vector<int> printMissIndices(Eigen::MatrixXd data, Eigen::VectorXd scales, std::vector< std::vector<int> > missIndices, Eigen::VectorXi respCounts, bool noMiss, int targetIndex);
-RcppExport SEXP _mibrr_printMissIndices(SEXP dataSEXP, SEXP scalesSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP targetIndexSEXP) {
+RcppExport SEXP _MIBRR_printMissIndices(SEXP dataSEXP, SEXP scalesSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP targetIndexSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -119,17 +119,17 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_mibrr_runGibbs", (DL_FUNC) &_mibrr_runGibbs, 17},
-    {"_mibrr_drawInvGamma", (DL_FUNC) &_mibrr_drawInvGamma, 3},
-    {"_mibrr_drawMVN", (DL_FUNC) &_mibrr_drawMVN, 3},
-    {"_mibrr_calcIncGamma", (DL_FUNC) &_mibrr_calcIncGamma, 3},
-    {"_mibrr_drawInvGauss", (DL_FUNC) &_mibrr_drawInvGauss, 3},
-    {"_mibrr_printObsIndices", (DL_FUNC) &_mibrr_printObsIndices, 6},
-    {"_mibrr_printMissIndices", (DL_FUNC) &_mibrr_printMissIndices, 6},
+    {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 17},
+    {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 3},
+    {"_MIBRR_drawMVN", (DL_FUNC) &_MIBRR_drawMVN, 3},
+    {"_MIBRR_calcIncGamma", (DL_FUNC) &_MIBRR_calcIncGamma, 3},
+    {"_MIBRR_drawInvGauss", (DL_FUNC) &_MIBRR_drawInvGauss, 3},
+    {"_MIBRR_printObsIndices", (DL_FUNC) &_MIBRR_printObsIndices, 6},
+    {"_MIBRR_printMissIndices", (DL_FUNC) &_MIBRR_printMissIndices, 6},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_mibrr(DllInfo *dll) {
+RcppExport void R_init_MIBRR(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

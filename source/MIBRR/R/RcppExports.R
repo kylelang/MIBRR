@@ -2,30 +2,30 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss) {
-    .Call('_mibrr_runGibbs', PACKAGE = 'mibrr', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss)
+    .Call('_MIBRR_runGibbs', PACKAGE = 'MIBRR', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss)
 }
 
 drawInvGamma <- function(n, shape, scale) {
-    .Call('_mibrr_drawInvGamma', PACKAGE = 'mibrr', n, shape, scale)
+    .Call('_MIBRR_drawInvGamma', PACKAGE = 'MIBRR', n, shape, scale)
 }
 
 drawMVN <- function(n, meanVec, covMat) {
-    .Call('_mibrr_drawMVN', PACKAGE = 'mibrr', n, meanVec, covMat)
+    .Call('_MIBRR_drawMVN', PACKAGE = 'MIBRR', n, meanVec, covMat)
 }
 
 calcIncGamma <- function(shape, cutVal, lowerTail) {
-    .Call('_mibrr_calcIncGamma', PACKAGE = 'mibrr', shape, cutVal, lowerTail)
+    .Call('_MIBRR_calcIncGamma', PACKAGE = 'MIBRR', shape, cutVal, lowerTail)
 }
 
 drawInvGauss <- function(n, mu, lambda) {
-    .Call('_mibrr_drawInvGauss', PACKAGE = 'mibrr', n, mu, lambda)
+    .Call('_MIBRR_drawInvGauss', PACKAGE = 'MIBRR', n, mu, lambda)
 }
 
 printObsIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {
-    .Call('_mibrr_printObsIndices', PACKAGE = 'mibrr', data, scales, missIndices, respCounts, noMiss, targetIndex)
+    .Call('_MIBRR_printObsIndices', PACKAGE = 'MIBRR', data, scales, missIndices, respCounts, noMiss, targetIndex)
 }
 
 printMissIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {
-    .Call('_mibrr_printMissIndices', PACKAGE = 'mibrr', data, scales, missIndices, respCounts, noMiss, targetIndex)
+    .Call('_MIBRR_printMissIndices', PACKAGE = 'MIBRR', data, scales, missIndices, respCounts, noMiss, targetIndex)
 }
 
