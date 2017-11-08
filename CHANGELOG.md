@@ -18,6 +18,7 @@ NOTE:
 ### Changed
 - Changed package name from `mibrr` to `MIBRR`
 - Reset version number
+- Cleaned up the */testing* directory
 
 ### Added
 - A subdirectory: */builds/oldName* to hold the builds generated under the old 
