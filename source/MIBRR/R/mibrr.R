@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-NOV-06
+### Modified: 2017-NOV-17
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -22,17 +22,17 @@
 ##  This file is part of MIBRR.                                                ##
 ##                                                                             ##
 ##  This program is free software: you can redistribute it and/or modify it    ##
-##  under the terms of the GNU Lesser General Public License as published by   ##
-##  the Free Software Foundation, either version 3 of the License, or          ##
-##  (at you option) any later version.                                         ##
+##  under the terms of the GNU General Public License as published by the      ##
+##  Free Software Foundation, either version 3 of the License, or (at you      ##
+##  option) any later version.                                                 ##
 ##                                                                             ##
 ##  This program is distributed in the hope that it will be useful, but        ##
-##  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY ##
-##  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public    ##
-##  License for more details.                                                  ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of                 ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   ##
+##  Public License for more details.                                           ##
 ##                                                                             ##
-##  You should have received a copy of the GNU Lesser General Public License   ##
-##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
+##  You should have received a copy of the GNU General Public License along    ##
+##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
 
@@ -96,6 +96,7 @@ mibrr <- function(doBl,
     respCounts <- colSums(!is.na(data))
     noMiss     <- all(respCounts == nObs)
 
+    dataMeans <- dataScales <- rep(NA, ncol(data))
     if(noMiss) {
         ## Mean-center the data (and compute initial data scales):
         scaleData()
