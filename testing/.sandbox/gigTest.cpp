@@ -1,7 +1,7 @@
 // Title:    Test the GIG Sampling Routines
 // Author:   Kyle M. Lang
 // Created:  2017-NOV-23
-// Modified: 2017-NOV-23
+// Modified: 2017-NOV-24
 // Purpose:  Create a simple program to test the GIG sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
@@ -25,14 +25,13 @@
 
 #include <string>
 #include <iostream>
-#include "gigSampler.hpp"
+#include "GigSampler.hpp"
 
 using namespace std;
 
 int main() {
   int    n;
   double lambda, chi, psi;
-  std::vector<double> output(n);
   
   cout << "How many variates would you like? ";
   cin >> n;
@@ -45,8 +44,9 @@ int main() {
   
   cout << "What should 'psi' be? ";
   cin >> psi;
-  
-  output = drawGig(n, lambda, chi, psi);
+
+  GigSampler gigSampler(lambda, chi, psi);
+  vector<double> output = gigSampler.drawGig(n);
   
   for(int i = 0; i < n; i++) cout << output[i] << endl;
   
