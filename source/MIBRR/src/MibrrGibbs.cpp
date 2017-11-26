@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2017-NOV-25
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -146,6 +146,7 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 }
 
 
+/*
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
 
 
@@ -196,6 +197,7 @@ double MibrrGibbs::drawInvGauss(const double mu, const double lambda)
 }// END drawInvGauss()
 
 
+*/
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
 

@@ -33,7 +33,7 @@
 
 //#include <R.h>
 //#include <RcppEigen.h>
-//#include <Rmath.h>
+#include <Rmath.h>
 #include <cmath>
 #include <vector>
 //#include <algorithm>

@@ -48,7 +48,7 @@ public:
   // @param4: vector or response counts
   // @param5: logical flag denoting completely observed data
   
-  MibrrData();
+  //MibrrData();
   // @effect: initialize MibrrData without any data to allow access to the
   //          drawMVN() member function
   
@@ -134,6 +134,7 @@ public:
   // @return: the number of missing values for the target variable
 
   
+  /*
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
 
   
@@ -141,6 +142,8 @@ public:
   // @param1: mean vector
   // @param2: covariance matrix
   // @return: random multivariate normal variates
+  
+  */
   
 private:
   bool                  _noMiss;

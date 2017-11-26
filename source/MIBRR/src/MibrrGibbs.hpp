@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2017-NOV-25
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -150,6 +150,7 @@ public:
   // @effect: start storing the parameters' Gibbs sampled values
 
 
+  /*
   ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
 
 
@@ -174,7 +175,7 @@ public:
   // @param2: shape parameter (lambda)
   // @return: random variate from the inverse Gaussian distribution
 
-
+  */
   ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
 

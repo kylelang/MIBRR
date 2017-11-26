@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2017-NOV-25
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -227,6 +227,7 @@ int MibrrData::nMiss (int targetIndex) const
 }
 
 
+/*
 /////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
 
 
@@ -242,3 +243,5 @@ VectorXd MibrrData::drawMVN(VectorXd &meanVec, MatrixXd &covMat) const
   
   return meanVec + (covCholesky * normDraws);
 }// END drawMVN()
+
+*/
