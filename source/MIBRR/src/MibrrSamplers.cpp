@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2017-NOV-24
+// Modified: 2017-NOV-27
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -33,23 +33,33 @@
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
 
-MibrrSamplers::MibrrSamplers(const unsigned int seed)
-{
-  // Initialize the PRNG:
-  mt19937_64 _gen(seed);
-  
-  // Initialize a standard uniform random number generator:
-  uniform_real_distribution<double> _unif(0.0, 1.0);
-  
-  // Initialize a standard normal random number generator:
-  normal_distribution<double> _norm(0.0, 1.0);
-}
-
 MibrrSamplers::MibrrSamplers() {}
 
 MibrrSamplers::~MibrrSamplers() {}
 
+////////////////////////////////// MUTATORS /////////////////////////////////////
+
+void MibrrSamplers::seedRng(const unsigned int seed)
+{
+  // Store the new seed:
+  _seed = seed;
+  
+  // Re-seed the PRNG:
+  _gen.seed(seed);
+}
+
+////////////////////////////////// ACCESSORS ////////////////////////////////////
+
+unsigned int MibrrSamplers::getSeed() const { return _seed;                     }
+
 ///////////////////////////// SAMPLING FUNCTIONS ////////////////////////////////
+
+double MibrrSamplers::drawNorm(const double mean, const double sd)
+{
+  normal_distribution<double> norm(mean, sd);
+  return norm(_gen);
+}//END drawNorm()
+
 
 double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
@@ -338,6 +348,7 @@ double MibrrSamplers::_gigNewApproach()
     // Return the accepted variate
     if(accept) return (_gigLam0 < 0.0) ? (_alpha / X) : (_alpha * X);
   };
+  throw runtime_error("Something has broken while sampling from the GIG; I've returned from a rejection sampling loop without a valid result.");
 } // END _gigNewApproach()
 
 

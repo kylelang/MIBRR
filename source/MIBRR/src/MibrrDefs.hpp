@@ -1,7 +1,7 @@
 // Title:    Header file to hold my global parameter definitions
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-25
-// Modified: 2017-NOV-17
+// Modified: 2017-NOV-27
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
 //  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
@@ -29,17 +29,29 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-#include <Rmath.h>
-#include <algorithm>
 
 #ifndef MACHINE_PRECISION
 #define MACHINE_PRECISION std::numeric_limits<double>::epsilon()
 #endif
 
-typedef Eigen::Array <bool, Eigen::Dynamic, 1>              ArrayXb;
+#ifndef ZTOL
+#define ZTOL MACHINE_PRECISION * 10
+#endif
+
+#ifndef M_LNPI
+#define M_LNPI 1.14472988584940017414342735135 // ln(pi)
+#endif
+
+typedef Eigen::Array <bool, Eigen::Dynamic, 1             > ArrayXb;
 typedef Eigen::Array <bool, Eigen::Dynamic, Eigen::Dynamic> ArrayXXb;
-typedef Eigen::Matrix <double, 5, 1>                        Vector5d;
-typedef Rcpp::List                                          RList;
+
+typedef Eigen::Matrix <double,       5,              1> Vector5d;
+//typedef Eigen::Matrix <unsigned int, Eigen::Dynamic, 1> VectorXui;
+
+typedef Rcpp::List RList;
 //typedef Eigen::Map <const Eigen::MatrixXd> DataMap;
+
+using namespace Eigen;
+using namespace std;
 
 #endif

@@ -1,7 +1,7 @@
 ### Title:    Multiple Imputation with Bayesian Regularized Regression
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2017-NOV-17
+### Modified: 2017-NOV-27
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -177,7 +177,9 @@ mibrr <- function(doBl,
                      doBl            = doBl,
                      adaptScales     = control$adaptScales,
                      simpleIntercept = control$simpleIntercept,
-                     noMiss          = noMiss)
+                     noMiss          = noMiss,
+                     seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
+                     )
 
         if(i < totalIters) {
             if(verbose) {

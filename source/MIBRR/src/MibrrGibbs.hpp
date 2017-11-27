@@ -30,9 +30,6 @@
 #include "MibrrData.hpp"
 #include "MibrrSamplers.hpp"
 
-using namespace std;
-using namespace Eigen;
-
 class MibrrGibbs: public MibrrSamplers {
 
 public:

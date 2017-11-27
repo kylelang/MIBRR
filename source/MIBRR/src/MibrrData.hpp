@@ -28,9 +28,7 @@
 #define MIBRRDATA_H
 
 #include "MibrrDefs.hpp"
-
-using namespace std;
-using namespace Eigen;
+#include <algorithm>
 
 class MibrrData {
   

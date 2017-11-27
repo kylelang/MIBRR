@@ -240,7 +240,7 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
       _betas.tail(nPreds);
   
   VectorXd newBetas(nPreds + 1);  
-  newBetas[0] = R::rnorm(intMean, intSd);
+  newBetas[0] = drawNorm(intMean, intSd);
   
   // Draw new values of the regression slope coefficients:
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCovariances);
@@ -280,7 +280,7 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
     double testDraw;
     while(!isDrawValid) {// Rejection sampling to draw a Sigma variate
       testDraw         = drawInvGamma(sigmaShape, sigmaScale);
-      double threshold = unif_rand();
+      double threshold = _unif(_gen);
       double igShape   = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
       double igDraw    = calcIncGamma(0.5, igShape, false);
       isDrawValid      = log(threshold) <=
@@ -318,7 +318,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   VectorXd    errorVector(nMiss);
   
   // Draw the residual error terms for the imputation model:
-  for(int i = 0; i < nMiss; i++) errorVector[i] = R::rnorm(0.0, sqrt(_sigma));
+  for(int i = 0; i < nMiss; i++) errorVector[i] = drawNorm(0.0, sqrt(_sigma));
   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:

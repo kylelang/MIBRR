@@ -32,37 +32,35 @@
 #ifndef MIBRRSAMPLERS_H
 #define MIBRRSAMPLERS_H
 
-#include <RcppEigen.h>
-#include <Rmath.h>
-#include <cmath>
-#include <vector>
-#include <iostream>
+#include "MibrrDefs.hpp"
 #include <random>
-
-#ifndef ZTOL
-#define ZTOL std::numeric_limits<double>::epsilon() * 10
-#endif
-
-#ifndef M_LNPI
-#define M_LNPI 1.14472988584940017414342735135 // ln(pi)
-#endif
-
-using namespace std;
-using namespace Eigen;
+#include <Rmath.h>
 
 class MibrrSamplers {
 
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
-  
-  MibrrSamplers(const unsigned int);
-  // @param1: a seed for the pseudo random number generator
 
   MibrrSamplers();
   
   ~MibrrSamplers();
 
+  ///////////////////////////////// MUTATORS ////////////////////////////////////
+  
+  void seedRng(const unsigned int seed);
+  // @param: seed for the pseudo random number generator
+  
+  ///////////////////////////////// ACCESSORS ///////////////////////////////////
+  
+  unsigned int getSeed() const;
+  // @return: the current PRNG seed
+  
   ///////////////////////////// SAMPLING FUNCTIONS //////////////////////////////
+
+  double drawNorm(const double, const double);
+  // @param1: mean parameter
+  // @param2: SD parameter
+  // @return: random normal variate
 
   double drawInvGamma(const double, const double);
   // @param1: shape parameter
@@ -101,7 +99,13 @@ public:
   // @param2: the 'chi' parameter of the GIG distribution
   // @param3: the 'psi' parameter of the GIG distribution
   // @return: a random GIG variate
-  
+
+protected:
+  // PRNG objects:
+  mt19937_64                        _gen;
+  uniform_real_distribution<double> _unif; // defaults to standard uniform
+  normal_distribution<double>       _norm; // defaults to standard normal
+
 private:
   double _gigMode() const;
   // @return: analytic mode of the GIG distribution as currently parameterized
@@ -120,16 +124,13 @@ private:
   //          "New approach, constant hat in log-concave part."
   
   // member variables:
-  double _gigLam;
-  double _gigLam0;
-  double _omega;
-  double _alpha;
-  double _mode;
+  double       _gigLam;
+  double       _gigLam0;
+  double       _omega;
+  double       _alpha;
+  double       _mode;
+  unsigned int _seed;
   
-  // PRNG objects:
-  mt19937_64                        _gen;
-  uniform_real_distribution<double> _unif;
-  normal_distribution<double>       _norm;
 };
 
 #endif

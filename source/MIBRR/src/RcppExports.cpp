@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss);
-RcppExport SEXP _MIBRR_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd data, Eigen::VectorXd dataScales, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, bool verbose, bool doBl, bool adaptScales, bool simpleIntercept, bool noMiss, Eigen::VectorXi seeds);
+RcppExport SEXP _MIBRR_runGibbs(SEXP dataSEXP, SEXP dataScalesSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP verboseSEXP, SEXP doBlSEXP, SEXP adaptScalesSEXP, SEXP simpleInterceptSEXP, SEXP noMissSEXP, SEXP seedsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -29,7 +29,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type adaptScales(adaptScalesSEXP);
     Rcpp::traits::input_parameter< bool >::type simpleIntercept(simpleInterceptSEXP);
     Rcpp::traits::input_parameter< bool >::type noMiss(noMissSEXP);
-    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss));
+    Rcpp::traits::input_parameter< Eigen::VectorXi >::type seeds(seedsSEXP);
+    rcpp_result_gen = Rcpp::wrap(runGibbs(data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, adaptScales, simpleIntercept, noMiss, seeds));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -133,7 +134,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 17},
+    {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 18},
     {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 3},
     {"_MIBRR_drawMvn", (DL_FUNC) &_MIBRR_drawMvn, 3},
     {"_MIBRR_calcIncGamma", (DL_FUNC) &_MIBRR_calcIncGamma, 3},
