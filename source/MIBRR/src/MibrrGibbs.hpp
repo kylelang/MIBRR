@@ -62,6 +62,9 @@ public:
   MatrixXd getImpSam() const;
   // @return: (burnt in) Gibbs sample of the DV
 
+  MatrixXd getLambdaSam() const;
+  // @return: (burnt in) Gibbs sample of the penalty parameters
+  
   int getNDraws() const;
   // @return: current number of retained Gibbs sampling draws
 
@@ -119,6 +122,9 @@ public:
   // @effect: use the unconditional mean of the target as the mean of the
   //          intercept's posterior
 
+  void doFullBayes();
+  // @effect: set the estimation method to fully Bayesian Gibbs sampling
+  
   void setLambdas(VectorXd&);
   // @param: new value for Lambda
 
@@ -150,7 +156,9 @@ public:
 
   ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
-
+  void updateLambdas();
+  // @effect: update _lambdas based on current values of other member variables
+  
   void updateTaus(const MibrrData&);
   // @param:  an initialized MibrrData object
   // @effect: update _taus based on current values of other member variables
@@ -206,6 +214,7 @@ private:
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _simpleIntercept;
+  bool     _fullBayes;
 };
 
 #endif

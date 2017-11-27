@@ -61,6 +61,13 @@ double MibrrSamplers::drawNorm(const double mean, const double sd)
 }//END drawNorm()
 
 
+double MibrrSamplers::drawGamma(const double shape, const double rate)
+{
+  gamma_distribution<double> gam(shape, 1 / rate);
+  return gam(_gen);
+}//END drawGamma()
+
+
 double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
   gamma_distribution<double> gam(shape, 1.0 / scale);

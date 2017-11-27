@@ -39,6 +39,7 @@
 ## Specify the main computational function of the mibrr package:
 mibrr <- function(doBl,
                   doImp,
+                  doFullBayes,
                   data,
                   nImps,
                   targetVars,
@@ -124,40 +125,8 @@ mibrr <- function(doBl,
 
     ## Fill remaining missing data with an integer code:
     if(control$fimlStarts & !noMiss) applyMissCode()
-
-    ## Calculate the total number of MCEM iterations:
-    totalIters <- sum(iterations)
     
-    ## Create a container for Lambda's iteration history:
-    lambdaHistory <- lapply(targetVars,
-                            function(x) {
-                                tmp <- matrix(NA, totalIters - 1, 2)
-                                colnames(tmp) <- c("lambda1", "lambda2")
-                                tmp
-                            }
-                            )
-    names(lambdaHistory) <- targetVars
-    
-    for(i in 1 : totalIters) {
-        ## Print status update:
-        if(verbose) {
-            if(i == 1) {
-                cat("\nBeginning MCEM 'Approximation' phase\n")
-                mcemStage <- "'Warm-Up'"
-            }
-            if(i == (iterations[1] + 1)){
-                cat("\nBeginning MCEM 'Tuning' phase\n")
-                mcemStage <- "'Tuning'"
-            }
-            if(i == totalIters) cat("\nSampling from the stationary posterior\n")
-        }
-        
-        ## What Gibbs sample sizes should we use?:
-        if     (i <= iterations[1]) sams <- sampleSizes[[1]]
-        else if(i < totalIters    ) sams <- sampleSizes[[2]]
-        else                        sams <- sampleSizes[[3]]
-        
-        if(verbose) cat("\n") # Beautify output
+    if(doFullBayes) {# Doing a fully Bayesian analysis
         
         ## Estimate the MIBEN/MIBL model:
         gibbsOut <-
@@ -175,89 +144,150 @@ mibrr <- function(doBl,
                      totalSams       = sum(sams),
                      verbose         = verbose,
                      doBl            = doBl,
+                     fullBayes       = doFullBayes,
                      adaptScales     = control$adaptScales,
                      simpleIntercept = control$simpleIntercept,
                      noMiss          = noMiss,
                      seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
                      )
-
-        if(i < totalIters) {
+        
+    } else {# Using MCEM to estimate penalty parameters
+        
+        ## Calculate the total number of MCEM iterations:
+        totalIters <- sum(iterations)
+        
+        ## Create a container for Lambda's iteration history:
+        lambdaHistory <- lapply(targetVars,
+                                function(x) {
+                                    tmp <- matrix(NA, totalIters - 1, 2)
+                                    colnames(tmp) <- c("lambda1", "lambda2")
+                                    tmp
+                                }
+                                )
+        names(lambdaHistory) <- targetVars
+        
+        for(i in 1 : totalIters) {
+            ## Print status update:
             if(verbose) {
-                check <- i > iterations[1]
-                cat(paste0("Doing MCEM ",
-                           ifelse(check, "'Tuning'", "'Approximation'"),
-                           " iteration ",
-                           ifelse(check, i - iterations[1], i),
-                           " of ",
-                           iterations[as.numeric(check) + 1],
-                           "\n")
-                    )
+                if(i == 1) {
+                    cat("\nBeginning MCEM 'Approximation' phase\n")
+                    mcemStage <- "'Warm-Up'"
+                }
+                if(i == (iterations[1] + 1)){
+                    cat("\nBeginning MCEM 'Tuning' phase\n")
+                    mcemStage <- "'Tuning'"
+                }
+                if(i == totalIters) cat("\nSampling from the stationary posterior\n")
             }
             
-            ## Conduct the MCEM update of the lambdas:
-            optOut <- optimizeLambda(lambdaMat    = lambdaMat,
-                                     gibbsState   = gibbsOut,
-                                     doBl         = doBl,
-                                     returnACov   = FALSE, # Do we ever care?
-                                     controlParms = list(
-                                         method      = control$optMethod,
-                                         boundLambda = control$optBoundLambda,
-                                         showWarns   = verbose,
-                                         traceLevel  = control$optTraceLevel,
-                                         checkKkt    = control$optCheckKkt
-                                     )
-                                     )
+            ## What Gibbs sample sizes should we use?:
+            if     (i <= iterations[1]) sams <- sampleSizes[[1]]
+            else if(i < totalIters    ) sams <- sampleSizes[[2]]
+            else                        sams <- sampleSizes[[3]]
             
-            if(doBl) {
-                lambdaMat           <- cbind(unlist(optOut), NA)
-                colnames(lambdaMat) <- c("lambda", "dummy")
-            } else {
-                if(control$optCheckKkt) {
-                    optCols <- 4
-                    optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+            if(verbose) cat("\n") # Beautify output
+            
+            ## Estimate the MIBEN/MIBL model:
+            gibbsOut <-
+                runGibbs(data            = as.matrix(data),
+                         dataScales      = dataScales,
+                         nTargets        = nTargets,
+                         missList        = missList[c(1 : nTargets)],
+                         respCounts      = respCounts[c(1 : nTargets)],
+                         lambda1         = lambdaMat[ , 1], 
+                         lambda2         = lambdaMat[ , 2], # Ignored for BL
+                         sigmaStarts     = sigmaStarts,
+                         tauStarts       = tauStarts,
+                         betaStarts      = betaStarts,
+                         burnSams        = sams[1],
+                         totalSams       = sum(sams),
+                         verbose         = verbose,
+                         doBl            = doBl,
+                         adaptScales     = control$adaptScales,
+                         simpleIntercept = control$simpleIntercept,
+                         noMiss          = noMiss,
+                         seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
+                         )
+
+            if(i < totalIters) {
+                if(verbose) {
+                    check <- i > iterations[1]
+                    cat(paste0("Doing MCEM ",
+                               ifelse(check, "'Tuning'", "'Approximation'"),
+                               " iteration ",
+                               ifelse(check, i - iterations[1], i),
+                               " of ",
+                               iterations[as.numeric(check) + 1],
+                               "\n")
+                        )
+                }
+                
+                ## Conduct the MCEM update of the lambdas:
+                optOut <- optimizeLambda(lambdaMat    = lambdaMat,
+                                         gibbsState   = gibbsOut,
+                                         doBl         = doBl,
+                                         returnACov   = FALSE, # Do we ever care?
+                                         controlParms = list(
+                                             method      = control$optMethod,
+                                             boundLambda = control$optBoundLambda,
+                                             showWarns   = verbose,
+                                             traceLevel  = control$optTraceLevel,
+                                             checkKkt    = control$optCheckKkt
+                                         )
+                                         )
+                
+                if(doBl) {
+                    lambdaMat           <- cbind(unlist(optOut), NA)
+                    colnames(lambdaMat) <- c("lambda", "dummy")
                 } else {
-                    optCols <- 2
-                    optLabs <- c("lambda1", "lambda2")
-                }
-                
-                ## Organize the optimization output:
-                optMat <- matrix(unlist(optOut),
-                                 ncol     = optCols,
-                                 byrow    = TRUE,
-                                 dimnames = list(NULL, optLabs)
-                                 )
-                lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
+                    if(control$optCheckKkt) {
+                        optCols <- 4
+                        optLabs <- c("kkt1", "kkt2", "lambda1", "lambda2")
+                    } else {
+                        optCols <- 2
+                        optLabs <- c("lambda1", "lambda2")
+                    }
+                    
+                    ## Organize the optimization output:
+                    optMat <- matrix(unlist(optOut),
+                                     ncol     = optCols,
+                                     byrow    = TRUE,
+                                     dimnames = list(NULL, optLabs)
+                                     )
+                    lambdaMat <- optMat[ , grep("lambda", colnames(optMat))]
 
-                ## Hack for models with single DV:
-                if(length(targetVars) == 1) lambdaMat <- matrix(lambdaMat, 1, 2)
-                
-                ## Check optimality conditions:
-                if(control$optCheckKkt) {
-                    kkt1Flag <- optMat[ , "kkt1"] == 0
-                    kkt2Flag <- optMat[ , "kkt2"] == 0
+                    ## Hack for models with single DV:
+                    if(length(targetVars) == 1) lambdaMat <- matrix(lambdaMat, 1, 2)
                     
-                    if(any(kkt1Flag))
-                        stop("First KKT optimality condition not satisfied when optimizing Lambda")
+                    ## Check optimality conditions:
+                    if(control$optCheckKkt) {
+                        kkt1Flag <- optMat[ , "kkt1"] == 0
+                        kkt2Flag <- optMat[ , "kkt2"] == 0
+                        
+                        if(any(kkt1Flag))
+                            stop("First KKT optimality condition not satisfied when optimizing Lambda")
+                        
+                        if(any(kkt2Flag))
+                            stop("Second KKT optimality condition not satisfied when optimizing Lambda")
+                    }
+                }
+
+                for(j in 1 : nTargets) {
+                    betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
+                    sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)
+                    tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
                     
-                    if(any(kkt2Flag))
-                        stop("Second KKT optimality condition not satisfied when optimizing Lambda")
+                    lambdaHistory[[j]][i, ] <- lambdaMat[j, ]
+
+                    if(i == iterations[1]) {
+                        smoothRange    <- (i - control$smoothingWindow + 1) : i
+                        lambdaMat[j, ] <- colMeans(lambdaHistory[[j]][smoothRange, ])
+                    }
                 }
             }
-
-            for(j in 1 : nTargets) {
-                betaStarts[ , j] <- colMeans(gibbsOut[[j]]$beta[ , -1])
-                sigmaStarts[j]   <- mean(gibbsOut[[j]]$sigma)
-                tauStarts[ , j]  <- colMeans(gibbsOut[[j]]$tau)
-                
-                lambdaHistory[[j]][i, ] <- lambdaMat[j, ]
-
-                if(i == iterations[1]) {
-                    smoothRange    <- (i - control$smoothingWindow + 1) : i
-                    lambdaMat[j, ] <- colMeans(lambdaHistory[[j]][smoothRange, ])
-                }
-            }
-        }
-    }# END for(i in 1 : totalIters)
+        }# END for(i in 1 : totalIters)
+        
+    }# CLOSE if(doFullBayes)
     
     ## Give some nicer names:
     names(gibbsOut) <- rownames(lambdaMat) <- targetVars

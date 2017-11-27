@@ -45,6 +45,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    int             totalSams,
 		    bool            verbose,
 		    bool            doBl,
+		    bool            fullBayes,
 		    bool            adaptScales,
 		    bool            simpleIntercept,
 		    bool            noMiss,
@@ -63,8 +64,9 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
     Eigen::VectorXd betaStartVec  = betaStarts.col(j);
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
 
-    if(doBl) mibrrGibbs[j].doBl(); // Using Bayesian LASSO?
-
+    if(doBl)      mibrrGibbs[j].doBl();        // Using Bayesian LASSO?
+    if(fullBayes) mibrrGibbs[j].doFullBayes(); // Fully Bayesian estimation?
+      
     mibrrGibbs[j].seedRng(seeds[j]);
     
     mibrrGibbs[j].startParameters(betaStartVec,
@@ -111,10 +113,11 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++)
     outList[j] = 
-      RList::create(Rcpp::Named("imps" ) = mibrrGibbs[j].getImpSam(), 
-		    Rcpp::Named("beta" ) = mibrrGibbs[j].getBetaSam(),
-		    Rcpp::Named("tau"  ) = mibrrGibbs[j].getTauSam(),
-		    Rcpp::Named("sigma") = mibrrGibbs[j].getSigmaSam()
+      RList::create(Rcpp::Named("imps" )  = mibrrGibbs[j].getImpSam(), 
+		    Rcpp::Named("beta" )  = mibrrGibbs[j].getBetaSam(),
+		    Rcpp::Named("tau"  )  = mibrrGibbs[j].getTauSam(),
+		    Rcpp::Named("sigma")  = mibrrGibbs[j].getSigmaSam(),
+		    Rcpp::Named("lambda") = mibrrGibbs[j].getLambdaSam()
 		    );    
 
   return outList;

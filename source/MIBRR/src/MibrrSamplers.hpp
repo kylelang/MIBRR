@@ -62,6 +62,11 @@ public:
   // @param2: SD parameter
   // @return: random normal variate
 
+  double drawGamma(const double, const double);
+  // @param1: shape parameter
+  // @param2: rate parameter
+  // @return: random Gamma variate
+
   double drawInvGamma(const double, const double);
   // @param1: shape parameter
   // @param2: scale parameter

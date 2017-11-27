@@ -37,6 +37,7 @@ MibrrGibbs::MibrrGibbs()
   _storeGibbsSamples = false;
   _verbose           = true;
   _useElasticNet     = true;
+  _fullBayes         = false;
 }
 
 
@@ -51,6 +52,7 @@ MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;              
 ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;               }
 VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;             }
 MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;               }
+MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;            }
 int      MibrrGibbs::getNDraws()          const { return _nDraws;               }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
@@ -86,7 +88,7 @@ void MibrrGibbs::beQuiet       ()                  { _verbose = false;          
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
 void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
-
+void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;         }
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
 {
@@ -137,6 +139,11 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   else {
     _impSam = MatrixXd::Zero(1, 1);
   }
+
+  if(_fullBayes)
+    _lambdaSam = MatrixXd(_nDraws, 2);
+  else
+    _lambdaSam = MatrixXd::Zero(1, 1);
   
   _betaSam  = MatrixXd(_nDraws, _betas.size());
   _tauSam   = MatrixXd(_nDraws, _taus.size());
@@ -149,6 +156,43 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
 
+void MibrrGibbs::updateLambdas(&MibrrData)
+{
+  int    nPreds = mibrrData.nPreds();
+  double lam1   = _lambdas[0];
+  double tauSum = _taus.sum();
+  
+  if(doBl) {
+    double shape = l1Parms[0] + nPreds;
+    double rate  = l1Parms[1] + tauSum / 2.0;
+    
+    _lambdas[0] = sqrt(drawGamma(shape, rate));
+  }
+  else {
+    double lam2 = _lambda[1];
+    
+    // sample new value of lambda1:
+    double shape = l1Parms[0] + nPreds / 2.0;
+    double rate  = l1Parms[1] + tauSum / (8.0 * lam2 * _sigma);
+    
+    _lambdas[0] = sqrt(drawGamma(shape, rate));
+    
+    // sample new value of lambda2:
+    double fBeta = _betas.tail(nPreds).asArray().square().sum(); 
+    
+    double chi = l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
+    double psi =
+      l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
+		    _betas.tail(nPreds).asArray().square().sum()) / _sigma;
+    
+    _lambdas[1] = drawGig(1.0, chi, psi);
+  }
+
+  // Add the updated lambdas to their Gibbs sample:
+  if(_storeGibbsSamples) _lambdaSam.row(_drawNum) = _lambdas.transpose();
+}// END updateLambdas()
+
+  
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {
   int     nPreds   = mibrrData.nPreds();
@@ -335,7 +379,8 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
-{  
+{
+  if(_fullBayes) updateLambdas(mibrrData);
   updateTaus (mibrrData);
   updateBetas(mibrrData);
   updateSigma(mibrrData);
