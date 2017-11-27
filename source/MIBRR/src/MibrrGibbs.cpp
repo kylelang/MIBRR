@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-25
+// Modified: 2017-NOV-27
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -146,58 +146,6 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 }
 
 
-/*
-/////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
-
-
-double MibrrGibbs::drawInvGamma(double shape, double scale) const
-{
-  return 1.0 / R::rgamma(shape, 1.0 / scale);
-}//END drawInvGamma()
-
-
-double MibrrGibbs::calcIncGamma(const double shape, 
-				const double cutVal,
-				const bool   lowerTail)
-{
-  double scale   = 1.0;
-  int    lower   = (int)lowerTail;
-  int    logTran = 0; // Don't want log transform
-  
-  return R::pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
-}// END calcIncGamma()
-
-
-double MibrrGibbs::drawInvGauss(const double mu, const double lambda)
-{ 
-  double b      = 0.5 * mu / lambda;
-  double a      = mu * b;
-  double c      = 4.0 * mu * lambda;
-  double d      = pow(mu, 2);
-  double outVal = 0.0;
-
-  while(outVal <= 0.0) {
-    double tmpDraw = norm_rand();
-    double         v = pow(tmpDraw, 2); // Chi-Squared with df = 1
-    if (mu <= 0.0) {
-      throw invalid_argument("The Inverse Gaussian's mean is non-positive.\n");  
-    }
-    else if (lambda <= 0.0) { 
-      throw invalid_argument("The Inverse Gaussian's scale is non-positive.\n");
-    }
-    else {
-      double u = unif_rand();
-      //Find the smallest root:
-      double x = mu + a * v - b * sqrt(c * v + d * pow(v, 2));
-      // Choose x with probability = mean / (mean + x), else choose d/x:
-      outVal = ( u < ( mu / (mu + x) ) ) ? x : d / x; 
-    }  
-  }// CLOSE while(outVal !> 0.0)
-  return outVal;
-}// END drawInvGauss()
-
-
-*/
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
 
@@ -295,7 +243,7 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   newBetas[0] = R::rnorm(intMean, intSd);
   
   // Draw new values of the regression slope coefficients:
-  newBetas.tail(nPreds) = mibrrData.drawMVN(betaMeans, betaCovariances);
+  newBetas.tail(nPreds) = drawMvn(betaMeans, betaCovariances);
   
   _betas = newBetas; // Store the updated Betas
   

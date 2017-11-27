@@ -13,7 +13,17 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9001 - XXXX-XX-XX
+## 0.0.0.9002 - XXXX-XX-XX
+
+### Changed
+- Pulled all samplers into a seperate class `MibrrSamplers`
+
+    - `MibrrGibbs` now extends `MibrrSamplers`
+
+### Added
+- A generalized inverse Gaussian sampler
+
+## 0.0.0.9001 - 2017-11-17
 
 ### Added
 - Help file for `predictData` dataset

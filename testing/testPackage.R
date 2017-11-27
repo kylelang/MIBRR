@@ -1,9 +1,11 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-NOV-08
+### Modified: 2017-NOV-27
 
 rm(list = ls(all = TRUE))
+
+                                        #install.packages("HyperbolicDist", repos = "http://cloud.r-project.org")
 
 library(mitools)
 library(psych)
@@ -12,6 +14,7 @@ library(devtools)
 library(parallel)
 library(MCMCpack)
 library(statmod)
+library(HyperbolicDist)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
@@ -32,7 +35,7 @@ colnames(ed.d) <-
 male            <- tmp$gender
 male[male == 2] <- 0
 
-parms$cn <- cn <- setdiff(colnames(bfi), c("gender", "education"))
+cn   <- setdiff(colnames(bfi), c("gender", "education"))
 bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
@@ -171,8 +174,8 @@ testFun <- function(rp, data, env) {
          )
 } # END testFun()
 
-nReps <- 8
-nImps <- 20
+nReps <- 4
+nImps <- 10
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
               )
@@ -217,7 +220,7 @@ mvnMu <- rep(10, 3)
 mvnSigma <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- MIBRR:::drawMVN(nObs, mvnMu, mvnSigma)
+out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -245,6 +248,18 @@ out3.2 <- rinvgauss(nObs, igMu, igLam)
 
 plot(density(out3.1), col = "red")
 lines(density(out3.2), col = "blue")
+
+## GIG sampler:
+gigLam <- 1
+gigChi <- 2
+gigPsi <- 2
+
+out4.1 <- MIBRR:::drawGig(nObs, gigLam, gigChi, gigPsi)
+out4.2 <- rgig(nObs, c(gigLam, gigChi, gigPsi))
+
+plot(density(out4.1), col = "red")
+lines(density(out4.2), col = "blue")
+
 
 ## Incomplte gamma calculation:
 incGamShape <- 10

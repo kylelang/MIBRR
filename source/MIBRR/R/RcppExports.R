@@ -9,8 +9,8 @@ drawInvGamma <- function(n, shape, scale) {
     .Call('_MIBRR_drawInvGamma', PACKAGE = 'MIBRR', n, shape, scale)
 }
 
-drawMVN <- function(n, meanVec, covMat) {
-    .Call('_MIBRR_drawMVN', PACKAGE = 'MIBRR', n, meanVec, covMat)
+drawMvn <- function(n, meanVec, covMat) {
+    .Call('_MIBRR_drawMvn', PACKAGE = 'MIBRR', n, meanVec, covMat)
 }
 
 calcIncGamma <- function(shape, cutVal, lowerTail) {
@@ -19,6 +19,10 @@ calcIncGamma <- function(shape, cutVal, lowerTail) {
 
 drawInvGauss <- function(n, mu, lambda) {
     .Call('_MIBRR_drawInvGauss', PACKAGE = 'MIBRR', n, mu, lambda)
+}
+
+drawGig <- function(n, lambda, chi, psi) {
+    .Call('_MIBRR_drawGig', PACKAGE = 'MIBRR', n, lambda, chi, psi)
 }
 
 printObsIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {

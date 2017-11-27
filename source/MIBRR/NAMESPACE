@@ -30,7 +30,7 @@ export(mibl,
 ###       implementation.
 
 ## drawInvGamma
-## drawMVN
+## drawMvn
 ## calcIncGamma
 ## drawInvGauss
 ## printObsIndices

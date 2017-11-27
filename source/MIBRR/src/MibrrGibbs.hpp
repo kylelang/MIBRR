@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-25
+// Modified: 2017-NOV-27
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -28,11 +28,12 @@
 #define MIBRRGIBBS_H
 
 #include "MibrrData.hpp"
+#include "MibrrSamplers.hpp"
 
 using namespace std;
 using namespace Eigen;
 
-class MibrrGibbs {
+class MibrrGibbs: public MibrrSamplers {
 
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
@@ -150,32 +151,6 @@ public:
   // @effect: start storing the parameters' Gibbs sampled values
 
 
-  /*
-  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
-
-
-  double drawInvGamma(double, double) const;
-  // @param1: shape parameter
-  // @param2: scale parameter
-  // @return: random Inverse Gamma variate
-
-  double calcIncGamma(const double, const double, const bool);
-  // @param1: shape parameter of the underlying gamma distribution
-  // @param2: threshold value cutting off the upper or lower tail
-  // (i.e., the underlying variate whose probability or [1 - probability] 
-  // is being returned)
-  // @param3: true = lower incomplete gamma, false = upper incomplete gamma
-  // @return: value of the incomplete gamma function (i.e., the un-normalized 
-  // area under the upper or lower tail of the Gamma CDF).
-
-  // The following function was adapted from source code originally
-  // implemented by Robert E. Wheeler (2001-MAR) in the R package SuppDists:
-  double drawInvGauss(const double, const double);
-  // @param1: mean parameter (mu)
-  // @param2: shape parameter (lambda)
-  // @return: random variate from the inverse Gaussian distribution
-
-  */
   ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
 
