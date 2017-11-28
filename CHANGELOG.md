@@ -1,5 +1,6 @@
 # Change Log
-All notable changes to the **MIBRR** project will be documented in this file.
+All notable changes to the **MIBRR** project (and some not so notable ones) will 
+be documented in this file.
 
 The format is based on [Keep a Changelog][kacl], and this project (attempts to) 
 adhere to [Semantic Versioning][sv].
@@ -20,9 +21,18 @@ NOTE:
 
     - `MibrrGibbs` now extends `MibrrSamplers`
 
+- Moved many R functions into the `MibrrFit` class as methods
+- Broke optimization functions out into a seperate source file: 
+  "optimizationFunctions.R"
+- Broke exported helper functions into a seperate source file: 
+  "exportedHelperFunctions.R"
+  
 ### Added
 - A generalized inverse Gaussian sampler
+- A metadata Reference Class: `MibrrFit`
 
+    - Objects returned by `MIBRR` calls will now have class `MibrrFit`
+	
 ## 0.0.0.9001 - 2017-11-17
 
 ### Added
