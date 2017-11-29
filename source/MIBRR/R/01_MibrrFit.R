@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2017-NOV-28
+### Modified: 2017-NOV-29
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
@@ -23,57 +23,62 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
-MibrrFit <- setRefClass("MibrrFit")
-
-MibrrFit$fields(
-             _data              = "data.frame",
-             _targetVars        = "character",
-             _ignoreVars        = "character"
-             _nImps             = "integer",
-             _iterations        = "integer",
-             _sampleSizes       = "list",
-             _missCode          = "integer",
-             _seed              = "integer",
-             _doImp             = "logical",
-             _doFullBayes       = "logical",
-             _returnConvInfo    = "logical",
-             _returnParams      = "logical",
-             _verbose           = "logical",
-             _convThresh        = "numeric",
-             _lambda1Starts     = "numeric",
-             _lambda2Starts     = "numeric",
-             _usePcStarts       = "logical",
-             _smoothingWindow   = "integer",
-             _center            = "logical",
-             _scale             = "logical",
-             _adaptScales       = "logical",
-             _simpleIntercept   = "logical",
-             _minPredCor        = "numeric",
-             _miceIters         = "integer",
-             _miceRidge         = "numeric",
-             _miceMethod        = "character",
-             _fimlStarts        = "logical",
-             _preserveStructure = "logical",
-             _optTraceLevel     = "integer",
-             _optCheckKkt       = "logical",
-             _optMethod         = "character",
-             _optBoundLambda    = "logical",
-             _dataMeans         = "numeric",
-             _dataScales        = "numeric",
-             _gibbsOut          = "list",
-             _ignoredColumns    = "data.frame",
-             _rawNames          = "character",
-             _impRowsPool       = "integer",
-             _missList          = "list",
-             _nChains           = "integer"
-             _rHats             = "list",
-             _lambdaMat         = "matrix",
-             _betaStarts        = "matrix",
-             _tauStarts         = "matrix",
-             _sigmaStarts       = "numeric"
-             _userMissCode      = "logical"
-             _missCounts        = "integer"
-         )# END MibrrFit$fields()
+MibrrFit <- setRefClass("MibrrFit",
+                        fields = list(
+                            data              = "data.frame",
+                            targetVars        = "character",
+                            ignoreVars        = "character",
+                            nImps             = "integer",
+                            iterations        = "integer",
+                            sampleSizes       = "list",
+                            missCode          = "integer",
+                            seed              = "integer",
+                            doImp             = "logical",
+                            doMcem            = "logical",
+                            doBl              = "logical",
+                            returnConvInfo    = "logical",
+                            returnParams      = "logical",
+                            verbose           = "logical",
+                            convThresh        = "numeric",
+                            lambda1Starts     = "numeric",
+                            lambda2Starts     = "numeric",
+                            usePcStarts       = "logical",
+                            smoothingWindow   = "integer",
+                            center            = "logical",
+                            scale             = "logical",
+                            adaptScales       = "logical",
+                            simpleIntercept   = "logical",
+                            minPredCor        = "numeric",
+                            miceIters         = "integer",
+                            miceRidge         = "numeric",
+                            miceMethod        = "character",
+                            fimlStarts        = "logical",
+                            preserveStructure = "logical",
+                            optTraceLevel     = "integer",
+                            optCheckKkt       = "logical",
+                            optMethod         = "character",
+                            optBoundLambda    = "logical",
+                            dataMeans         = "numeric",
+                            dataScales        = "numeric",
+                            gibbsOut          = "list",
+                            ignoredColumns    = "data.frame",
+                            rawNames          = "character",
+                            impRowsPool       = "integer",
+                            missList          = "list",
+                            nChains           = "integer",
+                            rHats             = "list",
+                            lambdaMat         = "matrix",
+                            betaStarts        = "matrix",
+                            tauStarts         = "matrix",
+                            sigmaStarts       = "numeric",
+                            userMissCode      = "logical",
+                            missCounts        = "integer",
+                            nTargets          = "integer",
+                            nVars             = "integer",
+                            nPreds            = "integer",
+                            nObs              = "integer"
+                        )
+                        )
 
 
 MibrrFit$methods(
@@ -83,14 +88,15 @@ MibrrFit$methods(
              initialize =
                  function(data              = data.frame(NULL),
                           targetVars        = "",
-                          ignoreVars        = ""
+                          ignoreVars        = "",
                           nImps             = as.integer(NA),
                           iterations        = as.integer(NA),
                           sampleSizes       = list(),
                           missCode          = as.integer(NA),
                           seed              = as.integer(NA),
                           doImp             = as.logical(NA),
-                          doFullBayes       = as.logical(NA),
+                          doMcem            = as.logical(NA),
+                          doBl              = as.logical(NA),
                           returnConvInfo    = as.logical(NA),
                           returnParams      = as.logical(NA),
                           verbose           = as.logical(NA),
@@ -127,62 +133,67 @@ MibrrFit$methods(
                           tauStarts         = matrix(NA),
                           sigmaStarts       = as.numeric(NA),
                           userMissCode      = as.logical(NA),
-                          missCounts        = as.integer(NA)
+                          missCounts        = as.integer(NA),
+                          nTargets          = as.integer(NA),
+                          nVars             = as.integer(NA),
+                          nPreds            = as.integer(NA),
+                          nObs              = as.integer(NA)
                           )
                  {
                      "Initialize an object of class MibrrFit"
-                     _data              <<- data
-                     _targetVars        <<- targetVars
-                     _ignoreVars        <<- ignoreVars
-                     _nImps             <<- nImps
-                     _iterations        <<- iterations
-                     _sampleSizes       <<- sampleSizes
-                     _missCode          <<- missCode
-                     _seed              <<- seed
-                     _doImp             <<- doImp
-                     _doFullBayes       <<- doFullBayes
-                     _returnConvInfo    <<- returnConvInfo
-                     _returnParams      <<- returnParams
-                     _verbose           <<- verbose
-                     _convThresh        <<- convThresh
-                     _usePcStarts       <<- usePcStarts
-                     _center            <<- center
-                     _scale             <<- scale
-                     _adaptScales       <<- adaptScales
-                     _simpleIntercept   <<- simpleIntercept 
-                     _minPredCor        <<- minPredCor
-                     _miceIters         <<- miceIters
-                     _miceRidge         <<- miceRidge
-                     _miceMethod        <<- miceMethod
-                     _fimlStarts        <<- fimlStarts
-                     _preserveStructure <<- preserveStructure
-                     _optTraceLevel     <<- optTraceLevel
-                     _optCheckKkt       <<- optCheckKkt
-                     _optMethod         <<- optMethod
-                     _optBoundLambda    <<- optBoundLambda
-                     _dataMeans         <<- dataMeans
-                     _dataScales        <<- dataScales
-                     _gibbsOut          <<- gibbsOut
-                     _ignoredColumns    <<- ignoredColumns
-                     _rawNames          <<- rawNames
-                     _impRowsPool       <<- impRowsPool
-                     _missList          <<- missList
-                     _nChains           <<- nChains
-                     _lambdaMat         <<- lambdaMat
-                     _betaStarts        <<- betaStarts
-                     _tauStarts         <<- tauStarts
-                     _sigmaStarts       <<- sigmaStarts
+                     data              <<- data
+                     targetVars        <<- targetVars
+                     ignoreVars        <<- ignoreVars
+                     nImps             <<- nImps
+                     iterations        <<- iterations
+                     sampleSizes       <<- sampleSizes
+                     missCode          <<- missCode
+                     seed              <<- seed
+                     doImp             <<- doImp
+                     doMcem            <<- doMcem
+                     doBl              <<- doBl
+                     returnConvInfo    <<- returnConvInfo
+                     returnParams      <<- returnParams
+                     verbose           <<- verbose
+                     convThresh        <<- convThresh
+                     usePcStarts       <<- usePcStarts
+                     center            <<- center
+                     scale             <<- scale
+                     adaptScales       <<- adaptScales
+                     simpleIntercept   <<- simpleIntercept 
+                     minPredCor        <<- minPredCor
+                     miceIters         <<- miceIters
+                     miceRidge         <<- miceRidge
+                     miceMethod        <<- miceMethod
+                     fimlStarts        <<- fimlStarts
+                     preserveStructure <<- preserveStructure
+                     optTraceLevel     <<- optTraceLevel
+                     optCheckKkt       <<- optCheckKkt
+                     optMethod         <<- optMethod
+                     optBoundLambda    <<- optBoundLambda
+                     dataMeans         <<- dataMeans
+                     dataScales        <<- dataScales
+                     gibbsOut          <<- gibbsOut
+                     ignoredColumns    <<- ignoredColumns
+                     rawNames          <<- rawNames
+                     impRowsPool       <<- impRowsPool
+                     missList          <<- missList
+                     nChains           <<- nChains
+                     lambdaMat         <<- lambdaMat
+                     betaStarts        <<- betaStarts
+                     tauStarts         <<- tauStarts
+                     sigmaStarts       <<- sigmaStarts
                      
                      ## Save the original variable names:
                      rawNames <<- colnames(data)
                      
                      ## Set aside the 'ignored' columns:
-                     _ignoredColumns <<- as.data.frame(data[ , ignoreVars])
+                     ignoredColumns <<- as.data.frame(data[ , ignoreVars])
                      if(length(ignoreVars) == 1)
-                         colnames(_ignoredColumns) <<- ignoreVars
-                     
-                     ## Re-order non-ignored data columns and store as _data
-                     _data <<- data.frame(
+                         colnames(ignoredColumns) <<- ignoreVars
+                   
+                     ## Re-order non-ignored data columns and store as data
+                     data <<- data.frame(
                          data[ , targetVars],
                          data[ , setdiff(colnames(data),
                                          c(targetVars, ignoreVars)
@@ -192,51 +203,60 @@ MibrrFit$methods(
                      
                      ## Hack to deal with 1D matrix conversion to vector:
                      if(length(targetVars) == 1)
-                         colnames(_data)[1] <<- targetVars
+                         colnames(data)[1] <<- targetVars
                      
-                     nTargets <- length(_targetVars)
-                     nPreds   <- ncol(_data) - 1
+                     ## Store some useful metadata:
+                     nTargets <<- nt <- as.integer(length(targetVars))
+                     nVars    <<- nv <- as.integer(
+                                      ncol(data) - length(ignoreVars)
+                                  )
+                     nPreds   <<- np <- as.integer(nv - 1)
+                     nObs     <<- as.integer(nrow(data))
+                    
+                     tauStarts <<- betaStarts <<- matrix(NA, np, nt)
+                                         
+                     lambda1Starts <<- rep(0.5, nt)
+                     lambda2Starts <<- rep(np / 10, nt)
+                                         
+                     smoothingWindow <<- as.integer(
+                         min(10, ceiling(iterations[1] / 10))
+                     )
                      
-                     _lambda1Starts <<- rep(0.5, nTargets)
-                     _lambda2Starts <<- rep(nPreds / 10, nTargets)
-
-                     _smoothingWindow <<- min(10, ceiling(_iterations[1] / 10))
-
-                     _rHats <<- list()
-                     for(j in _targetVars)
-                         _rHats[[j]] <- list(beta = NA, tau = NA, sigma = NA)
-
-                     ## Replace missCode entries in _data with NAs
+                     rHats <<- list()
+                     for(j in targetVars)
+                         rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
+                   
+                     ## Replace missCode entries in data with NAs
                      if(!is.na(missCode)) {
-                         _userMissCode            <<- TRUE
-                         _data[_data == missCode] <<- NA
-                     } else {
-                         _userMissCode <- FALSE
+                         userMissCode           <<- TRUE
+                         data[data == missCode] <<- NA
                      }
+                     else {
+                         userMissCode <<- FALSE
+                     }
+
+                     missCounts <<- sapply(colSums(is.na(data)), as.integer)
                      
                      ## Create a list of missing elements in each target variable
                      ## NOTE: Subtract 1 from each index vector to base indices
                      ##       at 0 for C++
-                     _missList <<- lapply(_data, function(x) which(is.na(x)) - 1)
-
-                     _missCounts <<- colSums(is.na(_data))
+                     missList <<- lapply(data, function(x) which(is.na(x)) - 1)
                  },
-
+             
 ################################### MUTATORS ####################################
 
-             setDataMeans  = function(dataMeans)  { _dataMeans  <<- dataMeans  },
-             setDataScales = function(dataScales) { _dataScales <<- dataScales },
+             setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans   },
+             setDataScales = function(dataScales) { dataScales <<- dataScales  },
 
 ###---------------------------------------------------------------------------###
              
-             setData = function(data) { _data[ , colnames(data)] <<- data      },
+             setData = function(data) { data[ , colnames(data)] <<- data       },
              
 ###---------------------------------------------------------------------------###
              
              setControl = function(x) {
                  "Assign the control parameters"
-                 x    <- lapply(x, function(y) paste0("_", y))
-                 ints <- c("_smoothingWindow", "_miceIters", "_optTraceLevel")
+                 ints <- c("smoothingWindow", "miceIters", "optTraceLevel")
                  
                  for(n in names(x)) {
                      if(n %in% ints) field(n, as.integer(x[[n]]))
@@ -246,74 +266,69 @@ MibrrFit$methods(
 
 ################################# ACCESSORS #####################################
 
-             dataNames    = function() { colnames(_data)                       },
-             targets      = function() { _targetVars                           },
-             countMissing = function() { _missCounts                           },
+             dataNames    = function() { colnames(data)                        },
+             targets      = function() { targetVars                            },
+             countMissing = function() { missCounts                            },
              
 ###---------------------------------------------------------------------------###
              
              getControl = function () {
                  "Return the 'control' list"
-                 list(convThresh        <- _convThresh
-                      usePcStarts       <- _usePcStarts
-                      center            <- _center
-                      scale             <- _scale
-                      adaptScales       <- _adaptScales
-                      simpleIntercept   <- _simpleIntercept 
-                      minPredCor        <- _minPredCor
-                      miceIters         <- _miceIters
-                      miceRidge         <- _miceRidge
-                      miceMethod        <- _miceMethod
-                      fimlStarts        <- _fimlStarts
-                      preserveStructure <- _preserveStructure
-                      optTraceLevel     <- _optTraceLevel
-                      optCheckKkt       <- _optCheckKkt
-                      optMethod         <- _optMethod
-                      optBoundLambda    <- _optBoundLambda)
+                 list(convThresh        = convThresh,
+                      usePcStarts       = usePcStarts,
+                      center            = center,
+                      scale             = scale,
+                      adaptScales       = adaptScales,
+                      simpleIntercept   = simpleIntercept, 
+                      minPredCor        = minPredCor,
+                      miceIters         = miceIters,
+                      miceRidge         = miceRidge,
+                      miceMethod        = miceMethod,
+                      fimlStarts        = fimlStarts,
+                      preserveStructure = preserveStructure,
+                      optTraceLevel     = optTraceLevel,
+                      optCheckKkt       = optCheckKkt,
+                      optMethod         = optMethod,
+                      optBoundLambda    = optBoundLambda)
              },
              
 ###---------------------------------------------------------------------------###
              
              getImpDataset = function() {
                  "Fill missing values to produce a single imputed dataset"
-                 data <- _data # Make a local copy of '_data'
+                 tmp <- data # Make a local copy of 'data'
                  
                  ## Randomly choose a posterior draw to use as imputations:
-                 impRow       <-  sample(_impRowsPool, 1)
-                 _impRowsPool <<- setdiff(_impRowsPool, impRow)
+                 impRow      <-  sample(impRowsPool, 1)
+                 impRowsPool <<- setdiff(impRowsPool, impRow)
                  
-                 for(j in _targetVars) {
-                     impSam <- _gibbsOut[[j]]$imps[impRow, ]
-                     data[_missList[[j]], j] <- impSam + _dataMeans[j]
+                 for(j in targetVars) {
+                     impSam <- gibbsOut[[j]]$imps[impRow, ]
+                     tmp[missList[[j]], j] <- impSam + dataMeans[j]
                  }
                  
                  ## Restructure imputed data to match the raw data layout:
-                 if(_preserveStructure)
-                     data.frame(data, _ignoredColumns)[ , _rawNames]
+                 if(preserveStructure)
+                     data.frame(tmp, ignoredColumns)[ , rawNames]
+                 else
+                     tmp
              },
-
-############################# DESCRIPTIVE FUNCTIONS #############################
-
-             nVar     = function() { ncol(_data)                               },
-             nObs     = function() { nrow(_data)                               },
-             nPreds   = function() { nVar() - 1                                },
-             nTargets = function() { length(_targetVars)                       },
-             
+          
 ########################## COMPLEX METHODS/SUBROUTINES ##########################
              
              applyMissCode = function() {
                  "Construct an integer-valued missing data code"
-                 if(is.na(_missCode)) {
-                     if(max(abs(_data), na.rm = TRUE) < 1.0) {
-                         _missCode <<- -9
+                 if(is.na(missCode)) {
+                     if(max(abs(data), na.rm = TRUE) < 1.0) {
+                         missCode <<- -9
                      }
                      else {
                          codeMag   <-
-                             floor(log10(max(abs(_data), na.rm = TRUE))) + 2
-                         _missCode <<- -(10^codeMag - 1)
+                             floor(log10(max(abs(data), na.rm = TRUE))) + 2
+                         missCode <<- -(10^codeMag - 1)
                      }
                  }
-                 _data[is.na(_data)] <- _missCode
+                 data[is.na(data)] <<- missCode
              },
 
 ###---------------------------------------------------------------------------###
@@ -323,29 +338,29 @@ MibrrFit$methods(
                  
                  ## Check for target variables. When no targets are given, all
                  ## incomplete variables not listed in 'ignoreVars' are imputed.
-                 if(is.null(_targetVars)) {
-                     if(_doImp) {
+                 if(is.null(targetVars)) {
+                     if(doImp) {
                          targetCandidates <-
-                             colnames(_data)[!colnames(_data) %in% _ignoreVars]
+                             colnames(data)[!colnames(data) %in% ignoreVars]
                          warning("You did not specify any target variables, so I will impute the missing data on\nevery variable in 'data' that is not listed in 'ignoreVars'.\n")        
                      } else {
                          stop("Please specify a DV.")
                      }
                  } else {
-                     targetCandidates <- _targetVars
+                     targetCandidates <- targetVars
                  }
                  
-                 ## Make sure '_data' contains missing data that we can find:
-                 if(is.na(_missCode)) {
-                     rMat <- is.na(_data)
+                 ## Make sure 'data' contains missing data that we can find:
+                 if(is.na(missCode)) {
+                     rMat <- is.na(data)
                  } else {
-                     rMat <- _data == _missCode
+                     rMat <- data == missCode
                      
                      if(!any(rMat, na.rm = TRUE))
                          stop(paste0("The value you provided for 'missCode' (i.e., ",
-                                     _missCode,
+                                     missCode,
                                      ") does not appear anywhere in 'data'.\nAre you sure that ",
-                                     _missCode,
+                                     missCode,
                                      " encodes your missing data?\n")
                               )
                  }
@@ -355,12 +370,12 @@ MibrrFit$methods(
                  else 
                      completeTargets <- mean(rMat[ , targetCandidates]) == 0
                  
-                 if(_doImp & all(completeTargets)) 
+                 if(doImp & all(completeTargets)) 
                      stop("Your target variables appear to be fully observed. Did you forget to provide a\nvalue for 'missCode'?\n")
                  
                  ## Select the final set of target variables:
-                 if(_doImp) {
-                     _targetVars <<- targetCandidates[!completeTargets]
+                 if(doImp) {
+                     targetVars <<- targetCandidates[!completeTargets]
                      if(any(completeTargets))
                          warning(
                              paste0("The potential target variables {",
@@ -373,49 +388,55 @@ MibrrFit$methods(
 
 ###---------------------------------------------------------------------------###
              
-             scaleData = function(revert = FALSE) {
-                 "Standardize the columns of _data"
-                 nObs <- nrow(_data)
-                 nVar <- ncol(_data)
-                 
+             scaleData = function(revert = FALSE, compStats = TRUE) {
+                 "Standardize the columns of data"
                  if(!revert) {# Doing initial scaling
-                     if(_scale)
-                         _dataScales <<- unlist(lapply(_data, sd))
-                     else
-                         _dataScales <<- rep(1, nVar)
-                     
-                     ## Mean center data:
-                     if(_center) {
-                         _dataMeans <<- colMeans(_data)
-                         _data      <<- as.data.frame(
-                             scale(_data, center = TRUE, scale = FALSE)
-                         )
-                     } else {
-                         _dataMeans <<- rep(0, nVar)
+                     if(compStats) {# Compute summary stats
+                         if(scale)
+                             dataScales <<- unlist(lapply(data, sd))
+                         else
+                             dataScales <<- rep(1, nVar)
+                         
+                         ## Mean center data:
+                         if(center) {
+                             dataMeans <<- colMeans(data)
+                             data      <<- as.data.frame(
+                                 scale(data, center = TRUE, scale = FALSE)
+                             )
+                         } else {
+                             dataMeans <<- rep(0, nVar)
+                         }
+                         
+                         names(dataMeans) <<-
+                             names(dataScales) <<- colnames(data)
                      }
-                     
-                     names(_dataMeans) <<- names(_dataScales) <- colnames(_data)
-                     
-                 } else {# Reverting the data to its original scaling
-                     _data <<-
-                         _data + data.frame(
-                                     matrix(_dataMeans, nObs, nVar, byrow = TRUE)
-                                 )
+                     else {# Don't re-compute summary stats
+                         data <<- data -
+                             data.frame(
+                                 matrix(dataMeans, nObs, nVar, byrow = TRUE)
+                             )
+                     }
+                 }
+                 else {# Reverting the data to its original scaling
+                     data <<-
+                         data + data.frame(
+                                    matrix(dataMeans, nObs, nVar, byrow = TRUE)
+                                )
                  }
              },
-
+             
 ###---------------------------------------------------------------------------###
 
              nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
-                 if(_returnConvInfo) names(_rHatList) <- _targetVars
+                 if(returnConvInfo) names(rHatList) <- targetVars
                  
-                 if(_returnParams)
-                     for(v in _targetVars) {
-                         tmp <- setdiff(colnames(_data), v)
+                 if(returnParams)
+                     for(v in targetVars) {
+                         tmp <- setdiff(colnames(data), v)
                          
-                         colnames(_gibbsOut[[v]]$beta) <<- c("intercept", tmp)
-                         colnames(_gibbsOut[[v]]$tau)  <<- tmp
+                         colnames(gibbsOut[[v]]$beta) <<- c("intercept", tmp)
+                         colnames(gibbsOut[[v]]$tau)  <<- tmp
                      }
              },
 
@@ -425,7 +446,7 @@ MibrrFit$methods(
              calcRHat = function(sims) {
                  "Compute a single split-chain Potential Scale Reduction Factor"
                  subChainLen <- floor(length(sims) / 2)
-                 nSubChains  <- _nChains * 2
+                 nSubChains  <- nChains * 2
                  
                  if(length(sims) %% nSubChains == 0) {
                      simsMat <- matrix(sims, ncol = nSubChains)
@@ -452,24 +473,24 @@ MibrrFit$methods(
              
              computeRHats = function() {
                  "Compute the potential scale reduction factors"
-                 for(j in _targetVars) {
-                     _rHats[[j]]$beta  <- apply(_gibbsOut[[j]]$beta, 2, calcRHat)
-                     _rHats[[j]]$tau   <- apply(_gibbsOut[[j]]$tau,  2, calcRHat)
-                     _rHats[[j]]$sigma <- calcRHat(gibbsOut[[j]]$sigma)
+                 for(j in targetVars) {
+                     rHats[[j]]$beta  <<- apply(gibbsOut[[j]]$beta, 2, calcRHat)
+                     rHats[[j]]$tau   <<- apply(gibbsOut[[j]]$tau,  2, calcRHat)
+                     rHats[[j]]$sigma <<- calcRHat(gibbsOut[[j]]$sigma)
                  }
-             }
+             },
 
 ###---------------------------------------------------------------------------###
              
              checkGibbsConv = function() {
                  "Check that the Gibb's sampler has converged everywhere"
-                 for(j in _targetVars) {
+                 for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(_rHats[[j]]$beta > _convThresh)
-                     maxBetaRHat  <- max(_rHats[[j]]$beta)
-                     badTauCount  <- sum(_rHats[[j]]$tau > _convThresh)
-                     maxTauRHat   <- max(__rHats[[j]]$tau)
-                     badSigmaFlag <- _rHats[[j]]$sigma > _convThresh
+                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
+                     maxBetaRHat  <- max(rHats[[j]]$beta)
+                     badTauCount  <- sum(rHats[[j]]$tau > convThresh)
+                     maxTauRHat   <- max(rHats[[j]]$tau)
+                     badSigmaFlag <- rHats[[j]]$sigma > convThresh
                      
                      ## Return warnings about possible failures of convergence:
                      if(badBetaCount > 0) {
@@ -478,7 +499,7 @@ MibrrFit$methods(
                                         ", Beta's final Gibbs sample may not have converged.\n",
                                         badBetaCount,
                                         " R-Hats > ",
-                                        _convThresh,
+                                        convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxBetaRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples.")
@@ -490,7 +511,7 @@ MibrrFit$methods(
                                         ", Tau's final Gibbs sample may not have converged.\n",
                                         badTauCount,
                                         " R-Hats > ",
-                                        _convThresh,
+                                        convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxTauRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples.")
@@ -504,52 +525,46 @@ MibrrFit$methods(
                                         round(sigmaRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."))
                      }
-                 }# CLOSE for(j in _targetVars)
+                 }# CLOSE for(j in targetVars)
              },
              
 ###---------------------------------------------------------------------------###
-             
+
              startParams = function(restart = FALSE) {    
                  "Provide starting values for all parameters"
-
-                 nTargets <- length(_targetVars)
+                 
                  if(restart) {
                      for(j in 1 : nTargets) {
-                         _sigmaStarts[j]   <- mean(_gibbsOut[[j]]$sigma)
-                         _tauStarts[ , j]  <- colMeans(_gibbsOut[[j]]$tau)
-                         _betaStarts[ , j] <-
-                             colMeans(_gibbsOut[[j]]$beta[ , -1])
+                         sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
+                         tauStarts[ , j]  <<- colMeans(gibbsOut[[j]]$tau)
+                         betaStarts[ , j] <<-
+                             colMeans(gibbsOut[[j]]$beta[ , -1])
                      }
-                     return
+                     return()
                  }
-                 
-                 nRows    <- nrow(_data)
-                 nObsVec  <- colSums(!is.na(_data))
-                 nPreds   <- ncol(_data) - 1
                  
                  ## NOTE: We don't need to start the intercept. It's initial
                  ##       value will be sampled in the first iteration of the
                  ##       Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
-                 if(!doBl) {
-                     _lambdaMat <<- cbind(
-                         matrix(_lambda1Starts, nTargets, 1),
-                         matrix(_lambda2Starts, nTargets, 1)
+                 if(!doBl)
+                     lambdaMat <<- cbind(
+                         matrix(lambda1Starts, nTargets, 1),
+                         matrix(lambda2Starts, nTargets, 1)
                      )
-                 } else {
-                     _lambdaMat <<- cbind(matrix(_lambda1Starts, nTargets, 1), 0)
-                 }# END if(!doBl)
+                 else 
+                     lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
                  
                  ## Populate starting values for betas, taus, and sigma:
-                 _sigmaStarts <<- _dataScales[_targetVars]
-                 
+                 sigmaStarts <<- dataScales[targetVars]
+                                
                  for(j in 1 : nTargets) {
-                     if(!_doBl) {
-                         lam1 <- _lambdaMat[j, 1]
-                         lam2 <- _lambdaMat[j, 2]
+                     if(!doBl) {
+                         lam1 <- lambdaMat[j, 1]
+                         lam2 <- lambdaMat[j, 2]
                          
-                         tauPriorScale <- (8 * lam2 * _sigmaStarts[j]) / lam1^2
+                         tauPriorScale <- (8 * lam2 * sigmaStarts[j]) / lam1^2
                          
                          for(k in 1 : nPreds) {
                              tauDraw <- 0.0
@@ -557,24 +572,25 @@ MibrrFit$methods(
                                  tauDraw <- rgamma(n     = 1,
                                                    shape = 0.5,
                                                    scale = tauPriorScale)
-                             _tauStarts[k, j] <<- tauDraw
+                             tauStarts[k, j] <<- tauDraw
                          }
                          
                          betaPriorCov <- diag(
-                             1 / ((lam2 / _sigmaStarts[j]) *
-                                  (_tauStarts[ , j] / (_tauStarts[ , j] - 1.0))
+                             1 / ((lam2 / sigmaStarts[j]) *
+                                  (tauStarts[ , j] / (tauStarts[ , j] - 1.0))
                              )
                          )
-                         
-                         _betaStarts[ , j] <<-
+
+                         betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
-                     } else {# We're doing BL
-                         lam <- _lambdaMat[j, 1]
+                     }
+                     else {# We're doing BL
+                         lam <- lambdaMat[j, 1]
                          
-                         _tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
+                         tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
                          
-                         betaPriorCov <- _sigmaStarts[j] * diag(_tauStarts[ , j])
-                         _betaStarts[ , j] <<-
+                         betaPriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
+                         betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
                  }# CLOSE for(j in 1 : nTargets)
@@ -584,10 +600,10 @@ MibrrFit$methods(
              
              smoothLambda = function() {
                  i     <- iterations[1]
-                 range <- (i - _smoothingWindow + 1) : i
+                 range <- (i - smoothingWindow + 1) : i
 
-                 for(j in _targetVars)
-                     lambdaMat[j, ] <- colMeans(_lambdaHistory[[j]][range, ])
+                 for(j in targetVars)
+                     lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
              }
              
          )# END MibrrFit$methods()

@@ -22,13 +22,50 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
+?miben
 
-preProcess <- function()
+
+data(mibrrExampleData)
+     
+data       <- mibrrExampleData
+nImps      <- 100
+iterations <- c(30, 10)
+targetVars <- c("y", paste0("x", c(1 : 3)))
+ignoreVars <- "idNum"
+
+sampleSizes    <- list(rep(25, 2), rep(250, 2), rep(500, 2))
+missCode       <- NA
+returnConvInfo <- TRUE
+returnParams   <- FALSE
+verbose        <- TRUE
+seed           <- NULL
+control        <- list()
+
+doImp  <- TRUE
+doMcem <- TRUE
+doBl   <- FALSE
+
+preProcess <- function(doBl,
+                       doImp,
+                       doMcem,
+                       data,
+                       nImps,
+                       targetVars,
+                       ignoreVars,
+                       iterations,
+                       sampleSizes,
+                       missCode,
+                       returnConvInfo,
+                       returnParams,
+                       verbose,
+                       seed,
+                       control)
 {
     if(!is.null(seed)) set.seed(seed)
 
     ## Initialize a new MibrrFit object:
-    mibrrFit <- MibrrFit(targetVars     = targetVars,
+    mibrrFit <- MibrrFit(data           = data,
+                         targetVars     = targetVars,
                          ignoreVars     = ignoreVars,
                          nImps          = as.integer(nImps),
                          iterations     = as.integer(iterations),
@@ -36,11 +73,14 @@ preProcess <- function()
                          missCode       = as.integer(missCode),
                          returnConvInfo = returnConvInfo,
                          returnParams   = returnParams,
-                         verbose        = verbose)
-    
+                         verbose        = verbose,
+                         doImp          = doImp,
+                         doMcem         = doMcem,
+                         doBl           = doBl)
+
     ## Check the user inputs and resolve a set of target variables:
     mibrrFit$checkInputs()
-
+       
     ## Update any user-specified control parameters:
     if(length(control) > 0) mibrrFit$setControl()
     
@@ -50,14 +90,20 @@ preProcess <- function()
     if(noMiss) {
         ## Mean-center the data (and compute initial data scales):
         mibrrFit$scaleData()
-    } else if(control$fimlStarts) {
+    }
+    else if(mibrrFit$fimlStarts) {
         ## Singly impute any missing data on auxiliaries:
         simpleImpute(covsOnly = TRUE)
-        ## Mean-center the data using FIML means as centers:
-        scaleDataWithFiml()
-    } else {
+
+        ## Compute sufficient stats using FIML:
+        compStatsWithFiml()
+
+        ## Mean center the data using FIML means as centers:
+        mibrrFit$scaleData(compStats = FALSE)
+    }
+    else {
         ## Start the missing values with (temporary) single imputations:
-        simpleImpute()
+        simpleImpute(object = mibrrFit)
         mibrrFit$scaleData()
     }
     
@@ -67,7 +113,7 @@ preProcess <- function()
     
     ## Fill remaining missing data with an integer code:
     if(control$fimlStarts & !noMiss) mibrrFit$applyMissCode()
-}
+}# END preProcess()
 
 
 postProcess <- function()

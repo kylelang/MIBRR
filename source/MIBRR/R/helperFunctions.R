@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-NOV-28
+### Modified: 2017-NOV-29
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -53,11 +53,14 @@
 
 ## Use a variant of the method recommended by Park and Casella (2008) to get
 ## starting values for the MIBL penalty parameters
-getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
-{          
+getLambdaStarts <- function(object, nSamples = 25)
+{
+    data     <- object$getData()
+    nTargets <- object$nTargets
+    
     ## Fill any missing data with rough guesses:
-    micePreds <- quickpred(inData)
-    miceOut   <- mice(data            = inData,
+    micePreds <- quickpred(data)
+    miceOut   <- mice(data            = data,
                       m               = 1,
                       method          = "norm",
                       predictorMatrix = micePreds,
@@ -74,7 +77,7 @@ getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
                 tmpPredCount * sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
                 sum(abs(tmpOut$coefficients[-1]))
         } else {
-            ## If P ~ N or  P > N, subsample inData's columns
+            ## If P ~ N or  P > N, subsample data's columns
             ## and repeatedly apply the Park & Casella (2008) method.
             tmpLambda    <- vector("numeric", nSamples)
             tmpPredCount <- round(0.90 * nrow(impData))
@@ -88,7 +91,7 @@ getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
                     sum(abs(tmpOut$coefficients[-1]))
             }# END for(j in 1 : nSamples)
             lambdaStarts[i] <- mean(tmpLambda)
-        }# END if( nrow(inData) > ncol(inData) )     
+        }# END if( nrow(data) > ncol(data) )     
     }# END for(i in 1 : nTargets)
     
     lambdaStarts
@@ -96,60 +99,53 @@ getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
     
 
 
-scaleDataWithFiml <- function(object, revert = FALSE) {
-    env  <- parent.frame()
-    nObs <- nrow(env$data)
-    nVar <- ncol(env$data)
-
-    if(!revert) {# Doing initial scaling
-        ## Specify a lavaan model to estimate data's sufficient statistics:
-        mod1 <- paste(
-            paste0("F",
-                   object$dataNames(),
-                   " =~ 1*",
-                   object$dataNames(),
-                   "\n"),
-            collapse = "")
-        
-        ## Estimate the sufficient statistics with FIML:
-        out1 <- lavaan(model           = mod1,
-                       data            = object$getData(),
-                       int.ov.free     = FALSE,
-                       int.lv.free     = TRUE,
-                       auto.var        = TRUE,
-                       auto.fix.single = TRUE,
-                       missing         = "fiml")
-        
-        ## Store the item means and scales:
-        object$setDataMeans(as.vector(inspect(out1, "coef")$alpha))
-        if(object$_scale)
-            env$dataScales <- sqrt(diag(inspect(out1, "coef")$psi))
-        else
-            env$dataScales <- rep(1, nVar)
-        
-        names(env$dataMeans) <- names(env$dataScales) <- colnames(env$data)
-        
-        ## Mean center data:
-        if(env$control$center)
-            env$data <- env$data - data.frame(
-                matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
-            )
-    } else {# Reverting the data to its original scaling
-        env$data <- env$data + data.frame(
-            matrix(env$dataMeans, nObs, nVar, byrow = TRUE)
-        )
-    }
-        
-}# END scaleDataWithFiml()
-
-
-## Initially fill the missing values via single imputation:
-simpleImpute <- function(covsOnly = FALSE) {
-    cn      <- object$dataNames()
+compStatsWithFiml <- function(object, revert = FALSE) {
+    nObs    <- object$nObs()
+    nVar    <- object$nVar()
+    dNames  <- object$dataNames()
     data    <- object$getData()
     control <- object$getControl()
     
-    rFlags <- object$countMissing() > 0
+    ## Specify a lavaan model to estimate data's sufficient statistics:
+    mod1 <- paste(paste0("F", dNames, " =~ 1*", dNames, "\n"), collapse = "")
+    
+    ## Estimate the sufficient statistics with FIML:
+    out1 <- lavaan(model           = mod1,
+                   data            = data,
+                   int.ov.free     = FALSE,
+                   int.lv.free     = TRUE,
+                   auto.var        = TRUE,
+                   auto.fix.single = TRUE,
+                   missing         = "fiml")
+    
+    ## Store the item means:
+    tmp        <- as.vector(inspect(out1, "coef")$alpha)
+    names(tmp) <- dNames
+    object$setDataMeans(tmp)
+    
+    ## Store the item scales:
+    if(control$scale) {
+        tmp        <- sqrt(diag(inspect(out1, "coef")$psi))
+        names(tmp) <- dNames
+        object$setDataScales(tmp)
+    }
+    else {
+        tmp        <- rep(1.0, nVar)
+        names(tmp) <- dNames
+        object$setDataScales(tmp)
+    }
+}# END scaleDataWithFiml()
+
+
+object <- mibrrFit
+
+## Initially fill the missing values via single imputation:
+simpleImpute <- function(object, covsOnly = FALSE) {
+    cn      <- object$dataNames()
+    data    <- object$data
+    control <- object$getControl()
+    
+    rFlags <- (object$countMissing() > 0)[cn]
     
     if(covsOnly) {
         impTargets <- setdiff(cn, object$targets())
