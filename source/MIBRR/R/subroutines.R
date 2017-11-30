@@ -84,8 +84,21 @@ preProcess <- function(doBl,
     ## Update any user-specified control parameters:
     if(length(control) > 0) mibrrFit$setControl()
     
-    ## Create a vector of response counts:
-    noMiss <- all(mibrrFit$countMissing() == 0)
+    ## Do we have any missing data:
+    haveMiss <- any(mibrrFit$countMissing() > 0)
+    
+    ## Are we doing any transformations?
+    transform <- mibrrFit$scale || mibrrFit$center
+    
+    ## Should we use FIML for scaling?
+    useFiml <- mibrrFit$fimlStarts & haveMiss
+    
+    ## Compute summary statistics:
+    if(transform)
+        if(haveMiss)
+            mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
+
+    if(mibrrFit$center) mibrrFit$meanCenter()
     
     if(noMiss) {
         ## Mean-center the data (and compute initial data scales):
@@ -116,82 +129,9 @@ preProcess <- function(doBl,
 }# END preProcess()
 
 
-postProcess <- function()
-{
-    ## Give some nicer names:
-    names(gibbsOut) <- rownames(lambdaMat) <- targetVars
-
-    ## Uncenter the data:
-    scaleData(revert = TRUE)
-
-    ## Replace missing values:
-    if(doImp) {
-        missFill <- ifelse(userMissCode, userMissCode, NA)
-        for(v in colnames(data)) {
-            ## Rebase indices as per R's preference :
-            missList[[v]]          <- missList[[v]] + 1
-            data[missList[[v]], v] <- missFill
-        }
-    }
-    
-    ## Compute the potential scale reduction factors (R-Hats) for the posterior
-    ## imputation model parameters:
-    rHatList <- lapply(X           = targetVars,
-                       FUN         = checkGibbsConv,
-                       gibbsStates = gibbsOut,
-                       returnRHats = TRUE,
-                       critVal     = control$convThresh)
-    
-    ## Draw imputations from the convergent posterior predictive distribution:
-    if(doImp) outImps <- getImputedData(gibbsState  = gibbsOut,
-                                        nImps       = nImps,
-                                        data        = data,
-                                        targetMeans = dataMeans[targetVars],
-                                        targetVars  = targetVars,
-                                        missList    = missList)
-    
-    ## Provide some pretty names for the output objects:
-    nameOutput()
-    
-    ## Aggregate and return the requested output:
-    outList <- list()
-    if(doImp) outList$imps <- outImps
-    
-    if(returnConvInfo) {
-        outList$rHats         <- rHatList
-        outList$lambdaHistory <- lambdaHistory
-    }
-    
-    if(returnParams) {
-        paramList <- list()
-        for(j in targetVars) {
-            paramList[[j]]$beta   <- gibbsOut[[j]]$beta
-            paramList[[j]]$tau    <- gibbsOut[[j]]$tau
-            paramList[[j]]$sigma  <- gibbsOut[[j]]$sigma
-            paramList[[j]]$lambda <- lambdaMat[j, ]
-        }
-        outList$params <- paramList
-    }
-    outList
-}
-
 
 ## Specify the main computational function of the mibrr package:
-runMcem <- function(doBl,
-                    doImp,
-                    doFullBayes,
-                    data,
-                    nImps,
-                    targetVars,
-                    ignoreVars,
-                    iterations,
-                    sampleSizes,
-                    missCode,
-                    returnConvInfo,
-                    returnParams,
-                    verbose,
-                    seed,
-                    control)
+runMcem <- function(mibrrFit, iterations, sampleSizes)
 {
     ## Calculate the total number of MCEM iterations:
     totalIters <- sum(iterations)
@@ -330,6 +270,7 @@ runMcem <- function(doBl,
 }# END runMcem()
 
 
+
 runFullBayes <- function()
 {
     gibbsOut <-
@@ -353,6 +294,68 @@ runFullBayes <- function()
                  seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
                  )
 }
+
+
+
+postProcess <- function()
+{
+    ## Give some nicer names:
+    names(gibbsOut) <- rownames(lambdaMat) <- targetVars
+
+    ## Uncenter the data:
+    scaleData(revert = TRUE)
+
+    ## Replace missing values:
+    if(doImp) {
+        missFill <- ifelse(userMissCode, userMissCode, NA)
+        for(v in colnames(data)) {
+            ## Rebase indices as per R's preference :
+            missList[[v]]          <- missList[[v]] + 1
+            data[missList[[v]], v] <- missFill
+        }
+    }
+    
+    ## Compute the potential scale reduction factors (R-Hats) for the posterior
+    ## imputation model parameters:
+    rHatList <- lapply(X           = targetVars,
+                       FUN         = checkGibbsConv,
+                       gibbsStates = gibbsOut,
+                       returnRHats = TRUE,
+                       critVal     = control$convThresh)
+    
+    ## Draw imputations from the convergent posterior predictive distribution:
+    if(doImp) outImps <- getImputedData(gibbsState  = gibbsOut,
+                                        nImps       = nImps,
+                                        data        = data,
+                                        targetMeans = dataMeans[targetVars],
+                                        targetVars  = targetVars,
+                                        missList    = missList)
+    
+    ## Provide some pretty names for the output objects:
+    nameOutput()
+    
+    ## Aggregate and return the requested output:
+    outList <- list()
+    if(doImp) outList$imps <- outImps
+    
+    if(returnConvInfo) {
+        outList$rHats         <- rHatList
+        outList$lambdaHistory <- lambdaHistory
+    }
+    
+    if(returnParams) {
+        paramList <- list()
+        for(j in targetVars) {
+            paramList[[j]]$beta   <- gibbsOut[[j]]$beta
+            paramList[[j]]$tau    <- gibbsOut[[j]]$tau
+            paramList[[j]]$sigma  <- gibbsOut[[j]]$sigma
+            paramList[[j]]$lambda <- lambdaMat[j, ]
+        }
+        outList$params <- paramList
+    }
+    outList
+}
+
 
 
 ### Specify a wrapper function to implement Multiple Imputation with the

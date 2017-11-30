@@ -387,42 +387,50 @@ MibrrFit$methods(
              },
 
 ###---------------------------------------------------------------------------###
+
+             computeStats = function(useFiml = FALSE) {
+                 "Compute the data means and standard deviations for scaling purposes"
+                 if(useFiml) {
+                     dn <- dataNames()
+                     ## Specify a lavaan model to estimate sufficient stats:
+                     mod1 <- paste(
+                         paste0("F", dn, " =~ 1*", dn, "\n"),
+                         collapse = ""
+                     )
+                     
+                     ## Estimate the sufficient statistics with FIML:
+                     out1 <- lavaan(model           = mod1,
+                                    data            = data,
+                                    int.ov.free     = FALSE,
+                                    int.lv.free     = TRUE,
+                                    auto.var        = TRUE,
+                                    auto.fix.single = TRUE,
+                                    missing         = "fiml")
+                     
+                     ## Store the estimated item means:
+                     dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
+                     
+                     ## Store the estimated item scales:
+                     dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
+                 }
+                 else {
+                     ## Store the raw item means:
+                     dataMeans <<- colMeans(data)
+                     
+                     ## Store the raw item scales:
+                     dataScales <<- unlist(lapply(data, sd))
+                 }
+                 
+                 names(dataMeans) <<- names(dataScales) <<- colnames(data)
+             },
              
-             scaleData = function(revert = FALSE, compStats = TRUE) {
-                 "Standardize the columns of data"
-                 if(!revert) {# Doing initial scaling
-                     if(compStats) {# Compute summary stats
-                         if(scale)
-                             dataScales <<- unlist(lapply(data, sd))
-                         else
-                             dataScales <<- rep(1, nVar)
-                         
-                         ## Mean center data:
-                         if(center) {
-                             dataMeans <<- colMeans(data)
-                             data      <<- as.data.frame(
-                                 scale(data, center = TRUE, scale = FALSE)
-                             )
-                         } else {
-                             dataMeans <<- rep(0, nVar)
-                         }
-                         
-                         names(dataMeans) <<-
-                             names(dataScales) <<- colnames(data)
-                     }
-                     else {# Don't re-compute summary stats
-                         data <<- data -
-                             data.frame(
-                                 matrix(dataMeans, nObs, nVar, byrow = TRUE)
-                             )
-                     }
-                 }
-                 else {# Reverting the data to its original scaling
-                     data <<-
-                         data + data.frame(
-                                    matrix(dataMeans, nObs, nVar, byrow = TRUE)
-                                )
-                 }
+             meanCenter = function(revert = FALSE) {
+                 "Mean center the columns of data"
+                 meanFrame <- data.frame(
+                     matrix(dataMeans, nObs, nVar, byrow = TRUE)
+                 ) 
+                 if(!revert) data <<- data - meanFrame
+                 else        data <<- data + meanFrame
              },
              
 ###---------------------------------------------------------------------------###
@@ -548,13 +556,16 @@ MibrrFit$methods(
                  ##       Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
-                 if(!doBl)
+                 if(!doBl) {
                      lambdaMat <<- cbind(
                          matrix(lambda1Starts, nTargets, 1),
                          matrix(lambda2Starts, nTargets, 1)
                      )
-                 else 
+                 }
+                 else {
+                     if(usePcStarts) getLambdaStarts()
                      lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
+                 }
                  
                  ## Populate starting values for betas, taus, and sigma:
                  sigmaStarts <<- dataScales[targetVars]
@@ -599,11 +610,89 @@ MibrrFit$methods(
 ###---------------------------------------------------------------------------###
              
              smoothLambda = function() {
+                 "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
                  i     <- iterations[1]
                  range <- (i - smoothingWindow + 1) : i
 
                  for(j in targetVars)
                      lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
+             },
+
+###---------------------------------------------------------------------------###
+             
+             simpleImpute = function(covsOnly = FALSE) {
+                 "Initially fill the missing values via single imputation"
+                 cn     <- dataNames()
+                 rFlags <- (missCounts > 0)[cn]
+                 
+                 if(covsOnly) {
+                     impTargets <- setdiff(cn, targetVars)
+                     rFlags <- rFlags & cn %in% impTargets 
+                 }
+                 else {
+                     impTargets <- cn
+                 }
+    
+                 ## Don't try to impute fully observed targets:
+                 if(!any(rFlags)) return()
+    
+                 ## Construct a predictor matrix for mice() to use:
+                 predMat <- quickpred(data, mincor = minPredCor)
+                 
+                 ## Construct a vector of elementary imputation methods:
+                 methVec         <- rep("", ncol(data))
+                 methVec[rFlags] <- miceMethod
+                 
+                 ## Singly impute the missing values:
+                 miceOut <- mice(data            = data,
+                                 m               = 1,
+                                 maxit           = miceIters,
+                                 method          = methVec,
+                                 predictorMatrix = predMat,
+                                 printFlag       = FALSE,
+                                 ridge           = miceRidge)
+                 
+                 ## Replace missing values with their imputations:
+                 setData(complete(miceOut, 1)[ , rFlags])
+             },
+
+###---------------------------------------------------------------------------###
+             
+             getLambdaStarts = function(nSamples = 25) {
+                 "Use a variant of the method recommended by Park and Casella (2008) to get starting values for the MIBL penalty parameters"
+                 
+                 ## Fill any missing data with rough guesses:
+                 predMat <- quickpred(data)
+                 miceOut <- mice(data            = data,
+                                 m               = 1,
+                                 method          = miceMethod,
+                                 predictorMatrix = predMat,
+                                 printFlag       = FALSE)
+                 impData <- as.matrix(complete(miceOut, 1))
+                 
+                 for(i in 1 : nTargets) {
+                     check <- 0.90 * nObs > nPreds 
+                     if(check) {# P << N
+                         lmOut            <- lm(impData[ , i] ~ impData[ , -i])
+                         lambda1Starts[i] <<- nPreds * sd(resid(lmOut)) /
+                             sum(abs(coef(lmOut)[-1]))
+                     } else {
+                         ## If P ~ N or  P > N, subsample data's columns and
+                         ## repeatedly apply the Park & Casella (2008) method.
+                         tmpLambda <- rep(NA, nSamples)
+                         predCount <- round(0.90 * nObs)
+                         for(j in 1 : nSamples) {
+                             predSelector <-
+                                 sample(c(1 : nVars)[-i], size = predCount)
+                             tmpData      <- impData[ , predSelector]
+                             lmOut        <- lm(impData[ , i] ~ tmpData)
+                             tmpLambda[j] <- predCount * sd(resid(lmOut)) / 
+                                 sum(abs(coef(lmOut)[-1]))
+                         }# END for(j in 1 : nSamples)
+                         lambda1Starts[i] <<- mean(tmpLambda)
+                     }    
+                 }
              }
+             
              
          )# END MibrrFit$methods()

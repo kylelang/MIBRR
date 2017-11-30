@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-27
+// Modified: 2017-NOV-30
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -84,8 +84,12 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
   MatrixXd tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
   MatrixXd outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
+
+  // Scale the data columns, if necessary
+  //if(_scale) MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
+  //else       MatrixXd tmpMat = _data;
   
-  if(_noMiss) {  // Return full predictor matrix:
+  if(_noMiss) {// Return full predictor matrix:
     outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
     
     outMat.rightCols(nVars - (targetIndex + 1)) =

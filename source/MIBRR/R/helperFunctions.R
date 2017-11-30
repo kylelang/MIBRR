@@ -137,7 +137,6 @@ compStatsWithFiml <- function(object, revert = FALSE) {
 }# END scaleDataWithFiml()
 
 
-object <- mibrrFit
 
 ## Initially fill the missing values via single imputation:
 simpleImpute <- function(object, covsOnly = FALSE) {
