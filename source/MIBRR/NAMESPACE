@@ -1,6 +1,22 @@
 useDynLib(MIBRR)
+
 import(RcppEigen)
+
 importFrom(Rcpp, evalCpp)
+importFrom(mice, mice, quickpred, complete)
+importFrom(lavaan, lavaan, inspect)
+importFrom(optimx, optimx)
+importFrom(mvtnorm, rmvnorm)
+importFrom(stats,
+           anova,
+           lm,
+           pgamma,
+           rexp,
+           rgamma,
+           rnorm,
+           sd,
+           var)
+
 export(mibl,
        miben,
        mibrrW,
@@ -11,7 +27,8 @@ export(mibl,
    
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their
-###       implementation. 
+###       implementation.
+
 ## drawInvGamma
 ## drawMVN
 ## calcIncGamma

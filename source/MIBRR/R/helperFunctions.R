@@ -1,25 +1,25 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-NOV-06
+### Modified: 2017-NOV-17
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2017 Kyle M. Lang <kyle.lang@ttu.edu>                        ##  
+##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
 ##                                                                             ##
 ##  This file is part of MIBRR.                                                ##
 ##                                                                             ##
 ##  This program is free software: you can redistribute it and/or modify it    ##
-##  under the terms of the GNU Lesser General Public License as published by   ##
-##  the Free Software Foundation, either version 3 of the License, or          ##
-##  (at you option) any later version.                                         ##
+##  under the terms of the GNU General Public License as published by the      ##
+##  Free Software Foundation, either version 3 of the License, or (at you      ##
+##  option) any later version.                                                 ##
 ##                                                                             ##
 ##  This program is distributed in the hope that it will be useful, but        ##
-##  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY ##
-##  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public    ##
-##  License for more details.                                                  ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of                 ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   ##
+##  Public License for more details.                                           ##
 ##                                                                             ##
-##  You should have received a copy of the GNU Lesser General Public License   ##
-##  along with this program.  If not, see <http://www.gnu.org/licenses/>.      ##
+##  You should have received a copy of the GNU General Public License along    ##
+##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
 
@@ -39,7 +39,7 @@
                    format(Sys.time(), "%Y"),
                    " Kyle M. Lang. ",
                    pkgname,
-                   " is distributed under Version 3 of the GNU Lesser General Public License (LGPL-3); execute 'mibrrL()' for details. ",
+                   " is distributed under Version 3 of the GNU General Public License (GPL-3); execute 'mibrrL()' for details. ",
                    pkgname,
                    " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for details. ",
                    pkgname,
@@ -140,51 +140,43 @@ getImputedData <- function(gibbsState,
 ## Use a variant of the method recommended by Park and Casella (2008) to get
 ## starting values for the MIBL penalty parameters
 getLambdaStarts <- function(inData, nTargets, nPreds, nSamples = 25)
-{
-    if(require(mice)) {# Can we load mice()?
-        
-        ## Fill any missing data with rough guesses:
-        micePreds <- quickpred(inData)
-        miceOut   <- mice(data            = inData,
-                          m               = 1,
-                          method          = "norm",
-                          predictorMatrix = micePreds,
-                          printFlag       = FALSE)
-        
-        impData     <- as.matrix(complete(miceOut, 1))
-        lambdaStart <- vector("numeric", nTargets)
-        
-        for(i in 1 : nTargets) {
-            if(0.90 * nrow(impData) > (ncol(impData) - 1)) {# P << N
-                tmpPredCount   <- ncol(impData)
-                tmpOut         <- lm(impData[ , i] ~ impData[ , -i])
-                lambdaStart[i] <-
-                    tmpPredCount * sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
-                        sum(abs(tmpOut$coefficients[-1]))
-            } else {
-                ## If P ~ N or  P > N, subsample inData's columns
-                ## and repeatedly apply the Park & Casella (2008) method.
-                tmpLambda    <- vector("numeric", nSamples)
-                tmpPredCount <- round(0.90 * nrow(impData))
-                for(j in 1 : nSamples) {
-                    predSelector <-
-                        sample(c(1 : ncol(impData))[-i], size = tmpPredCount)
-                    tmpDat       <- impData[ , predSelector]
-                    tmpOut       <- lm(impData[ , i] ~ tmpDat)
-                    tmpLambda[j] <- tmpPredCount *
-                        sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
-                            sum(abs(tmpOut$coefficients[-1]))
-                }# END for(j in 1 : nSamples)
-                lambdaStart[i] <- mean(tmpLambda)
-            }# END if( nrow(inData) > ncol(inData) )     
-        }# END for(i in 1 : nTargets)
-        
-    } else {# mice() isn't available    
-        
-        warning("I cannot attach the mice package, so I cannot give lambda starting values via\nthe Park and Casella (2008) rule. I am falling back to the default values.")
-        lambdaStarts <- rep(0.5, nTargets)  
-        
-    }# END if(require(mice))
+{          
+    ## Fill any missing data with rough guesses:
+    micePreds <- quickpred(inData)
+    miceOut   <- mice(data            = inData,
+                      m               = 1,
+                      method          = "norm",
+                      predictorMatrix = micePreds,
+                      printFlag       = FALSE)
+    
+    impData      <- as.matrix(complete(miceOut, 1))
+    lambdaStarts <- vector("numeric", nTargets)
+    
+    for(i in 1 : nTargets) {
+        if(0.90 * nrow(impData) > (ncol(impData) - 1)) {# P << N
+            tmpPredCount    <- ncol(impData)
+            tmpOut          <- lm(impData[ , i] ~ impData[ , -i])
+            lambdaStarts[i] <-
+                tmpPredCount * sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
+                sum(abs(tmpOut$coefficients[-1]))
+        } else {
+            ## If P ~ N or  P > N, subsample inData's columns
+            ## and repeatedly apply the Park & Casella (2008) method.
+            tmpLambda    <- vector("numeric", nSamples)
+            tmpPredCount <- round(0.90 * nrow(impData))
+            for(j in 1 : nSamples) {
+                predSelector <-
+                    sample(c(1 : ncol(impData))[-i], size = tmpPredCount)
+                tmpDat       <- impData[ , predSelector]
+                tmpOut       <- lm(impData[ , i] ~ tmpDat)
+                tmpLambda[j] <- tmpPredCount *
+                    sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
+                    sum(abs(tmpOut$coefficients[-1]))
+            }# END for(j in 1 : nSamples)
+            lambdaStarts[i] <- mean(tmpLambda)
+        }# END if( nrow(inData) > ncol(inData) )     
+    }# END for(i in 1 : nTargets)
+    
     lambdaStarts
 }# END getLambdaStarts()
     
@@ -657,7 +649,9 @@ eNetLL <- function(lambdaVec, gibbsState) {
     p <- ncol(taus)
     
     e1 <- mean(
-        log(pgamma(l1^2 / (8 * sigmas * l2), 0.5, lower = FALSE) * gamma(0.5))
+        log(pgamma(l1^2 / (8 * sigmas * l2), 0.5, lower.tail = FALSE) *
+            gamma(0.5)
+            )
     )
     e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
     e3 <- mean(rowSums(taus) / sigmas)
@@ -681,7 +675,7 @@ eNetGrad <- function(lambdaVec, gibbsState)
     tmp <- l1^2 / (8 * sigmas * l2)
     
     e1 <- mean(
-    (1 / (pgamma(tmp, 0.5, lower = FALSE) * gamma(0.5))) *
+    (1 / (pgamma(tmp, 0.5, lower.tail = FALSE) * gamma(0.5))) *
     (1 / (sqrt(tmp) * exp(tmp))) * (1 / sigmas)
     )
     e2 <- mean(rowSums((taus / (taus - 1)) * betas[ , -1]^2) / sigmas)
