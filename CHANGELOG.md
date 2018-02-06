@@ -33,9 +33,10 @@ NOTE:
 
     - Objects returned by `MIBRR` calls will now have class `MibrrFit`
 	
-## 0.0.0.9001 - 2017-11-17
+## 0.0.0.9001 - 2018-02-06
 
 ### Added
+- *Makevars.win* file allowing C++11 support on Windows
 - Help file for `predictData` dataset
 - Appropriate `importFrom` statements to pull functions from `mice`, `lavaan`, 
   `optimx`, `stats`, and `mvtnorm`
