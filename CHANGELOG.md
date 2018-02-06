@@ -13,9 +13,10 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9001 - XXXX-XX-XX
+## 0.0.0.9001 - 2018-02-06
 
 ### Added
+- *Makevars.win* file allowing C++11 support on Windows
 - Help file for `predictData` dataset
 - Appropriate `importFrom` statements to pull functions from `mice`, `lavaan`, 
   `optimx`, `stats`, and `mvtnorm`
