@@ -1,10 +1,10 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2017-NOV-28
+### Modified: 2018-FEB-06
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
 ##                                                                             ##
 ##  This file is part of MIBRR.                                                ##
 ##                                                                             ##
@@ -24,6 +24,9 @@
 
 ?miben
 
+source("01_MibrrFit.R")
+
+load("../data/mibrrExampleData.RData")
 
 data(mibrrExampleData)
      
@@ -88,7 +91,7 @@ preProcess <- function(doBl,
     haveMiss <- any(mibrrFit$countMissing() > 0)
     
     ## Are we doing any transformations?
-    transform <- mibrrFit$scale || mibrrFit$center
+    trans <- mibrrFit$scale || mibrrFit$center
     
     ## Should we use FIML for scaling?
     useFiml <- mibrrFit$fimlStarts & haveMiss
