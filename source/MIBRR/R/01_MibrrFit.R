@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2017-NOV-29
+### Modified: 2018-FEB-07
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
@@ -68,15 +68,17 @@ MibrrFit <- setRefClass("MibrrFit",
                             nChains           = "integer",
                             rHats             = "list",
                             lambdaMat         = "matrix",
+                            lambdaHistory     = "list",
                             betaStarts        = "matrix",
                             tauStarts         = "matrix",
                             sigmaStarts       = "numeric",
                             userMissCode      = "logical",
                             missCounts        = "integer",
                             nTargets          = "integer",
-                            nVars             = "integer",
+                            nVar              = "integer",
                             nPreds            = "integer",
-                            nObs              = "integer"
+                            nObs              = "integer",
+                            totalIters        = "integer"
                         )
                         )
 
@@ -129,15 +131,17 @@ MibrrFit$methods(
                           nChains           = 1L,
                           rHats             = list(),
                           lambdaMat         = matrix(NA),
+                          lambdaHistory     = list(),
                           betaStarts        = matrix(NA),
                           tauStarts         = matrix(NA),
                           sigmaStarts       = as.numeric(NA),
                           userMissCode      = as.logical(NA),
                           missCounts        = as.integer(NA),
                           nTargets          = as.integer(NA),
-                          nVars             = as.integer(NA),
+                          nVar              = as.integer(NA),
                           nPreds            = as.integer(NA),
-                          nObs              = as.integer(NA)
+                          nObs              = as.integer(NA),
+                          totalIters        = as.integer(NA)
                           )
                  {
                      "Initialize an object of class MibrrFit"
@@ -184,6 +188,9 @@ MibrrFit$methods(
                      tauStarts         <<- tauStarts
                      sigmaStarts       <<- sigmaStarts
                      
+                     ## Don't use FIML for summary stats when they're not used:
+                     if(!center & !scale) fimlStarts <<- FALSE
+                     
                      ## Save the original variable names:
                      rawNames <<- colnames(data)
                      
@@ -207,20 +214,35 @@ MibrrFit$methods(
                      
                      ## Store some useful metadata:
                      nTargets <<- nt <- as.integer(length(targetVars))
-                     nVars    <<- nv <- as.integer(
+                     nVar     <<- nv <- as.integer(
                                       ncol(data) - length(ignoreVars)
                                   )
                      nPreds   <<- np <- as.integer(nv - 1)
                      nObs     <<- as.integer(nrow(data))
                     
                      tauStarts <<- betaStarts <<- matrix(NA, np, nt)
-                                         
-                     lambda1Starts <<- rep(0.5, nt)
-                     lambda2Starts <<- rep(np / 10, nt)
-                                         
-                     smoothingWindow <<- as.integer(
-                         min(10, ceiling(iterations[1] / 10))
-                     )
+
+                     ## Initialize penalty parameter-related stuff:
+                     if(doMcem) {
+                         lambda1Starts <<- rep(0.5, nt)
+                         lambda2Starts <<- rep(np / 10, nt)
+                         
+                         smoothingWindow <<- as.integer(
+                             min(10, ceiling(iterations[1] / 10))
+                         )
+                         
+                         totalIters <<- sum(iterations)
+                         
+                         lambdaHistory <<-
+                             lapply(targetVars,
+                                    function(x) {
+                                        tmp <- matrix(NA, totalIters - 1, 2)
+                                        colnames(tmp) <- c("lambda1", "lambda2")
+                                        tmp
+                                    }
+                                    )
+                         names(lambdaHistory) <<- targetVars
+                     }
                      
                      rHats <<- list()
                      for(j in targetVars)
@@ -408,19 +430,24 @@ MibrrFit$methods(
                                     missing         = "fiml")
                      
                      ## Store the estimated item means:
-                     dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
+                     if(center)
+                         dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
                      
                      ## Store the estimated item scales:
-                     dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
+                     if(scale)
+                         dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
                  }
                  else {
                      ## Store the raw item means:
-                     dataMeans <<- colMeans(data)
+                     if(center) dataMeans <<- colMeans(data)
                      
                      ## Store the raw item scales:
-                     dataScales <<- unlist(lapply(data, sd))
+                     if(scale) dataScales <<- unlist(lapply(data, sd))
                  }
-                 
+
+                 if(!center) dataMeans  <<- rep(0.0, ncol(data))
+                 if(!scale)  dataScales <<- rep(1.0, ncol(data))
+                                                
                  names(dataMeans) <<- names(dataScales) <<- colnames(data)
              },
              
@@ -627,7 +654,7 @@ MibrrFit$methods(
                  
                  if(covsOnly) {
                      impTargets <- setdiff(cn, targetVars)
-                     rFlags <- rFlags & cn %in% impTargets 
+                     rFlags     <- rFlags & cn %in% impTargets 
                  }
                  else {
                      impTargets <- cn
@@ -683,7 +710,7 @@ MibrrFit$methods(
                          predCount <- round(0.90 * nObs)
                          for(j in 1 : nSamples) {
                              predSelector <-
-                                 sample(c(1 : nVars)[-i], size = predCount)
+                                 sample(c(1 : nVar)[-i], size = predCount)
                              tmpData      <- impData[ , predSelector]
                              lmOut        <- lm(impData[ , i] ~ tmpData)
                              tmpLambda[j] <- predCount * sd(resid(lmOut)) / 

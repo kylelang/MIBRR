@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-06
+### Modified: 2018-FEB-07
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -22,31 +22,31 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
-?miben
+rm(list = ls(all = TRUE))
 
 source("01_MibrrFit.R")
 
 load("../data/mibrrExampleData.RData")
 
-data(mibrrExampleData)
-     
-data       <- mibrrExampleData
-nImps      <- 100
-iterations <- c(30, 10)
-targetVars <- c("y", paste0("x", c(1 : 3)))
-ignoreVars <- "idNum"
-
-sampleSizes    <- list(rep(25, 2), rep(250, 2), rep(500, 2))
-missCode       <- NA
-returnConvInfo <- TRUE
-returnParams   <- FALSE
-verbose        <- TRUE
-seed           <- NULL
-control        <- list()
-
-doImp  <- TRUE
-doMcem <- TRUE
-doBl   <- FALSE
+mibrrFit1 <- preProcess(doBl           = FALSE,
+                        doImp          = TRUE,
+                        doMcem         = TRUE,
+                        data           = mibrrExampleData,
+                        nImps          = 100,
+                        targetVars     = c("y", paste0("x", c(1 : 3))),
+                        ignoreVars     = "idNum",
+                        iterations     = c(30, 10),
+                        sampleSizes    = list(rep(25, 2),
+                                              rep(250, 2),
+                                              rep(500, 2)
+                                              ),
+                        missCode       = NA,
+                        returnConvInfo = TRUE,
+                        returnParams   = FALSE,
+                        verbose        = TRUE,
+                        seed           = NULL,
+                        control        = list()
+                        )
 
 preProcess <- function(doBl,
                        doImp,
@@ -89,52 +89,33 @@ preProcess <- function(doBl,
     
     ## Do we have any missing data:
     haveMiss <- any(mibrrFit$countMissing() > 0)
-    
+
+    ## Temporarily fill missing with single imputations:
+    if(haveMiss) mibrrFit$simpleImpute(covsOnly = mibrrFit$fimlStarts)
+
     ## Are we doing any transformations?
     trans <- mibrrFit$scale || mibrrFit$center
     
-    ## Should we use FIML for scaling?
-    useFiml <- mibrrFit$fimlStarts & haveMiss
-    
     ## Compute summary statistics:
-    if(transform)
-        if(haveMiss)
-            mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
-
+    if(trans)
+        mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
+   
     if(mibrrFit$center) mibrrFit$meanCenter()
-    
-    if(noMiss) {
-        ## Mean-center the data (and compute initial data scales):
-        mibrrFit$scaleData()
-    }
-    else if(mibrrFit$fimlStarts) {
-        ## Singly impute any missing data on auxiliaries:
-        simpleImpute(covsOnly = TRUE)
-
-        ## Compute sufficient stats using FIML:
-        compStatsWithFiml()
-
-        ## Mean center the data using FIML means as centers:
-        mibrrFit$scaleData(compStats = FALSE)
-    }
-    else {
-        ## Start the missing values with (temporary) single imputations:
-        simpleImpute(object = mibrrFit)
-        mibrrFit$scaleData()
-    }
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()
     
     ## Fill remaining missing data with an integer code:
-    if(control$fimlStarts & !noMiss) mibrrFit$applyMissCode()
+    if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
+
+    mibrrFit
 }# END preProcess()
 
 
 
-## Specify the main computational function of the mibrr package:
-runMcem <- function(mibrrFit, iterations, sampleSizes)
+## Estimate a model using MCEM:
+runMcem <- function(mibrrFit)
 {
     ## Calculate the total number of MCEM iterations:
     totalIters <- sum(iterations)
