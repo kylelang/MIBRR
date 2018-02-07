@@ -177,3 +177,6 @@ simpleImpute <- function(object, covsOnly = FALSE) {
     object$setData(complete(miceOut, 1)[ , rFlags])
 }# END simpleImpute()
 
+
+## Print 'x' only if 'verbose = TRUE':
+vcat <- function(x) if(parent.frame()$mibrrFit$verbose) cat(x)

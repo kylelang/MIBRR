@@ -1,7 +1,9 @@
-### Title:    Optimization Functions for MIBRR
+### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
 ### Modified: 2018-FEB-07
+### Notes:    This file will add optimization and Gibbs sampling methods to the
+###           MibrrFit class.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -24,6 +26,41 @@
 
 
 MibrrFit$methods(
+
+             doGibbs = function(phase) {
+                 "Run the Gibbs sampler to update the imputation model parameters"
+
+                 respCounts <- nObs - missCounts
+
+                 gibbsOut <<-
+                     runGibbs(data            = as.matrix(data),
+                              dataScales      = dataScales,
+                              nTargets        = nTargets,
+                              missList        = missList[c(1 : nTargets)],
+                              respCounts      = respCounts[c(1 : nTargets)],
+                              lambda1         = lambdaMat[ , 1], 
+                              lambda2         = lambdaMat[ , 2], # Ignored for BL
+                              sigmaStarts     = sigmaStarts,
+                              tauStarts       = tauStarts,
+                              betaStarts      = betaStarts,
+                              burnSams        = sampleSizes[[phase]][1],
+                              totalSams       = sum(sampleSizes[[phase]]),
+                              verbose         = verbose,
+                              doBl            = doBl,
+                              adaptScales     = adaptScales,
+                              simpleIntercept = simpleIntercept,
+                              noMiss          = all(missCounts == 0),
+                              seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
+                              )
+
+                 ## Update the parameters' starting values:
+                 if(doMcem)
+                     for(j in 1 : nTargets) {
+                         betaStarts[ , j] <<- colMeans(gibbsOut[[j]]$beta[ , -1])
+                         sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
+                         tauStarts[ , j]  <<- colMeans(gibbsOut[[j]]$tau)
+                     }
+             },
              
              eNetLL = function(lambdaVec, index) {
                  "Conditional loglikelihood function of Lambda (used for MCEM)"
@@ -81,11 +118,11 @@ MibrrFit$methods(
                  (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
              },             
                       
-             optWrap = function(index, method, lowBound) {
+             optWrap = function(index, method, lowBounds) {
                  "Wrapper to allow optimx to run within lapply()"
                  optOut <- optimx(par     = lambdaMat[index, ],
-                                  fn      = eNetLL,
-                                  gr      = eNetGrad,
+                                  fn      = .self$eNetLL,
+                                  gr      = .self$eNetGrad,
                                   method  = method,
                                   lower   = lowBounds,
                                   control = list(
@@ -99,10 +136,10 @@ MibrrFit$methods(
                  if(length(method) > 1) optOut <- optOut[nrow(optOut), ]
                                                
                  if(optCheckKkt) {
-                     if(optOut$kk1)
+                     if(!optOut$kkt1)
                          stop("First KKT optimality condition not satisfied when optimizing Lambda")
                      
-                     if(optOut$kk2)
+                     if(!optOut$kkt2)
                          stop("Second KKT optimality condition not satisfied when optimizing Lambda")
                  }
 
@@ -118,7 +155,7 @@ MibrrFit$methods(
                  lambdaMat[index, 1] <<- sqrt((2 * p) / sum(colMeans(taus)))
              },
 
-             optimizeLambda = function() {
+             optimizeLambda = function(iter) {
                  "Optimize the BEN or BL penalty parameters"
                  
                  ## Use simple update rule and return early when doing BL:
@@ -142,12 +179,23 @@ MibrrFit$methods(
                  sink(nullFile) # Don't show optimx output
                  
                  lapply(1 : nTargets,
-                        FUN       = optWrap,
+                        FUN       = .self$optWrap,
                         method    = method,
                         lowBounds = lowBounds)
                  
                  sink()
                  options(warn = 0)
+
+                 for(j in 1 : nTargets) {
+                     lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
+                     
+                     ## Smooth Lambda estimates if beginning 'tuning' phase:
+                     if(iter == iterations[1]) {
+                         smoothRange    <- (iter - smoothingWindow + 1) : iter
+                         lambdaMat[j, ] <<-
+                             colMeans(lambdaHistory[[j]][smoothRange, ])
+                     }
+                 }
              }
              
          )# END MibrrFit$methods()

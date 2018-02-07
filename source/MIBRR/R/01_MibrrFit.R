@@ -213,19 +213,20 @@ MibrrFit$methods(
                          colnames(data)[1] <<- targetVars
                      
                      ## Store some useful metadata:
-                     nTargets <<- nt <- as.integer(length(targetVars))
-                     nVar     <<- nv <- as.integer(
-                                      ncol(data) - length(ignoreVars)
-                                  )
-                     nPreds   <<- np <- as.integer(nv - 1)
+                     nTargets <<- as.integer(length(targetVars))
+                     nVar     <<- as.integer(
+                         ncol(data) - length(ignoreVars)
+                     )
+                     nPreds   <<- as.integer(.self$nVar - 1)
                      nObs     <<- as.integer(nrow(data))
-                    
-                     tauStarts <<- betaStarts <<- matrix(NA, np, nt)
+                     
+                     tauStarts <<- betaStarts <<-
+                         matrix(NA, .self$nPreds, .self$nTargets)
 
                      ## Initialize penalty parameter-related stuff:
                      if(doMcem) {
-                         lambda1Starts <<- rep(0.5, nt)
-                         lambda2Starts <<- rep(np / 10, nt)
+                         lambda1Starts <<- rep(0.5, .self$nTargets)
+                         lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
                          
                          smoothingWindow <<- as.integer(
                              min(10, ceiling(iterations[1] / 10))
@@ -236,11 +237,11 @@ MibrrFit$methods(
                          lambdaHistory <<-
                              lapply(targetVars,
                                     function(x) {
-                                        tmp <- matrix(NA, totalIters - 1, 2)
+                                        tmp <-
+                                            matrix(NA, .self$totalIters - 1, 2)
                                         colnames(tmp) <- c("lambda1", "lambda2")
                                         tmp
-                                    }
-                                    )
+                                    })
                          names(lambdaHistory) <<- targetVars
                      }
                      
@@ -719,7 +720,6 @@ MibrrFit$methods(
                          lambda1Starts[i] <<- mean(tmpLambda)
                      }    
                  }
-             }
-             
+             }             
              
          )# END MibrrFit$methods()
