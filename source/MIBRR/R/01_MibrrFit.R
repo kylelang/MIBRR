@@ -36,8 +36,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             doImp             = "logical",
                             doMcem            = "logical",
                             doBl              = "logical",
-                            returnConvInfo    = "logical",
-                            returnParams      = "logical",
+                            checkConv         = "logical",
+                                        #returnParams      = "logical",
                             verbose           = "logical",
                             convThresh        = "numeric",
                             lambda1Starts     = "numeric",
@@ -99,8 +99,8 @@ MibrrFit$methods(
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
                           doBl              = as.logical(NA),
-                          returnConvInfo    = as.logical(NA),
-                          returnParams      = as.logical(NA),
+                          checkConv         = TRUE,
+                                        #returnParams      = as.logical(NA),
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
                           lambda1Starts     = as.numeric(NA),
@@ -156,8 +156,8 @@ MibrrFit$methods(
                      doImp             <<- doImp
                      doMcem            <<- doMcem
                      doBl              <<- doBl
-                     returnConvInfo    <<- returnConvInfo
-                     returnParams      <<- returnParams
+                     checkConv         <<- checkConv
+                                        #returnParams      <<- returnParams
                      verbose           <<- verbose
                      convThresh        <<- convThresh
                      usePcStarts       <<- usePcStarts
@@ -256,6 +256,7 @@ MibrrFit$methods(
                      }
                      else {
                          userMissCode <<- FALSE
+                         missCode     <<- -999L
                      }
 
                      missCounts <<- sapply(colSums(is.na(data)), as.integer)
@@ -264,6 +265,9 @@ MibrrFit$methods(
                      ## NOTE: Subtract 1 from each index vector to base indices
                      ##       at 0 for C++
                      missList <<- lapply(data, function(x) which(is.na(x)) - 1)
+
+                     ## Generate a pool of potential imputation indices:
+                     if(doImp) impRowsPool <<- 1 : sampleSizes[[3]][2]
                  },
              
 ################################### MUTATORS ####################################
@@ -309,6 +313,7 @@ MibrrFit$methods(
                       miceMethod        = miceMethod,
                       fimlStarts        = fimlStarts,
                       preserveStructure = preserveStructure,
+                      checkConv         = checkConv,
                       optTraceLevel     = optTraceLevel,
                       optCheckKkt       = optCheckKkt,
                       optMethod         = optMethod,
@@ -317,8 +322,10 @@ MibrrFit$methods(
              
 ###---------------------------------------------------------------------------###
              
-             getImpDataset = function() {
+             getImpDataset = function(reset = FALSE) {
                  "Fill missing values to produce a single imputed dataset"
+                 if(reset) impRowsPool <<- 1 : sampleSizes[[3]][2]
+                 
                  tmp <- data # Make a local copy of 'data'
                  
                  ## Randomly choose a posterior draw to use as imputations:
@@ -339,19 +346,19 @@ MibrrFit$methods(
           
 ########################## COMPLEX METHODS/SUBROUTINES ##########################
              
-             applyMissCode = function() {
-                 "Construct an integer-valued missing data code"
-                 if(is.na(missCode)) {
-                     if(max(abs(data), na.rm = TRUE) < 1.0) {
-                         missCode <<- -9
-                     }
-                     else {
-                         codeMag   <-
-                             floor(log10(max(abs(data), na.rm = TRUE))) + 2
-                         missCode <<- -(10^codeMag - 1)
+             applyMissCode = function(revert = FALSE) {
+                 "Replace 'NA' with an integer-valued missing data code"
+                 if(revert) {
+                     missFill <- ifelse(userMissCode, missCode, NA)
+                     for(v in colnames(data)) {
+                         ## Rebase indices as per R's preference :
+                         missList[[v]]          <<- missList[[v]] + 1
+                         data[missList[[v]], v] <<- missFill
                      }
                  }
-                 data[is.na(data)] <<- missCode
+                 else {
+                     data[is.na(data)] <<- missCode
+                 }
              },
 
 ###---------------------------------------------------------------------------###
@@ -374,7 +381,7 @@ MibrrFit$methods(
                  }
                  
                  ## Make sure 'data' contains missing data that we can find:
-                 if(is.na(missCode)) {
+                 if(!userMissCode) {
                      rMat <- is.na(data)
                  } else {
                      rMat <- data == missCode
@@ -465,15 +472,14 @@ MibrrFit$methods(
 
              nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
-                 if(returnConvInfo) names(rHatList) <- targetVars
+                 if(checkConv) names(rHats) <<- targetVars
                  
-                 if(returnParams)
-                     for(v in targetVars) {
-                         tmp <- setdiff(colnames(data), v)
-                         
-                         colnames(gibbsOut[[v]]$beta) <<- c("intercept", tmp)
-                         colnames(gibbsOut[[v]]$tau)  <<- tmp
-                     }
+                 for(v in targetVars) {
+                     tmp <- setdiff(colnames(data), v)
+                     
+                     colnames(gibbsOut[[v]]$beta) <<- c("intercept", tmp)
+                     colnames(gibbsOut[[v]]$tau)  <<- tmp
+                 }
              },
 
 
@@ -594,6 +600,8 @@ MibrrFit$methods(
                      if(usePcStarts) getLambdaStarts()
                      lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
                  }
+                 rownames(lambdaMat) <<- targetVars
+                 colnames(lambdaMat) <<- c("lambda1", "lambda2")
                  
                  ## Populate starting values for betas, taus, and sigma:
                  sigmaStarts <<- dataScales[targetVars]

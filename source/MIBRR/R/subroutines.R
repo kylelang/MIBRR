@@ -52,38 +52,34 @@ load("../data/mibrrExampleData.RData")
 
 
 
-initMibrr <- function(doBl,
-                      doImp,
-                      doMcem,
-                      data,
-                      nImps,
-                      targetVars,
-                      ignoreVars,
-                      iterations,
-                      sampleSizes,
-                      missCode,
-                      returnConvInfo,
-                      returnParams,
-                      verbose,
-                      seed,
-                      control)
+init <- function(doBl,
+                 doImp,
+                 doMcem,
+                 data,
+                 nImps,
+                 targetVars,
+                 ignoreVars,
+                 iterations,
+                 sampleSizes,
+                 missCode,
+                 verbose,
+                 seed,
+                 control)
 {
     if(!is.null(seed)) set.seed(seed)
 
     ## Initialize a new MibrrFit object:
-    mibrrFit <- MibrrFit(data           = data,
-                         targetVars     = targetVars,
-                         ignoreVars     = ignoreVars,
-                         nImps          = as.integer(nImps),
-                         iterations     = as.integer(iterations),
-                         sampleSizes    = sampleSizes,
-                         missCode       = as.integer(missCode),
-                         returnConvInfo = returnConvInfo,
-                         returnParams   = returnParams,
-                         verbose        = verbose,
-                         doImp          = doImp,
-                         doMcem         = doMcem,
-                         doBl           = doBl)
+    mibrrFit <- MibrrFit(data        = data,
+                         targetVars  = targetVars,
+                         ignoreVars  = ignoreVars,
+                         nImps       = as.integer(nImps),
+                         iterations  = as.integer(iterations),
+                         sampleSizes = sampleSizes,
+                         missCode    = as.integer(missCode),
+                         verbose     = verbose,
+                         doImp       = doImp,
+                         doMcem      = doMcem,
+                         doBl        = doBl)
 
     ## Check the user inputs and resolve a set of target variables:
     mibrrFit$checkInputs()
@@ -117,29 +113,27 @@ initMibrr <- function(doBl,
 }# END preProcess()
 
 
-mibrrFit1 <- initMibrr(doBl           = FALSE,
-                       doImp          = TRUE,
-                       doMcem         = TRUE,
-                       data           = mibrrExampleData,
-                       nImps          = 100,
-                       targetVars     = c("y", paste0("x", c(1 : 3))),
-                       ignoreVars     = "idNum",
-                       iterations     = c(30, 10),
-                       sampleSizes    = list(rep(25, 2),
-                                             rep(250, 2),
-                                             rep(500, 2)
-                                             ),
-                       missCode       = NA,
-                       returnConvInfo = TRUE,
-                       returnParams   = FALSE,
-                       verbose        = TRUE,
-                       seed           = NULL,
-                       control        = list()
-                       )
+mibrrFit1 <- init(doBl           = FALSE,
+                  doImp          = TRUE,
+                  doMcem         = TRUE,
+                  data           = mibrrExampleData,
+                  nImps          = 100,
+                  targetVars     = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars     = "idNum",
+                  iterations     = c(30, 10),
+                  sampleSizes    = list(rep(25, 2),
+                                        rep(250, 2),
+                                        rep(500, 2)
+                                        ),
+                  missCode       = NA,
+                  verbose        = TRUE,
+                  seed           = NULL,
+                  control        = list()
+                  )
 
 
 ## Estimate a model using MCEM:
-runMcem <- function(mibrrFit) {
+mcem <- function(mibrrFit) {
     iters      <- mibrrFit$iterations
     totalIters <- sum(iters)
     
@@ -183,68 +177,31 @@ runMcem <- function(mibrrFit) {
     mibrrFit
 }# END runMcem()
     
-mibrrFit1 <- runMcem(mibrrFit1)
+mibrrFit1 <- mcem(mibrrFit1)
 
-postProcess <- function()
-{
-    ## Give some nicer names:
-    names(gibbsOut) <- rownames(lambdaMat) <- targetVars
-
+postProcess <- function(mibrrFit) {
     ## Uncenter the data:
-    scaleData(revert = TRUE)
-
+    if(mibrrFit$center) mibrrFit$meanCenter(revert = TRUE)
+    
     ## Replace missing values:
-    if(doImp) {
-        missFill <- ifelse(userMissCode, userMissCode, NA)
-        for(v in colnames(data)) {
-            ## Rebase indices as per R's preference :
-            missList[[v]]          <- missList[[v]] + 1
-            data[missList[[v]], v] <- missFill
-        }
-    }
+    if(mibrrFit$doImp) mibrrFit$applyMissCode(revert = TRUE)
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
-    rHatList <- lapply(X           = targetVars,
-                       FUN         = checkGibbsConv,
-                       gibbsStates = gibbsOut,
-                       returnRHats = TRUE,
-                       critVal     = control$convThresh)
-    
-    ## Draw imputations from the convergent posterior predictive distribution:
-    if(doImp) outImps <- getImputedData(gibbsState  = gibbsOut,
-                                        nImps       = nImps,
-                                        data        = data,
-                                        targetMeans = dataMeans[targetVars],
-                                        targetVars  = targetVars,
-                                        missList    = missList)
+    if(mibrrFit$checkConv) {
+        mibrrFit$computeRHats()
+        mibrrFit$checkGibbsConv()
+    }
     
     ## Provide some pretty names for the output objects:
-    nameOutput()
+    mibrrFit$nameOutput()
     
-    ## Aggregate and return the requested output:
-    outList <- list()
-    if(doImp) outList$imps <- outImps
-    
-    if(returnConvInfo) {
-        outList$rHats         <- rHatList
-        outList$lambdaHistory <- lambdaHistory
-    }
-    
-    if(returnParams) {
-        paramList <- list()
-        for(j in targetVars) {
-            paramList[[j]]$beta   <- gibbsOut[[j]]$beta
-            paramList[[j]]$tau    <- gibbsOut[[j]]$tau
-            paramList[[j]]$sigma  <- gibbsOut[[j]]$sigma
-            paramList[[j]]$lambda <- lambdaMat[j, ]
-        }
-        outList$params <- paramList
-    }
-    outList
-}
+mibrrFit
+}# END postProcess()
 
+mibrrFit1 <- postProcess(mibrrFit1)
 
+test <- mibrrFit1$getImpDataset()
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):

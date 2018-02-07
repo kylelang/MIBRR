@@ -52,7 +52,9 @@ MibrrFit$methods(
                               noMiss          = all(missCounts == 0),
                               seeds           = round(runif(nTargets, 1e5, 1e6)) # Fix
                               )
-
+                 
+                 names(gibbsOut) <<- targetVars
+                 
                  ## Update the parameters' starting values:
                  if(doMcem)
                      for(j in 1 : nTargets) {
