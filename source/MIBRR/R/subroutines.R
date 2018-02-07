@@ -178,6 +178,9 @@ mcem <- function(mibrrFit) {
 }# END runMcem()
     
 mibrrFit1 <- mcem(mibrrFit1)
+mibrrFit1$gibbsOut$y
+mibrrFit1$missList
+mibrrFit1$data
 
 postProcess <- function(mibrrFit) {
     ## Uncenter the data:
@@ -200,8 +203,41 @@ mibrrFit
 }# END postProcess()
 
 mibrrFit1 <- postProcess(mibrrFit1)
+mibrrFit1$gibbsOut$x1$imps
 
 test <- mibrrFit1$getImpDataset()
+
+
+impRowsPool <- mibrrFit1$impRowsPool
+targetVars <- mibrrFit1$targetVars
+gibbsOut <- mibrrFit1$gibbsOut
+
+j <- targetVars[1]
+
+getImpDataset = function(reset = FALSE) {
+    "Fill missing values to produce a single imputed dataset"
+    if(reset) impRowsPool <<- 1 : sampleSizes[[3]][2]
+    
+    tmp <- mibrrFit1$data # Make a local copy of 'data'
+    
+    ## Randomly choose a posterior draw to use as imputations:
+    impRow      <-  sample(impRowsPool, 1)
+    impRowsPool <<- setdiff(impRowsPool, impRow)
+    
+    for(j in targetVars) {
+        impSam <- gibbsOut[[j]]$imps[impRow, ]
+        tmp[missList[[j]], j] <- impSam + dataMeans[j]
+    }
+    
+    ## Restructure imputed data to match the raw data layout:
+    if(preserveStructure)
+        data.frame(tmp, ignoredColumns)[ , rawNames]
+    else
+        tmp
+}
+
+#### NOTE: Imputations are not being stored for 'y'
+
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
