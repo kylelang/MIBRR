@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2017-NOV-27
 // Purpose:  This class contains data- and sampling-related functions used by the
 //           MIBRR Gibbs sampler.
 
@@ -28,9 +28,7 @@
 #define MIBRRDATA_H
 
 #include "MibrrDefs.hpp"
-
-using namespace std;
-using namespace Eigen;
+#include <algorithm>
 
 class MibrrData {
   
@@ -47,11 +45,7 @@ public:
   // @param3: list of indices for missing rows
   // @param4: vector or response counts
   // @param5: logical flag denoting completely observed data
-  
-  MibrrData();
-  // @effect: initialize MibrrData without any data to allow access to the
-  //          drawMVN() member function
-  
+    
   ~MibrrData();
 
   
@@ -132,15 +126,6 @@ public:
   int nMiss(int) const;
   // @param:  the index for the target variable
   // @return: the number of missing values for the target variable
-
-  
-  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
-
-  
-  VectorXd drawMVN(VectorXd&, MatrixXd&) const;
-  // @param1: mean vector
-  // @param2: covariance matrix
-  // @return: random multivariate normal variates
   
 private:
   bool                  _noMiss;

@@ -23,14 +23,17 @@ export(mibl,
        mibrrL,
        ben,
        bl,
-       predictMibrr)
-   
+       predictMibrr,
+       complete)
+
+#export(init, mcem, postProcess)
+
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their
 ###       implementation.
 
 ## drawInvGamma
-## drawMVN
+## drawMvn
 ## calcIncGamma
 ## drawInvGauss
 ## printObsIndices

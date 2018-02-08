@@ -1,5 +1,6 @@
 # Change Log
-All notable changes to the **MIBRR** project will be documented in this file.
+All notable changes to the **MIBRR** project (and some not so notable ones) will 
+be documented in this file.
 
 The format is based on [Keep a Changelog][kacl], and this project (attempts to) 
 adhere to [Semantic Versioning][sv].
@@ -13,6 +14,31 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
+## 0.0.0.9002 - XXXX-XX-XX
+
+### Changed
+- Removed the `mibrr` function. The new `init`, `mcem`, and `postProcess` 
+  subroutines are directly wrapped by `miben`, `mibl`, `ben`, `bl`.
+- Pulled all main exported functions into new source file: 
+  "exportedPrimaryFunctions.R"
+- Broke core estimation subroutines into a new source files "subroutines.R"
+- Pulled all samplers into a seperate class `MibrrSamplers`
+
+    - `MibrrGibbs` now extends `MibrrSamplers`
+
+- Moved many R functions into the `MibrrFit` class as methods
+- Broke optimization/Gibbs sampling routines out into a seperate source file: 
+  "02_EstimationMethods.R"
+- Broke exported helper functions into a seperate source file: 
+  "exportedHelperFunctions.R"
+	  
+### Added
+- Exported helper functions: `complete` and `getParams`
+- A generalized inverse Gaussian sampler
+- A metadata Reference Class: `MibrrFit`
+
+    - Objects returned by `MIBRR` calls will now have class `MibrrFit`
+	
 ## 0.0.0.9001 - 2018-02-06
 
 ### Added

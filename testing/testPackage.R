@@ -1,9 +1,11 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-NOV-08
+### Modified: 2017-NOV-27
 
 rm(list = ls(all = TRUE))
+
+                                        #install.packages("HyperbolicDist", repos = "http://cloud.r-project.org")
 
 library(mitools)
 library(psych)
@@ -12,6 +14,7 @@ library(devtools)
 library(parallel)
 library(MCMCpack)
 library(statmod)
+library(HyperbolicDist)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
@@ -32,7 +35,7 @@ colnames(ed.d) <-
 male            <- tmp$gender
 male[male == 2] <- 0
 
-parms$cn <- cn <- setdiff(colnames(bfi), c("gender", "education"))
+cn   <- setdiff(colnames(bfi), c("gender", "education"))
 bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
@@ -119,23 +122,19 @@ testFun <- function(rp, data, env) {
                            pm      = pm,
                            snr     = snr)$data
 
-    mibenOut <- miben(data           = dat2,
-                      nImps          = nImps,
-                      targetVars     = targets$mar,
-                      ignoreVars     = NULL,
-                      iterations     = c(50, 10),
-                      returnConvInfo = FALSE,
-                      returnParams   = FALSE,
-                      verbose        = FALSE)
-
-    miblOut <- mibl(data           = dat2,
-                    nImps          = nImps,
-                    targetVars     = targets$mar,
-                    ignoreVars     = NULL,
-                    iterations     = c(50, 10),
-                    returnConvInfo = FALSE,
-                    returnParams   = FALSE,
-                    verbose        = FALSE)
+    mibenOut <- miben(data       = dat2,
+                      targetVars = targets$mar,
+                      ignoreVars = NULL,
+                      iterations = c(50, 10),
+                      verbose    = FALSE)
+    mibenImps <- MIBRR::complete(mibenOut, 100)
+    
+    miblOut <- mibl(data       = dat2,
+                    targetVars = targets$mar,
+                    ignoreVars = NULL,
+                    iterations = c(50, 10),
+                    verbose    = FALSE)
+    miblImps <- MIBRR::complete(miblOut, 100)
     
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
@@ -144,21 +143,21 @@ testFun <- function(rp, data, env) {
     for(m in 1 : nImps) {
         ## MIBEN estimates:
         scores         <- scoreItems(keys  = keys,
-                                     items = mibenOut$imps[[m]])$scores
+                                     items = mibenImps[[m]])$scores
         mibenList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                             mA = mean(scores[ , "agree"]),
                             mE = mean(scores[ , "extra"])
                             )
         ## MIBL estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = miblOut$imps[[m]])$scores
+                                    items = miblImps[[m]])$scores
         miblList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
                            )
         ## MICE estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = complete(miceOut, m))$scores
+                                    items = mice::complete(miceOut, m))$scores
         miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
@@ -171,8 +170,8 @@ testFun <- function(rp, data, env) {
          )
 } # END testFun()
 
-nReps <- 8
-nImps <- 20
+nReps <- 3
+nImps <- 10
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
               )
@@ -181,7 +180,7 @@ simOut <- mclapply(X        = c(1 : nReps),
                    FUN      = testFun,
                    data     = bfi2,
                    env      = parent.frame(),
-                   mc.cores = 4)
+                   mc.cores = 3)
 
 tmp <- do.call(rbind, lapply(simOut, unlist))
 
@@ -217,7 +216,7 @@ mvnMu <- rep(10, 3)
 mvnSigma <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- MIBRR:::drawMVN(nObs, mvnMu, mvnSigma)
+out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -245,6 +244,18 @@ out3.2 <- rinvgauss(nObs, igMu, igLam)
 
 plot(density(out3.1), col = "red")
 lines(density(out3.2), col = "blue")
+
+## GIG sampler:
+gigLam <- 1
+gigChi <- 2
+gigPsi <- 2
+
+out4.1 <- MIBRR:::drawGig(nObs, gigLam, gigChi, gigPsi)
+out4.2 <- rgig(nObs, c(gigLam, gigChi, gigPsi))
+
+plot(density(out4.1), col = "red")
+lines(density(out4.2), col = "blue")
+
 
 ## Incomplte gamma calculation:
 incGamShape <- 10
@@ -325,14 +336,14 @@ testFun <- function(rp, parms) {
                               predReliability = lamSq)
         
         if(class(enOut) != "try-error") {
-            enPred       <- predictMibrr(object  = enOut, newData = testDat)$y
+            enPred       <- predictMibrr(mibrrFit = enOut, newData = testDat)$y
             mseMat[i, 1] <- mean((enPred - testDat$y)^2)
         } else {
             mseMat[i, 1] <- NA
         }
         
         if(class(blOut) != "try-error") {
-            blPred       <- predictMibrr(object  = blOut, newData = testDat)$y
+            blPred       <- predictMibrr(mibrrFit = blOut, newData = testDat)$y
             mseMat[i, 2] <- mean((blPred - testDat$y)^2)
         } else {
             mseMat[i, 2] <- NA

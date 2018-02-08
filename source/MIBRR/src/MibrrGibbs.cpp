@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2018-FEB-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -37,6 +37,7 @@ MibrrGibbs::MibrrGibbs()
   _storeGibbsSamples = false;
   _verbose           = true;
   _useElasticNet     = true;
+  _fullBayes         = false;
 }
 
 
@@ -51,6 +52,7 @@ MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;              
 ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;               }
 VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;             }
 MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;               }
+MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;            }
 int      MibrrGibbs::getNDraws()          const { return _nDraws;               }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
@@ -86,7 +88,7 @@ void MibrrGibbs::beQuiet       ()                  { _verbose = false;          
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
 void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
-
+void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;         }
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
 {
@@ -137,6 +139,11 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   else {
     _impSam = MatrixXd::Zero(1, 1);
   }
+
+  if(_fullBayes)
+    _lambdaSam = MatrixXd(_nDraws, 2);
+  else
+    _lambdaSam = MatrixXd::Zero(1, 1);
   
   _betaSam  = MatrixXd(_nDraws, _betas.size());
   _tauSam   = MatrixXd(_nDraws, _taus.size());
@@ -146,59 +153,46 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 }
 
 
-/////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
-
-
-double MibrrGibbs::drawInvGamma(double shape, double scale) const
-{
-  return 1.0 / R::rgamma(shape, 1.0 / scale);
-}//END drawInvGamma()
-
-
-double MibrrGibbs::calcIncGamma(const double shape, 
-				const double cutVal,
-				const bool   lowerTail)
-{
-  double scale   = 1.0;
-  int    lower   = (int)lowerTail;
-  int    logTran = 0; // Don't want log transform
-  
-  return R::pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
-}// END calcIncGamma()
-
-
-double MibrrGibbs::drawInvGauss(const double mu, const double lambda)
-{ 
-  double b      = 0.5 * mu / lambda;
-  double a      = mu * b;
-  double c      = 4.0 * mu * lambda;
-  double d      = pow(mu, 2);
-  double outVal = 0.0;
-
-  while(outVal <= 0.0) {
-    double tmpDraw = norm_rand();
-    double         v = pow(tmpDraw, 2); // Chi-Squared with df = 1
-    if (mu <= 0.0) {
-      throw invalid_argument("The Inverse Gaussian's mean is non-positive.\n");  
-    }
-    else if (lambda <= 0.0) { 
-      throw invalid_argument("The Inverse Gaussian's scale is non-positive.\n");
-    }
-    else {
-      double u = unif_rand();
-      //Find the smallest root:
-      double x = mu + a * v - b * sqrt(c * v + d * pow(v, 2));
-      // Choose x with probability = mean / (mean + x), else choose d/x:
-      outVal = ( u < ( mu / (mu + x) ) ) ? x : d / x; 
-    }  
-  }// CLOSE while(outVal !> 0.0)
-  return outVal;
-}// END drawInvGauss()
-
-
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
 
+void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
+{
+  int    nPreds = mibrrData.nPreds();
+  double lam1   = _lambdas[0];
+  double tauSum = _taus.sum();
+  
+  if(!_useElasticNet) {
+    double shape = _l1Parms[0] + nPreds;
+    double rate  = _l1Parms[1] + tauSum / 2.0;
+    
+    _lambdas[0] = sqrt(drawGamma(shape, rate));
+  }
+  else {
+    double lam2 = _lambdas[1];
+    
+    // sample new value of lambda1:
+    double shape = _l1Parms[0] + nPreds / 2.0;
+    double rate  = _l1Parms[1] + tauSum / (8.0 * lam2 * _sigma);
+    
+    _lambdas[0] = sqrt(drawGamma(shape, rate));
+    
+    // sample new value of lambda2:
+    //double fBeta = _betas.tail(nPreds).asArray().square().sum(); 
+    
+    double chi = _l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
+    double psi =
+      _l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
+		     _betas.tail(nPreds).array().square().sum()) / _sigma;
+    
+    _lambdas[1] = drawGig(1.0, chi, psi);
+  }
+
+  // Add the updated lambdas to their Gibbs sample:
+  if(_storeGibbsSamples) _lambdaSam.row(_drawNum) = _lambdas.transpose();
+}// END updateLambdas()
+
+  
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {
   int     nPreds   = mibrrData.nPreds();
@@ -290,10 +284,10 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
       _betas.tail(nPreds);
   
   VectorXd newBetas(nPreds + 1);  
-  newBetas[0] = R::rnorm(intMean, intSd);
+  newBetas[0] = drawNorm(intMean, intSd);
   
   // Draw new values of the regression slope coefficients:
-  newBetas.tail(nPreds) = mibrrData.drawMVN(betaMeans, betaCovariances);
+  newBetas.tail(nPreds) = drawMvn(betaMeans, betaCovariances);
   
   _betas = newBetas; // Store the updated Betas
   
@@ -330,7 +324,7 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
     double testDraw;
     while(!isDrawValid) {// Rejection sampling to draw a Sigma variate
       testDraw         = drawInvGamma(sigmaShape, sigmaScale);
-      double threshold = unif_rand();
+      double threshold = _unif(_gen);
       double igShape   = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
       double igDraw    = calcIncGamma(0.5, igShape, false);
       isDrawValid      = log(threshold) <=
@@ -368,7 +362,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   VectorXd    errorVector(nMiss);
   
   // Draw the residual error terms for the imputation model:
-  for(int i = 0; i < nMiss; i++) errorVector[i] = R::rnorm(0.0, sqrt(_sigma));
+  for(int i = 0; i < nMiss; i++) errorVector[i] = drawNorm(0.0, sqrt(_sigma));
   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
@@ -385,7 +379,8 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
-{  
+{
+  if(_fullBayes) updateLambdas(mibrrData);
   updateTaus (mibrrData);
   updateBetas(mibrrData);
   updateSigma(mibrrData);
