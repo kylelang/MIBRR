@@ -28,7 +28,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             data              = "data.frame",
                             targetVars        = "character",
                             ignoreVars        = "character",
-                            nImps             = "integer",
+                                        #nImps             = "integer",
                             iterations        = "integer",
                             sampleSizes       = "list",
                             missCode          = "integer",
@@ -90,7 +90,7 @@ MibrrFit$methods(
                  function(data              = data.frame(NULL),
                           targetVars        = "",
                           ignoreVars        = "",
-                          nImps             = as.integer(NA),
+                                        #nImps             = as.integer(NA),
                           iterations        = as.integer(NA),
                           sampleSizes       = list(),
                           missCode          = as.integer(NA),
@@ -146,7 +146,7 @@ MibrrFit$methods(
                      data              <<- data
                      targetVars        <<- targetVars
                      ignoreVars        <<- ignoreVars
-                     nImps             <<- nImps
+                                        #nImps             <<- nImps
                      iterations        <<- iterations
                      sampleSizes       <<- sampleSizes
                      missCode          <<- missCode
@@ -682,7 +682,7 @@ MibrrFit$methods(
                                  ridge           = miceRidge)
                  
                  ## Replace missing values with their imputations:
-                 setData(complete(miceOut, 1)[ , rFlags])
+                 setData(mice::complete(miceOut, 1)[ , rFlags])
              },
 
 ###---------------------------------------------------------------------------###
@@ -697,7 +697,7 @@ MibrrFit$methods(
                                  method          = miceMethod,
                                  predictorMatrix = predMat,
                                  printFlag       = FALSE)
-                 impData <- as.matrix(complete(miceOut, 1))
+                 impData <- as.matrix(mice::complete(miceOut, 1))
                  
                  for(i in 1 : nTargets) {
                      check <- 0.90 * nObs > nPreds 

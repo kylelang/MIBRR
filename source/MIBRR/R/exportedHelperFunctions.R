@@ -51,7 +51,7 @@ calcRHat <- function(simsIn, nChains = 1)
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
-getImputedData <- function(mibrrFit) {
+complete <- function(mibrrFit, nImps) {
     impList <- list()
     for(m in 1 : nImps) impList[[m]] <- mibrrFit$getImpDataset()
     impList

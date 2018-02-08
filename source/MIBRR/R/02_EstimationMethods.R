@@ -163,7 +163,7 @@ MibrrFit$methods(
                  
                  ## Use simple update rule and return early when doing BL:
                  if(doBl) {
-                     lapply(1 : nTargets, updateBlLambda)
+                     lapply(1 : nTargets, .self$updateBlLambda)
                      return()
                  }
                  

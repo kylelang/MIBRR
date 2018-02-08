@@ -106,6 +106,8 @@ for(v in 1 : ncol(dat3)) {
 
 ### Check MIBEN and MIBL ###
 
+data <- bfi2
+
 testFun <- function(rp, data, env) {
     cn       <- env$cn
     targets  <- env$targets
@@ -122,23 +124,19 @@ testFun <- function(rp, data, env) {
                            pm      = pm,
                            snr     = snr)$data
 
-    mibenOut <- miben(data           = dat2,
-                      nImps          = nImps,
-                      targetVars     = targets$mar,
-                      ignoreVars     = NULL,
-                      iterations     = c(50, 10),
-                      returnConvInfo = FALSE,
-                      returnParams   = FALSE,
-                      verbose        = FALSE)
-
-    miblOut <- mibl(data           = dat2,
-                    nImps          = nImps,
-                    targetVars     = targets$mar,
-                    ignoreVars     = NULL,
-                    iterations     = c(50, 10),
-                    returnConvInfo = FALSE,
-                    returnParams   = FALSE,
-                    verbose        = FALSE)
+    mibenOut <- miben(data       = dat2,
+                      targetVars = targets$mar,
+                      ignoreVars = NULL,
+                      iterations = c(50, 10),
+                      verbose    = FALSE)
+    mibenImps <- MIBRR::complete(mibenOut, 100)
+    
+    miblOut <- mibl(data       = dat2,
+                    targetVars = targets$mar,
+                    ignoreVars = NULL,
+                    iterations = c(50, 10),
+                    verbose    = FALSE)
+    miblImps <- MIBRR::complete(miblOut, 100)
     
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
@@ -147,21 +145,21 @@ testFun <- function(rp, data, env) {
     for(m in 1 : nImps) {
         ## MIBEN estimates:
         scores         <- scoreItems(keys  = keys,
-                                     items = mibenOut$imps[[m]])$scores
+                                     items = mibenImps[[m]])$scores
         mibenList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                             mA = mean(scores[ , "agree"]),
                             mE = mean(scores[ , "extra"])
                             )
         ## MIBL estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = miblOut$imps[[m]])$scores
+                                    items = miblImps[[m]])$scores
         miblList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
                            )
         ## MICE estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = complete(miceOut, m))$scores
+                                    items = mice::complete(miceOut, m))$scores
         miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
@@ -174,7 +172,7 @@ testFun <- function(rp, data, env) {
          )
 } # END testFun()
 
-nReps <- 4
+nReps <- 3
 nImps <- 10
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
@@ -184,7 +182,7 @@ simOut <- mclapply(X        = c(1 : nReps),
                    FUN      = testFun,
                    data     = bfi2,
                    env      = parent.frame(),
-                   mc.cores = 4)
+                   mc.cores = 3)
 
 tmp <- do.call(rbind, lapply(simOut, unlist))
 
@@ -388,7 +386,7 @@ parms$scales      <- rep(1, nPreds)
 parms$center      <- TRUE
 parms$scale       <- TRUE
 parms$simpleInt   <- FALSE
-parms$verbose     <- FALSE
+parms$verbose     <- TRUE
 parms$adaptScales <- TRUE
 parms$nTests      <- 100
 parms$checkKkt    <- FALSE
@@ -403,6 +401,8 @@ mseList <- mclapply(X        = c(1 : nReps),
                     mc.cores = 4)
 
 mseList
+
+testFun(1, parms)
 
 ###---------------------------------------------------------------------------###
 

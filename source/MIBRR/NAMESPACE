@@ -23,7 +23,8 @@ export(mibl,
        mibrrL,
        ben,
        bl,
-       predictMibrr)
+       predictMibrr,
+       complete)
 
 #export(init, mcem, postProcess)
 
