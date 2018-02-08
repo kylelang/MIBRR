@@ -28,7 +28,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             data              = "data.frame",
                             targetVars        = "character",
                             ignoreVars        = "character",
-                                        #nImps             = "integer",
                             iterations        = "integer",
                             sampleSizes       = "list",
                             missCode          = "integer",
@@ -41,6 +40,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             convThresh        = "numeric",
                             lambda1Starts     = "numeric",
                             lambda2Starts     = "numeric",
+                            l1Pars            = "numeric",
+                            l2Pars            = "numeric",
                             usePcStarts       = "logical",
                             smoothingWindow   = "integer",
                             center            = "logical",
@@ -90,7 +91,6 @@ MibrrFit$methods(
                  function(data              = data.frame(NULL),
                           targetVars        = "",
                           ignoreVars        = "",
-                                        #nImps             = as.integer(NA),
                           iterations        = as.integer(NA),
                           sampleSizes       = list(),
                           missCode          = as.integer(NA),
@@ -103,6 +103,8 @@ MibrrFit$methods(
                           convThresh        = 1.1,
                           lambda1Starts     = as.numeric(NA),
                           lambda2Starts     = as.numeric(NA),
+                          l1Pars            = as.numeric(NA),
+                          l2Pars            = as.numeric(NA),
                           usePcStarts       = FALSE,
                           smoothingWindow   = as.numeric(NA),
                           center            = TRUE,
@@ -146,7 +148,6 @@ MibrrFit$methods(
                      data              <<- data
                      targetVars        <<- targetVars
                      ignoreVars        <<- ignoreVars
-                                        #nImps             <<- nImps
                      iterations        <<- iterations
                      sampleSizes       <<- sampleSizes
                      missCode          <<- missCode
@@ -157,6 +158,8 @@ MibrrFit$methods(
                      checkConv         <<- checkConv
                      verbose           <<- verbose
                      convThresh        <<- convThresh
+                     l1Pars            <<- l1Pars
+                     l2Pars            <<- l2Pars
                      usePcStarts       <<- usePcStarts
                      center            <<- center
                      scale             <<- scale
@@ -219,10 +222,10 @@ MibrrFit$methods(
                          matrix(NA, .self$nPreds, .self$nTargets)
 
                      ## Initialize penalty parameter-related stuff:
+                     lambda1Starts <<- rep(0.5, .self$nTargets)
+                     lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
+                     
                      if(doMcem) {
-                         lambda1Starts <<- rep(0.5, .self$nTargets)
-                         lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
-                         
                          smoothingWindow <<- as.integer(
                              min(10, ceiling(iterations[1] / 10))
                          )
@@ -264,14 +267,15 @@ MibrrFit$methods(
                          lapply(.self$data, function(x) which(is.na(x)) - 1)
 
                      ## Generate a pool of potential imputation indices:
-                     if(doImp) impRowsPool <<- 1 : sampleSizes[[3]][2]
+                     if(doImp) impRowsPool <<-
+                                   1 : sampleSizes[[length(sampleSizes)]][2]
                  },
              
 ################################### MUTATORS ####################################
 
              setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans   },
              setDataScales = function(dataScales) { dataScales <<- dataScales  },
-
+            
 ###---------------------------------------------------------------------------###
              
              setData = function(data) { data[ , colnames(data)] <<- data       },
@@ -288,6 +292,13 @@ MibrrFit$methods(
                  }
              },
 
+###---------------------------------------------------------------------------###
+
+             setLambdaParams = function(l1, l2) {
+                 l1Pars <<- l1
+                 l2Pars <<- l2
+             },
+             
 ################################# ACCESSORS #####################################
 
              dataNames    = function() { colnames(data)                        },

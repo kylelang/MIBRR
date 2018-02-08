@@ -104,7 +104,38 @@ for(v in 1 : ncol(dat3)) {
 
 ###---------------------------------------------------------------------------###
 
-### Check MIBEN and MIBL ###
+### Check fully Bayesian estimation of MIBEN and MIBL ###
+
+plot(density(rgamma(100000, 1.0, scale = 100.0)))
+     
+dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
+dat2 <- imposeMissData(data    = dat1,
+                       targets = targets,
+                       preds   = marPreds,
+                       pm      = pm,
+                       snr     = snr)$data
+
+mibenOut <- miben(data         = dat2,
+                  targetVars   = targets$mar,
+                  ignoreVars   = NULL,
+                  iterations   = c(50, 10),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 2.0),
+                  lam2PriorPar = c(20.0, 0.01),
+                  verbose      = TRUE)
+
+mibenImps <- MIBRR::complete(mibenOut, 100)
+    
+    miblOut <- mibl(data       = dat2,
+                    targetVars = targets$mar,
+                    ignoreVars = NULL,
+                    iterations = c(50, 10),
+                    verbose    = FALSE)
+miblImps <- MIBRR::complete(miblOut, 100)
+
+###---------------------------------------------------------------------------###
+
+### Test MIBEN and MIBL ###
 
 testFun <- function(rp, data, env) {
     cn       <- env$cn

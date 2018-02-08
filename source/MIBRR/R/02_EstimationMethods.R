@@ -27,7 +27,7 @@
 
 MibrrFit$methods(
 
-             doGibbs = function(phase) {
+             doGibbs = function(phase = 1) {
                  "Run the Gibbs sampler to update the imputation model parameters"
 
                  respCounts <- nObs - missCounts
@@ -40,6 +40,8 @@ MibrrFit$methods(
                               respCounts      = respCounts[c(1 : nTargets)],
                               lambda1         = lambdaMat[ , 1], 
                               lambda2         = lambdaMat[ , 2], # Ignored for BL
+                              l1Parms         = l1Pars, # Ignored when
+                              l2Parms         = l2Pars, # doMcem = TRUE
                               sigmaStarts     = sigmaStarts,
                               tauStarts       = tauStarts,
                               betaStarts      = betaStarts,

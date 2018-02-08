@@ -38,6 +38,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
 		    Eigen::VectorXi respCounts,
 		    Eigen::VectorXd lambda1,
 		    Eigen::VectorXd lambda2,
+		    Eigen::VectorXd l1Parms,
+		    Eigen::VectorXd l2Parms,
 		    Eigen::VectorXd sigmaStarts,
 		    Eigen::MatrixXd tauStarts,
 		    Eigen::MatrixXd betaStarts,
@@ -64,9 +66,15 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
     Eigen::VectorXd betaStartVec  = betaStarts.col(j);
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
 
-    if(doBl)      mibrrGibbs[j].doBl();        // Using Bayesian LASSO?
-    if(fullBayes) mibrrGibbs[j].doFullBayes(); // Fully Bayesian estimation?
-      
+    if(doBl) mibrrGibbs[j].doBl(); // Using Bayesian LASSO?
+
+    if(fullBayes) { // Fully Bayesian estimation?
+      mibrrGibbs[j].doFullBayes(); 
+      mibrrGibbs[j].setLam1Parms(l1Parms);
+
+      if(!doBl) mibrrGibbs[j].setLam2Parms(l2Parms);
+    }
+    
     mibrrGibbs[j].seedRng(seeds[j]);
     
     mibrrGibbs[j].startParameters(betaStartVec,

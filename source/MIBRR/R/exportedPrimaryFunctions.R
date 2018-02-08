@@ -33,12 +33,13 @@
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
 miben <- function(data,
-                                        #nImps,
                   targetVars     = NULL,
                   ignoreVars     = NULL,
                   iterations     = c(100, 10),
                   sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
                   doMcem         = TRUE,
+                  lam1PriorPar   = NULL,
+                  lam2PriorPar   = NULL,
                   missCode       = NA,
                   verbose        = TRUE,
                   seed           = NULL,
@@ -46,23 +47,25 @@ miben <- function(data,
                   )
 {
     ## Initialize the output object:
-    mibrrFit <- init(doBl        = FALSE,
-                     doImp       = TRUE,
-                     doMcem      = doMcem,
-                     data        = data,
-                                        #nImps       = nImps,
-                     targetVars  = targetVars,
-                     ignoreVars  = ignoreVars,
-                     iterations  = iterations,
-                     sampleSizes = sampleSizes,
-                     missCode    = missCode,
-                     verbose     = verbose,
-                     seed        = seed,
-                     control     = control)
+    mibrrFit <- init(doBl         = FALSE,
+                     doImp        = TRUE,
+                     doMcem       = doMcem,
+                     data         = data,
+                     targetVars   = targetVars,
+                     ignoreVars   = ignoreVars,
+                     iterations   = iterations,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = lam1PriorPar,
+                     lam2PriorPar = lam2PriorPar,
+                     missCode     = missCode,
+                     verbose      = verbose,
+                     seed         = seed,
+                     control      = control)
 
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)
-
+    else       mibrrFit$doGibbs()
+    
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
 }# END miben()
@@ -71,35 +74,36 @@ miben <- function(data,
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Lasso (MIBL):
 mibl <- function(data,
-                                        #nImps,
-                 targetVars     = NULL,
-                 ignoreVars     = NULL,
-                 iterations     = c(100, 10),
-                 sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-                 doMcem         = TRUE,
-                 missCode       = NA,
-                 verbose        = TRUE,
-                 seed           = NULL,
-                 control        = list()
+                 targetVars   = NULL,
+                 ignoreVars   = NULL,
+                 iterations   = c(100, 10),
+                 sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+                 doMcem       = TRUE,
+                 lam1PriorPar = NULL,
+                 missCode     = NA,
+                 verbose      = TRUE,
+                 seed         = NULL,
+                 control      = list()
                  )
 {
     ## Initialize the output object:
-    mibrrFit <- init(doBl        = TRUE,
-                     doImp       = TRUE,
-                     doMcem      = doMcem,
-                     data        = data,
-                                        #nImps       = nImps,
-                     targetVars  = targetVars,
-                     ignoreVars  = ignoreVars,
-                     iterations  = iterations,
-                     sampleSizes = sampleSizes,
-                     missCode    = missCode,
-                     verbose     = verbose,
-                     seed        = seed,
-                     control     = control)
+    mibrrFit <- init(doBl         = TRUE,
+                     doImp        = TRUE,
+                     doMcem       = doMcem,
+                     data         = data,
+                     targetVars   = targetVars,
+                     ignoreVars   = ignoreVars,
+                     iterations   = iterations,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = lam1PriorPar,
+                     missCode     = missCode,
+                     verbose      = verbose,
+                     seed         = seed,
+                     control      = control)
     
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)
+    else       mibrrFit$doGibbs()
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -109,36 +113,40 @@ mibl <- function(data,
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
 ben <- function(data,
                 y,
-                X           = NULL,
-                iterations  = c(100, 10),
-                sampleSizes = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-                doMcem      = TRUE,
-                missCode    = NA,
-                verbose     = TRUE,
-                seed        = NULL,
-                control     = list()
+                X            = NULL,
+                iterations   = c(100, 10),
+                sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+                doMcem       = TRUE,
+                lam1PriorPar = NULL,
+                lam2PriorPar = NULL,
+                missCode     = NA,
+                verbose      = TRUE,
+                seed         = NULL,
+                control      = list()
                 )
 {
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
 
     ## Initialize the output object:
-    mibrrFit <- init(doBl        = FALSE,
-                     doImp       = FALSE,
-                     doMcem      = doMcem,
-                     data        = data,
-                                        #nImps       = 0,
-                     targetVars  = y,
-                     ignoreVars  = setdiff(colnames(data), c(y, X)),
-                     iterations  = iterations,
-                     sampleSizes = sampleSizes,
-                     missCode    = missCode,
-                     verbose     = verbose,
-                     seed        = seed,
-                     control     = control)
+    mibrrFit <- init(doBl         = FALSE,
+                     doImp        = FALSE,
+                     doMcem       = doMcem,
+                     data         = data,
+                     targetVars   = y,
+                     ignoreVars   = setdiff(colnames(data), c(y, X)),
+                     iterations   = iterations,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = lam1PriorPar,
+                     lam2PriorPar = lam2PriorPar,
+                     missCode     = missCode,
+                     verbose      = verbose,
+                     seed         = seed,
+                     control      = control)
 
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)
-
+    else       mibrrFit$doGibbs()
+    
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
 }# END ben()
@@ -147,35 +155,37 @@ ben <- function(data,
 ### Specify a wrapper function to fit the Bayesian LASSO (BL):
 bl <- function(data,
                y,
-               X              = NULL,
-               iterations     = c(100, 10),
-               sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-               doMcem         = TRUE,
-               missCode       = NA,
-               verbose        = TRUE,
-               seed           = NULL,
-               control        = list()
+               X            = NULL,
+               iterations   = c(100, 10),
+               sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+               lam1PriorPar = NULL,
+               doMcem       = TRUE,
+               missCode     = NA,
+               verbose      = TRUE,
+               seed         = NULL,
+               control      = list()
                )
 {
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
     
     ## Initialize the output object:
-    mibrrFit <- init(doBl        = TRUE,
-                     doImp       = FALSE,
-                     doMcem      = doMcem,
-                     data        = data,
-                                        #nImps       = 0,
-                     targetVars  = y,
-                     ignoreVars  = setdiff(colnames(data), c(y, X)),
-                     iterations  = iterations,
-                     sampleSizes = sampleSizes,
-                     missCode    = missCode,
-                     verbose     = verbose,
-                     seed        = seed,
-                     control     = control)
+    mibrrFit <- init(doBl         = TRUE,
+                     doImp        = FALSE,
+                     doMcem       = doMcem,
+                     data         = data,
+                     targetVars   = y,
+                     ignoreVars   = setdiff(colnames(data), c(y, X)),
+                     iterations   = iterations,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = lam1PriorPar,
+                     missCode     = missCode,
+                     verbose      = verbose,
+                     seed         = seed,
+                     control      = control)
 
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)
+    else       mibrrFit$doGibbs()
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)

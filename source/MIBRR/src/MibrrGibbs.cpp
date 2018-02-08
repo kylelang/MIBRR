@@ -87,8 +87,11 @@ void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;            
 void MibrrGibbs::beQuiet       ()                  { _verbose = false;          }
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
 void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
-void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;         }
+void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms = l1Parms;        }
+void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms = l2Parms;        }
+void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
+
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
 {
@@ -101,6 +104,13 @@ void MibrrGibbs::setLambdas(double lambda)
 {
   _lambdas[0] = lambda;
   _lambdas[1] = 0.0;
+}
+
+
+void MibrrGibbs::setLambdaParms(VectorXd& lambdaParms)
+{
+  _l1Parms = lambdaParms.head(2);
+  _l2Parms = lambdaParms.tail(2);
 }
 
 
@@ -381,9 +391,11 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
   if(_fullBayes) updateLambdas(mibrrData);
+  
   updateTaus (mibrrData);
   updateBetas(mibrrData);
   updateSigma(mibrrData);
+  
   if(_doImp) updateImputations(mibrrData);
   
   if(_storeGibbsSamples) _drawNum++;

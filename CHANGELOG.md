@@ -14,7 +14,10 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9002 - XXXX-XX-XX
+## 0.0.0.9003 - XXXX-XX-XX
+
+
+## 0.0.0.9002 - 2018-02-08
 
 ### Changed
 - Removed the `mibrr` function. The new `init`, `mcem`, and `postProcess` 

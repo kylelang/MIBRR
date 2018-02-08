@@ -124,6 +124,15 @@ public:
 
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
+
+  void setLam1Parms  (VectorXd&);
+  // @param: new value of lambda1 prior parameters
+  
+  void setLam2Parms  (VectorXd&);
+  // @param: new value of lambda2^2 prior parameters
+  
+  void setLambdaParms  (VectorXd&);
+  // @param: concatenated values for lambda1 & lambda2^2 prior parameters
   
   void setLambdas(VectorXd&);
   // @param: new value for Lambda

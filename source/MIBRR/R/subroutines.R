@@ -27,23 +27,25 @@ init <- function(doBl,
                  doImp,
                  doMcem,
                  data,
-                                        #nImps,
                  targetVars,
                  ignoreVars,
                  iterations,
                  sampleSizes,
+                 lam1PriorPar,
+                 lam2PriorPar,
                  missCode,
                  verbose,
                  seed,
                  control)
 {
     if(!is.null(seed)) set.seed(seed)
-
+    
+    if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
+    
     ## Initialize a new MibrrFit object:
     mibrrFit <- MibrrFit(data        = data,
                          targetVars  = as.character(targetVars),
                          ignoreVars  = as.character(ignoreVars),
-                                        #nImps       = as.integer(nImps),
                          iterations  = as.integer(iterations),
                          sampleSizes = sampleSizes,
                          missCode    = as.integer(missCode),
@@ -52,6 +54,9 @@ init <- function(doBl,
                          doMcem      = doMcem,
                          doBl        = doBl)
 
+    ## Store Lambda's prior parameters:
+    if(!doMcem) mibrrFit$setLambdaParams(l1 = lam1PriorPar, l2 = lam2PriorPar)
+    
     ## Check the user inputs and resolve a set of target variables:
     mibrrFit$checkInputs()
        
