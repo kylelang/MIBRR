@@ -106,8 +106,6 @@ for(v in 1 : ncol(dat3)) {
 
 ### Check MIBEN and MIBL ###
 
-data <- bfi2
-
 testFun <- function(rp, data, env) {
     cn       <- env$cn
     targets  <- env$targets
@@ -338,14 +336,14 @@ testFun <- function(rp, parms) {
                               predReliability = lamSq)
         
         if(class(enOut) != "try-error") {
-            enPred       <- predictMibrr(object  = enOut, newData = testDat)$y
+            enPred       <- predictMibrr(mibrrFit = enOut, newData = testDat)$y
             mseMat[i, 1] <- mean((enPred - testDat$y)^2)
         } else {
             mseMat[i, 1] <- NA
         }
         
         if(class(blOut) != "try-error") {
-            blPred       <- predictMibrr(object  = blOut, newData = testDat)$y
+            blPred       <- predictMibrr(mibrrFit = blOut, newData = testDat)$y
             mseMat[i, 2] <- mean((blPred - testDat$y)^2)
         } else {
             mseMat[i, 2] <- NA
@@ -386,7 +384,7 @@ parms$scales      <- rep(1, nPreds)
 parms$center      <- TRUE
 parms$scale       <- TRUE
 parms$simpleInt   <- FALSE
-parms$verbose     <- TRUE
+parms$verbose     <- FALSE
 parms$adaptScales <- TRUE
 parms$nTests      <- 100
 parms$checkKkt    <- FALSE
@@ -401,8 +399,6 @@ mseList <- mclapply(X        = c(1 : nReps),
                     mc.cores = 4)
 
 mseList
-
-testFun(1, parms)
 
 ###---------------------------------------------------------------------------###
 

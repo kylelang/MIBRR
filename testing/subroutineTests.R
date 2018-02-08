@@ -22,84 +22,31 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
-#rm(list = ls(all = TRUE))
+rm(list = ls(all = TRUE))
 
 library(MIBRR)
 
 load("../source/MIBRR/data/mibrrExampleData.RData")
 
-#doBl           <- FALSE
-#doImp          <- TRUE
-#doMcem         <- TRUE
-#data           <- mibrrExampleData
-#nImps          <- 100
-#targetVars     <- c("y", paste0("x", c(1 : 3)))
-#ignoreVars     <- "idNum"
-#iterations     <- c(30, 10)
-#sampleSizes    <- list(rep(25, 2),
-#                      rep(250, 2),
-#                      rep(500, 2)
-#                      )
-#missCode       <- NA
-#returnConvInfo <- TRUE
-#returnParams   <- FALSE
-#verbose        <- TRUE
-#seed           <- NULL
-#control        <- list()
-
 dat1              <- mibrrExampleData
 dat1[is.na(dat1)] <- -999
 
-mibrrFit1 <- init(doBl           = FALSE,
-                  doImp          = TRUE,
-                  doMcem         = TRUE,
-                  data           = dat1,
-                  nImps          = 100,
-                  targetVars     = paste0("x", c(1 : 3)), #c("y", paste0("x", c(1 : 3))),
-                  ignoreVars     = "idNum",
-                  iterations     = c(20, 5),
-                  sampleSizes    = list(rep(25, 2),
-                                        rep(250, 2),
-                                        rep(500, 2)
-                                        ),
-                  missCode       = -999,
-                  verbose        = TRUE,
-                  seed           = NULL,
-                  control        = list(center = FALSE)
-                  )
-
-
-tmp <- mibrrFit1$data
-dat2 <- dat1[ , colnames(tmp)]
-
-head(dat2)
-head(tmp)
-
-test <- dat2 == tmp
-
-all.equal(!test, dat2 == -999)
-
-head(mibrrFit1$data)
-mibrrFit1$targetVars
-mibrrFit1$missList
-mibrrFit1$smoothingWindow
-
-mibrrFit1 <- mcem(mibrrFit1)
-
-mibrrFit1$gibbsOut$x1$imps
-mibrrFit1$missList
-mibrrFit1$data
-
-    
-mibrrFit1 <- postProcess(mibrrFit1)
-
-mibrrFit1$gibbsOut$x1$imps
-
-test <- mibrrFit1$getImpDataset()
-test
-
-impRowsPool <- mibrrFit1$impRowsPool
-targetVars <- mibrrFit1$targetVars
-gibbsOut <- mibrrFit1$gibbsOut
-
-mibrrFit1$ignoredColumns
+mibrrFit1 <- MIBRR::::init(doBl           = FALSE,
+                           doImp          = TRUE,
+                           doMcem         = TRUE,
+                           data           = dat1,
+                           nImps          = 100,
+                           targetVars     = paste0("x", c(1 : 3)),
+                           ignoreVars     = "idNum",
+                           iterations     = c(20, 5),
+                           sampleSizes    = list(rep(25, 2),
+                                                 rep(250, 2),
+                                                 rep(500, 2)
+                                                 ),
+                           missCode       = -999,
+                           verbose        = TRUE,
+                           seed           = NULL,
+                           control        = list(center = FALSE)
+                           )
+mibrrFit1 <- MIBRR:::mcem(mibrrFit1)
+mibrrFit1 <- MIBRR:::postProcess(mibrrFit1)
