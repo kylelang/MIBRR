@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-07
+### Modified: 2018-FEB-08
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -22,35 +22,6 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
 ##-----------------------------------------------------------------------------##
 
-rm(list = ls(all = TRUE))
-
-source("01_MibrrFit.R")
-source("02_EstimationMethods.R")
-source("helperFunctions.R")
-source("RcppExports.R")
-
-load("../data/mibrrExampleData.RData")
-
-#doBl           <- FALSE
-#doImp          <- TRUE
-#doMcem         <- TRUE
-#data           <- mibrrExampleData
-#nImps          <- 100
-#targetVars     <- c("y", paste0("x", c(1 : 3)))
-#ignoreVars     <- "idNum"
-#iterations     <- c(30, 10)
-#sampleSizes    <- list(rep(25, 2),
-#                      rep(250, 2),
-#                      rep(500, 2)
-#                      )
-#missCode       <- NA
-#returnConvInfo <- TRUE
-#returnParams   <- FALSE
-#verbose        <- TRUE
-#seed           <- NULL
-#control        <- list()
-
-
 
 init <- function(doBl,
                  doImp,
@@ -70,8 +41,8 @@ init <- function(doBl,
 
     ## Initialize a new MibrrFit object:
     mibrrFit <- MibrrFit(data        = data,
-                         targetVars  = targetVars,
-                         ignoreVars  = ignoreVars,
+                         targetVars  = as.character(targetVars),
+                         ignoreVars  = as.character(ignoreVars),
                          nImps       = as.integer(nImps),
                          iterations  = as.integer(iterations),
                          sampleSizes = sampleSizes,
@@ -85,7 +56,7 @@ init <- function(doBl,
     mibrrFit$checkInputs()
        
     ## Update any user-specified control parameters:
-    if(length(control) > 0) mibrrFit$setControl()
+    if(length(control) > 0) mibrrFit$setControl(control)
     
     ## Do we have any missing data:
     haveMiss <- any(mibrrFit$countMissing() > 0)
@@ -113,25 +84,6 @@ init <- function(doBl,
 }# END preProcess()
 
 
-mibrrFit1 <- init(doBl           = FALSE,
-                  doImp          = TRUE,
-                  doMcem         = TRUE,
-                  data           = mibrrExampleData,
-                  nImps          = 100,
-                  targetVars     = c("y", paste0("x", c(1 : 3))),
-                  ignoreVars     = "idNum",
-                  iterations     = c(30, 10),
-                  sampleSizes    = list(rep(25, 2),
-                                        rep(250, 2),
-                                        rep(500, 2)
-                                        ),
-                  missCode       = NA,
-                  verbose        = TRUE,
-                  seed           = NULL,
-                  control        = list()
-                  )
-
-
 ## Estimate a model using MCEM:
 mcem <- function(mibrrFit) {
     iters      <- mibrrFit$iterations
@@ -154,7 +106,7 @@ mcem <- function(mibrrFit) {
         
         ## Estimate the BEN/BL model:
         mibrrFit$doGibbs(phase)
-
+               
         if(i < totalIters) {
             ## Print a nice message:
             if(mibrrFit$verbose) {
@@ -176,11 +128,7 @@ mcem <- function(mibrrFit) {
     
     mibrrFit
 }# END runMcem()
-    
-mibrrFit1 <- mcem(mibrrFit1)
-mibrrFit1$gibbsOut$y
-mibrrFit1$missList
-mibrrFit1$data
+
 
 postProcess <- function(mibrrFit) {
     ## Uncenter the data:
@@ -201,167 +149,3 @@ postProcess <- function(mibrrFit) {
     
 mibrrFit
 }# END postProcess()
-
-mibrrFit1 <- postProcess(mibrrFit1)
-mibrrFit1$gibbsOut$x1$imps
-
-test <- mibrrFit1$getImpDataset()
-
-
-impRowsPool <- mibrrFit1$impRowsPool
-targetVars <- mibrrFit1$targetVars
-gibbsOut <- mibrrFit1$gibbsOut
-
-j <- targetVars[1]
-
-getImpDataset = function(reset = FALSE) {
-    "Fill missing values to produce a single imputed dataset"
-    if(reset) impRowsPool <<- 1 : sampleSizes[[3]][2]
-    
-    tmp <- mibrrFit1$data # Make a local copy of 'data'
-    
-    ## Randomly choose a posterior draw to use as imputations:
-    impRow      <-  sample(impRowsPool, 1)
-    impRowsPool <<- setdiff(impRowsPool, impRow)
-    
-    for(j in targetVars) {
-        impSam <- gibbsOut[[j]]$imps[impRow, ]
-        tmp[missList[[j]], j] <- impSam + dataMeans[j]
-    }
-    
-    ## Restructure imputed data to match the raw data layout:
-    if(preserveStructure)
-        data.frame(tmp, ignoredColumns)[ , rawNames]
-    else
-        tmp
-}
-
-#### NOTE: Imputations are not being stored for 'y'
-
-
-### Specify a wrapper function to implement Multiple Imputation with the
-### Bayesian Elastic Net (MIBEN):
-miben <- function(data,
-                  nImps,
-                  targetVars     = NULL,
-                  ignoreVars     = NULL,
-                  iterations     = c(100, 10),
-                  sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-                  missCode       = NULL,
-                  returnConvInfo = TRUE,
-                  returnParams   = FALSE,
-                  verbose        = TRUE,
-                  seed           = NULL,
-                  control        = list()
-                  )
-{
-    mibrr(doBl           = FALSE,
-          doImp          = TRUE,
-          data           = data,
-          nImps          = nImps,
-          targetVars     = targetVars,
-          ignoreVars     = ignoreVars,
-          iterations     = iterations,
-          sampleSizes    = sampleSizes,
-          missCode       = missCode,
-          returnConvInfo = returnConvInfo,
-          returnParams   = returnParams,
-          verbose        = verbose,
-          seed           = seed,
-          control        = control)
-}# END miben()
-
-
-### Specify a wrapper function to implement Multiple Imputation with the
-### Bayesian Lasso (MIBL):
-mibl <- function(data,
-                 nImps,
-                 targetVars     = NULL,
-                 ignoreVars     = NULL,
-                 iterations     = c(100, 10),
-                 sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-                 missCode       = NULL,
-                 returnConvInfo = TRUE,
-                 returnParams   = FALSE,
-                 verbose        = TRUE,
-                 seed           = NULL,
-                 control        = list()
-                 )
-{
-    mibrr(doBl           = TRUE,
-          doImp          = TRUE,
-          data           = data,
-          nImps          = nImps,
-          targetVars     = targetVars,
-          ignoreVars     = ignoreVars,
-          iterations     = iterations,
-          sampleSizes    = sampleSizes,
-          missCode       = missCode,
-          returnConvInfo = returnConvInfo,
-          returnParams   = returnParams,
-          verbose        = verbose,
-          seed           = seed,
-          control        = control)
-}# END mibl()
-
-
-### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
-ben <- function(data,
-                y,
-                X              = NULL,
-                iterations     = c(100, 10),
-                sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-                missCode       = NULL,
-                returnConvInfo = TRUE,
-                verbose        = TRUE,
-                seed           = NULL,
-                control        = list()
-                )
-{
-    if(length(y) > 1) stop("Only one outcome variable is allowed.")
-    
-    mibrr(doBl           = FALSE,
-          doImp          = FALSE,
-          data           = data,
-          targetVars     = y,
-          ignoreVars     = setdiff(colnames(data), c(y, X)),
-          iterations     = iterations,
-          sampleSizes    = sampleSizes,
-          missCode       = missCode,
-          returnConvInfo = returnConvInfo,
-          returnParams   = TRUE,
-          verbose        = verbose,
-          seed           = seed,
-          control        = control)
-}# END ben()
-
-
-### Specify a wrapper function to fit the Bayesian LASSO (BL):
-bl <- function(data,
-               y,
-               X              = NULL,
-               iterations     = c(100, 10),
-               sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-               missCode       = NULL,
-               returnConvInfo = TRUE,
-               verbose        = TRUE,
-               seed           = NULL,
-               control        = list()
-               )
-{
-    if(length(y) > 1) stop("Only one outcome variable is allowed.")
-    
-    mibrr(doBl           = TRUE,
-          doImp          = FALSE,
-          data           = data,
-          targetVars     = y,
-          ignoreVars     = setdiff(colnames(data), c(y, X)),
-          iterations     = iterations,
-          sampleSizes    = sampleSizes,
-          missCode       = missCode,
-          returnConvInfo = returnConvInfo,
-          returnParams   = TRUE,
-          verbose        = verbose,
-          seed           = seed,
-          control        = control)
-}# END bl()

@@ -1,11 +1,11 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-07
+### Modified: 2018-FEB-08
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
 ##                                                                             ##
 ##  This file is part of MIBRR.                                                ##
 ##                                                                             ##
@@ -37,7 +37,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             doMcem            = "logical",
                             doBl              = "logical",
                             checkConv         = "logical",
-                                        #returnParams      = "logical",
                             verbose           = "logical",
                             convThresh        = "numeric",
                             lambda1Starts     = "numeric",
@@ -100,7 +99,6 @@ MibrrFit$methods(
                           doMcem            = as.logical(NA),
                           doBl              = as.logical(NA),
                           checkConv         = TRUE,
-                                        #returnParams      = as.logical(NA),
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
                           lambda1Starts     = as.numeric(NA),
@@ -157,7 +155,6 @@ MibrrFit$methods(
                      doMcem            <<- doMcem
                      doBl              <<- doBl
                      checkConv         <<- checkConv
-                                        #returnParams      <<- returnParams
                      verbose           <<- verbose
                      convThresh        <<- convThresh
                      usePcStarts       <<- usePcStarts
@@ -214,11 +211,9 @@ MibrrFit$methods(
                      
                      ## Store some useful metadata:
                      nTargets <<- as.integer(length(targetVars))
-                     nVar     <<- as.integer(
-                         ncol(data) - length(ignoreVars)
-                     )
+                     nVar     <<- as.integer(ncol(.self$data))
                      nPreds   <<- as.integer(.self$nVar - 1)
-                     nObs     <<- as.integer(nrow(data))
+                     nObs     <<- as.integer(nrow(.self$data))
                      
                      tauStarts <<- betaStarts <<-
                          matrix(NA, .self$nPreds, .self$nTargets)
@@ -244,27 +239,29 @@ MibrrFit$methods(
                                     })
                          names(lambdaHistory) <<- targetVars
                      }
-                     
+                                        
                      rHats <<- list()
                      for(j in targetVars)
                          rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
                    
                      ## Replace missCode entries in data with NAs
                      if(!is.na(missCode)) {
-                         userMissCode           <<- TRUE
-                         data[data == missCode] <<- NA
+                         userMissCode                 <<- TRUE
+                         data[.self$data == missCode] <<- NA
                      }
                      else {
                          userMissCode <<- FALSE
                          missCode     <<- -999L
                      }
 
-                     missCounts <<- sapply(colSums(is.na(data)), as.integer)
+                     missCounts <<-
+                         sapply(colSums(is.na(.self$data)), as.integer)
                      
                      ## Create a list of missing elements in each target variable
                      ## NOTE: Subtract 1 from each index vector to base indices
                      ##       at 0 for C++
-                     missList <<- lapply(data, function(x) which(is.na(x)) - 1)
+                     missList <<-
+                         lapply(.self$data, function(x) which(is.na(x)) - 1)
 
                      ## Generate a pool of potential imputation indices:
                      if(doImp) impRowsPool <<- 1 : sampleSizes[[3]][2]
@@ -381,11 +378,8 @@ MibrrFit$methods(
                  }
                  
                  ## Make sure 'data' contains missing data that we can find:
-                 if(!userMissCode) {
-                     rMat <- is.na(data)
-                 } else {
-                     rMat <- data == missCode
-                     
+                 rMat <- is.na(data)
+                 if(userMissCode)                      
                      if(!any(rMat, na.rm = TRUE))
                          stop(paste0("The value you provided for 'missCode' (i.e., ",
                                      missCode,
@@ -393,7 +387,6 @@ MibrrFit$methods(
                                      missCode,
                                      " encodes your missing data?\n")
                               )
-                 }
                  
                  if(length(targetCandidates) > 1) 
                      completeTargets <- colMeans(rMat[ , targetCandidates]) == 0

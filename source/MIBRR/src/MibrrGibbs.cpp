@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-27
+// Modified: 2018-FEB-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -156,34 +156,34 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 ////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
 
 
-void MibrrGibbs::updateLambdas(&MibrrData)
+void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
 {
   int    nPreds = mibrrData.nPreds();
   double lam1   = _lambdas[0];
   double tauSum = _taus.sum();
   
-  if(doBl) {
-    double shape = l1Parms[0] + nPreds;
-    double rate  = l1Parms[1] + tauSum / 2.0;
+  if(!_useElasticNet) {
+    double shape = _l1Parms[0] + nPreds;
+    double rate  = _l1Parms[1] + tauSum / 2.0;
     
     _lambdas[0] = sqrt(drawGamma(shape, rate));
   }
   else {
-    double lam2 = _lambda[1];
+    double lam2 = _lambdas[1];
     
     // sample new value of lambda1:
-    double shape = l1Parms[0] + nPreds / 2.0;
-    double rate  = l1Parms[1] + tauSum / (8.0 * lam2 * _sigma);
+    double shape = _l1Parms[0] + nPreds / 2.0;
+    double rate  = _l1Parms[1] + tauSum / (8.0 * lam2 * _sigma);
     
     _lambdas[0] = sqrt(drawGamma(shape, rate));
     
     // sample new value of lambda2:
-    double fBeta = _betas.tail(nPreds).asArray().square().sum(); 
+    //double fBeta = _betas.tail(nPreds).asArray().square().sum(); 
     
-    double chi = l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
+    double chi = _l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
     double psi =
-      l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
-		    _betas.tail(nPreds).asArray().square().sum()) / _sigma;
+      _l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
+		     _betas.tail(nPreds).array().square().sum()) / _sigma;
     
     _lambdas[1] = drawGig(1.0, chi, psi);
   }

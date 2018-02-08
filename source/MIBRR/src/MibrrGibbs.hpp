@@ -1,12 +1,12 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-27
+// Modified: 2018-FEB-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -156,7 +156,7 @@ public:
 
   ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
-  void updateLambdas();
+  void updateLambdas(const MibrrData&);
   // @effect: update _lambdas based on current values of other member variables
   
   void updateTaus(const MibrrData&);
@@ -202,10 +202,13 @@ private:
   ArrayXd  _taus;
   double   _sigma;
   VectorXd _lambdas;
+  VectorXd _l1Parms;
+  VectorXd _l2Parms;
   MatrixXd _betaSam;
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;
   MatrixXd _impSam;
+  MatrixXd _lambdaSam;
   int      _targetIndex;
   int      _nDraws;
   int      _drawNum;

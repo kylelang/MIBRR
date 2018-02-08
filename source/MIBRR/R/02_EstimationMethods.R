@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-FEB-07
+### Modified: 2018-FEB-08
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -47,6 +47,7 @@ MibrrFit$methods(
                               totalSams       = sum(sampleSizes[[phase]]),
                               verbose         = verbose,
                               doBl            = doBl,
+                              fullBayes       = !doMcem,
                               adaptScales     = adaptScales,
                               simpleIntercept = simpleIntercept,
                               noMiss          = all(missCounts == 0),
@@ -192,7 +193,7 @@ MibrrFit$methods(
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
                      
                      ## Smooth Lambda estimates if beginning 'tuning' phase:
-                     if(iter == iterations[1]) {
+                     if(iter == iterations[1] & smoothingWindow > 1) {
                          smoothRange    <- (iter - smoothingWindow + 1) : iter
                          lambdaMat[j, ] <<-
                              colMeans(lambdaHistory[[j]][smoothRange, ])
