@@ -17,17 +17,23 @@ NOTE:
 ## 0.0.0.9002 - XXXX-XX-XX
 
 ### Changed
+- Removed the `mibrr` function. The new `init`, `mcem`, and `postProcess` 
+  subroutines are directly wrapped by `miben`, `mibl`, `ben`, `bl`.
+- Pulled all main exported functions into new source file: 
+  "exportedPrimaryFunctions.R"
+- Broke core estimation subroutines into a new source files "subroutines.R"
 - Pulled all samplers into a seperate class `MibrrSamplers`
 
     - `MibrrGibbs` now extends `MibrrSamplers`
 
 - Moved many R functions into the `MibrrFit` class as methods
-- Broke optimization functions out into a seperate source file: 
-  "optimizationFunctions.R"
+- Broke optimization/Gibbs sampling routines out into a seperate source file: 
+  "02_EstimationMethods.R"
 - Broke exported helper functions into a seperate source file: 
   "exportedHelperFunctions.R"
-  
+	  
 ### Added
+- Exported helper functions: `complete` and `getParams`
 - A generalized inverse Gaussian sampler
 - A metadata Reference Class: `MibrrFit`
 
