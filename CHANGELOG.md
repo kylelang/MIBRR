@@ -18,6 +18,7 @@ NOTE:
 
 ### Changed
 - Updated all documentation files (they still need work, though).
+- Updated the development branch README file.
 
 ### Added 
 - Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters
