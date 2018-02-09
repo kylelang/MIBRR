@@ -82,11 +82,11 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 			  
 		miblOut <- mibl(data         = mibrrExampleData,
 		                targetVars   = c("y", paste0("x", c(1 : 3))),
-						ignoreVars   = "idNum",
-						doMcem       = FALSE,
-						sampleSizes  = c(500, 500),
-						lam1PriorPar = c(1.0, 0.1)
-						)
+                        ignoreVars   = "idNum",
+                        doMcem       = FALSE,
+                        sampleSizes  = c(500, 500),
+                        lam1PriorPar = c(1.0, 0.1)
+                        )
 				
 		## Extract list of 100 imputed datasets:
 		mibenImps <- complete(mibrrFit = mibenOut, nImps = 100)
@@ -118,19 +118,19 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		benOut <- ben(data         = trainData,
                       y            = "agree",
                       X            = setdiff(colnames(trainData), "agree"),
-					  doMcem       = FALSE,
-					  sampleSizes  = c(500, 500),
-					  lam1PriorPar = c(1.0, 0.1),
-					  lam2PriorPar = c(1.0, 0.1)
+                      doMcem       = FALSE,
+                      sampleSizes  = c(500, 500),
+                      lam1PriorPar = c(1.0, 0.1),
+                      lam2PriorPar = c(1.0, 0.1)
                       )
 		   
 		## Estimate a Bayesian LASSO model using full Bayes:
 		blOut <- bl(data         = trainData,
                     y            = "agree",
                     X            = setdiff(colnames(trainData), "agree"),
-					doMcem       = FALSE,
-					sampleSizes  = c(500, 500),
-					lam1PriorPar = c(1.0, 0.1)
+                    doMcem       = FALSE,
+                    sampleSizes  = c(500, 500),
+                    lam1PriorPar = c(1.0, 0.1)
                     )
 					
 		## Extract posterior parameter samples:
