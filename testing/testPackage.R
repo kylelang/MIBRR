@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-NOV-27
+### Modified: 2018-FEB-09
 
 rm(list = ls(all = TRUE))
 
@@ -101,37 +101,6 @@ for(v in 1 : ncol(dat3)) {
     t3 <- setdiff(pmiOut, missIndices[[v]])
     if(length(t3) > 0) stop("Miss indices broken")
 }# END for(v in 1 : ncol(dat3))
-
-###---------------------------------------------------------------------------###
-
-### Check fully Bayesian estimation of MIBEN and MIBL ###
-
-plot(density(rgamma(100000, 1.0, scale = 100.0)))
-     
-dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
-dat2 <- imposeMissData(data    = dat1,
-                       targets = targets,
-                       preds   = marPreds,
-                       pm      = pm,
-                       snr     = snr)$data
-
-mibenOut <- miben(data         = dat2,
-                  targetVars   = targets$mar,
-                  ignoreVars   = NULL,
-                  iterations   = c(50, 10),
-                  doMcem       = FALSE,
-                  lam1PriorPar = c(1.0, 2.0),
-                  lam2PriorPar = c(20.0, 0.01),
-                  verbose      = TRUE)
-
-mibenImps <- MIBRR::complete(mibenOut, 100)
-    
-    miblOut <- mibl(data       = dat2,
-                    targetVars = targets$mar,
-                    ignoreVars = NULL,
-                    iterations = c(50, 10),
-                    verbose    = FALSE)
-miblImps <- MIBRR::complete(miblOut, 100)
 
 ###---------------------------------------------------------------------------###
 

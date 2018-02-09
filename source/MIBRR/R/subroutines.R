@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-08
+### Modified: 2018-FEB-09
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -55,7 +55,9 @@ init <- function(doBl,
                          doBl        = doBl)
 
     ## Store Lambda's prior parameters:
-    if(!doMcem) mibrrFit$setLambdaParams(l1 = lam1PriorPar, l2 = lam2PriorPar)
+    if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
+                                         l2 = as.numeric(lam2PriorPar)
+                                         )
     
     ## Check the user inputs and resolve a set of target variables:
     mibrrFit$checkInputs()

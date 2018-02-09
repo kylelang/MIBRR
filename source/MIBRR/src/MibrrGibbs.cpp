@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-08
+// Modified: 2018-FEB-09
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -30,7 +30,8 @@
   
 MibrrGibbs::MibrrGibbs() 
 {
-  // _beta, _tau, and _nDraws need user-supplied starting values
+  // _beta, _tau, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
+  // values
   _sigma             = 0.0;
   _lambdas           = VectorXd(2);
   _drawNum           = 0;
