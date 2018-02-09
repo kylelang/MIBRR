@@ -72,8 +72,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 						
 		## Estimate the imputation models using fully Bayesian modeling:
 		mibenOut <- miben(data         = mibrrExampleData,
-                          targetVars   = c("y", paste0("x", c(1 : 3))),
-                          ignoreVars   = "idNum",
+		                  targetVars   = c("y", paste0("x", c(1 : 3))),
+						  ignoreVars   = "idNum",
 						  doMcem       = FALSE,
 						  sampleSizes  = c(500, 500),
 						  lam1PriorPar = c(1.0, 0.1),
@@ -81,8 +81,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 						  )
 			  
 		miblOut <- mibl(data         = mibrrExampleData,
-                        targetVars   = c("y", paste0("x", c(1 : 3))),
-                        ignoreVars   = "idNum",
+		                targetVars   = c("y", paste0("x", c(1 : 3))),
+						ignoreVars   = "idNum",
 						doMcem       = FALSE,
 						sampleSizes  = c(500, 500),
 						lam1PriorPar = c(1.0, 0.1)
@@ -149,7 +149,7 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		missData <- predictData$incomplete
 		testData <- predictData$test
 		
-		## Create M = 100 multiply imputed datasets:
+		## Estimate the imputation models:
 		mibenOut <- miben(data = missData)
 		miblOut  <- mibl(data = missData)
 		
