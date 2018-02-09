@@ -453,3 +453,14 @@ mibenPred <- predictMibrr(object = mibenOut, newData = predictData$test)
 ## Info Functions:
 mibrrL()
 mibrrW()
+
+## Look at documentation:
+?miben
+?mibl
+?MibrrFit
+?inspect
+?predictMibrr
+?ben
+?bl
+?complete
+?getParams

@@ -8,15 +8,15 @@ Generate Posterior Predictions from MIBRR Models
   using \code{miben}, \code{mibl}, \code{ben}, or \code{bl}.
 }
 \usage{
-predictMibrr(object,
+predictMibrr(mibrrFit,
              newData,
              targetVar = NULL,
              nDraws    = 0)
 }
 \arguments{
-  \item{object}{
-    A fitted model object returned by \code{miben}, \code{mibl}, \code{ben}, or
-    \code{bl}.  
+  \item{mibrrFit}{
+    A fitted model object (with class \code{MibrrFit}) returned by
+    \code{miben}, \code{mibl}, \code{ben}, or \code{bl}.  
   }
   \item{newData}{
     A data.frame containing new predictor data from which to generate the
@@ -26,7 +26,7 @@ predictMibrr(object,
     An optional character vector giving the column labels for the outcome
     variables for which to generate posterior predictions. When \code{targetVar
       = NULL} predictions are generated for all target variables contained in
-    \code{object}.
+    \code{mibrrFit}.
   }
   \item{nDraws}{
     The number of posterior predictive draws to return.\cr
@@ -35,12 +35,12 @@ predictMibrr(object,
 }
 \value{
   A list containing the posterior predictive draws for each target variable
-  defined in \code{targetVar} or for all target variables in \code{object} when
+  defined in \code{targetVar} or for all target variables in \code{mibrrFit} when
   \code{targetVar = NULL}.
 }
 \note{
   The column names of \code{newData} must contain the column names of
-  all variables used to estimate the model represented by \code{object}.
+  all variables used to estimate the model represented by \code{mibrrFit}.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -72,7 +72,7 @@ benOut <- ben(data       = predictData$train,
               )
 
 ## Generate posterior predictions for 'y':
-benPred <- predictMibrr(object = benOut, newData = predictData$test)
+benPred <- predictMibrr(mibrrFit = benOut, newData = predictData$test)
 
 ## Fit chained Bayesian elastic net models to support MI:
 mibenOut <- miben(data         = predictData$incomplete,
@@ -81,5 +81,5 @@ mibenOut <- miben(data         = predictData$incomplete,
                   returnParams = TRUE)
 
 ## Generate posterior predictions from elementary imputation models:
-benPred <- predictMibrr(object = mibenOut, newData = predictData$test)
+benPred <- predictMibrr(mibrrFit = mibenOut, newData = predictData$test)
 }

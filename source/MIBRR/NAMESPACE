@@ -24,9 +24,8 @@ export(mibl,
        ben,
        bl,
        predictMibrr,
-       complete)
-
-#export(init, mcem, postProcess)
+       complete,
+       getParams)
 
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their

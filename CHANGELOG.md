@@ -16,7 +16,19 @@ NOTE:
 
 ## 0.0.0.9003 - XXXX-XX-XX
 
+### Changed
+- Updated all documentation files (they still need work, though).
 
+### Added 
+- Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters
+- A `complete` function to replace missing values and generate the mulitply
+  imputed datasets after a run of `miben` or `mibl`.
+- A `getParams` function to extract the posterior samples of the model parameters
+  from a fitted `MibrrFit` object.
+- An `inspect` function to extract arbitrary fields from a `MibrrFit` object.
+- Documentation for `complete`, `inspect`, `getParams` functions and for the 
+  `MibrrFit` class.
+  
 ## 0.0.0.9002 - 2018-02-08
 
 ### Changed
@@ -36,7 +48,6 @@ NOTE:
   "exportedHelperFunctions.R"
 	  
 ### Added
-- Exported helper functions: `complete` and `getParams`
 - A generalized inverse Gaussian sampler
 - A metadata Reference Class: `MibrrFit`
 

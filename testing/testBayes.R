@@ -5,21 +5,13 @@
 
 rm(list = ls(all = TRUE))
 
-                                        #install.packages("HyperbolicDist", repos = "http://cloud.r-project.org")
-
 library(mitools)
 library(psych)
 library(MIBRR)
-library(devtools)
 library(parallel)
-library(MCMCpack)
-library(statmod)
-library(HyperbolicDist)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
-
-saveDate <- format(Sys.time(), "%Y%m%d")
 
 ###---------------------------------------------------------------------------###
 
@@ -62,7 +54,7 @@ dat2 <- imposeMissData(data    = dat1,
 
 ###---------------------------------------------------------------------------###
 
-### Check fully Bayesian estimation of MIBEN and MIBL ###
+### Check fully Bayesian estimation ###
 
 mibenOut <- miben(data         = dat2,
                   targetVars   = targets$mar,
@@ -86,6 +78,26 @@ miblOut <- mibl(data         = dat2,
 
 miblImps <- MIBRR::complete(miblOut, 100)
 
+benOut <- ben(data         = bfi2,
+              y            = "A1",
+              X            = c(paste0("E", 1 : 5), paste0("O", 1 : 5)),
+              sampleSizes  = c(500, 500),
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1),
+              verbose      = TRUE)
+
+benPars <- MIBRR:::getParams(benOut, "A1")
+            
+blOut <- bl(data         = bfi2,
+            y            = "A1",
+            X            = c(paste0("E", 1 : 5), paste0("O", 1 : 5)),
+            sampleSizes  = c(500, 500),
+            doMcem       = FALSE,
+            lam1PriorPar = c(1.0, 0.1),
+            verbose      = TRUE)
+
+blPars <- MIBRR:::getParams(blOut, "A1")
 
 ###---------------------------------------------------------------------------###
 
@@ -128,7 +140,7 @@ plot(density(out2))
 
 ### Check Sensitivity to Priors ###
 
-testFun <- function(rp, data, parms) {
+testFun1 <- function(rp, data, parms) {
     cat(paste0("Doing replication ", rp, "\n"))
     
     cn       <- parms$cn
@@ -205,14 +217,17 @@ parms$keys     <- keys
 parms$verbose  <- FALSE
 parms$miben    <- FALSE
 parms$samSizes <- c(500, 500)
-parms$vals     <- matrix(c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0))
 
-                                        #parms$vals     <- expand.grid(c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0),
-                                        #                              c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0)
-                                        #                              )
+if(parms$miben) {
+    parms$vals <- expand.grid(c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0),
+                              c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0)
+                              )
+} else {
+    parms$vals <- matrix(c(0.01, 0.1, 0.5, 1.0, 5.0, 10.0))
+}
 
 simOut <- mclapply(X        = c(1 : nReps),
-                   FUN      = testFun,
+                   FUN      = testFun1,
                    data     = bfi2,
                    parms    = parms,
                    mc.cores = 4)
@@ -221,15 +236,128 @@ tmp  <- do.call(rbind, lapply(simOut, unlist))
 tmp2 <- matrix(colMeans(tmp), ncol = 3, byrow = TRUE)
 tmp3 <- apply(tmp2, 2, scale, scale = FALSE)
 
+## How much Monte Carlo variability?
 tmp4 <- matrix(apply(tmp, 2, sd), ncol = 3, byrow = TRUE)
+tmp4
 
+## How much prior-driven variability?
 plot(tmp3[ , 1], ylim = range(tmp3), type = "l")
 lines(tmp3[ , 2], col = "red")
 lines(tmp3[ , 3], col = "blue")
 
-mibenFrame <- tmp[ , grep("miben", colnames(tmp))]
-miblFrame  <- tmp[ , grep("mibl", colnames(tmp))]
-miceFrame  <- tmp[ , grep("mice", colnames(tmp))]
+###---------------------------------------------------------------------------###
+
+### Compare Fully Bayesian and MCEM Estimation ###
+
+
+testFun2 <- function(rp, data, parms) {
+    cat(paste0("Doing replication ", rp, "\n"))
+    
+    cn       <- parms$cn
+    targets  <- parms$targets
+    marPreds <- parms$marPreds
+    pm       <- parms$pm
+    snr      <- parms$snr
+    nImps    <- parms$nImps
+    keys     <- parms$keys
+    
+    dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
+    dat2 <- imposeMissData(data    = dat1,
+                           targets = targets,
+                           preds   = marPreds,
+                           pm      = pm,
+                           snr     = snr)$data
+
+    if(parms$miben) {
+        mcemFit <- miben(data       = dat2,
+                         targetVars = targets$mar,
+                         ignoreVars = NULL,
+                         iterations = parms$iterations,
+                         verbose    = parms$verbose)
+        mcemImps <- MIBRR::complete(mcemFit, nImps)
+        
+        bayesFit <- miben(data         = dat2,
+                          targetVars   = targets$mar,
+                          ignoreVars   = NULL,
+                          doMcem       = FALSE,
+                          sampleSizes  = parms$samSizes,
+                          lam1PriorPar = parms$l1Par,
+                          lam2PriorPar = parms$l2Par,
+                          verbose      = parms$verbose)
+        bayesImps <- MIBRR::complete(bayesFit, nImps)
+    }
+    else {
+        mcemFit <- mibl(data       = dat2,
+                        targetVars = targets$mar,
+                        ignoreVars = NULL,
+                        iterations = parms$iterations,
+                        verbose    = parms$verbose)
+        mcemImps <- MIBRR::complete(mcemFit, nImps)
+        
+        bayesFit <- mibl(data         = dat2,
+                         targetVars   = targets$mar,
+                         ignoreVars   = NULL,
+                         doMcem       = FALSE,
+                         sampleSizes  = parms$samSizes,
+                         lam1PriorPar = parms$l1Par,
+                         verbose      = parms$verbose)
+        bayesImps <- MIBRR::complete(bayesFit, nImps)
+    }
+    
+    mcemRes <- bayesRes <- list()
+    for(m in 1 : nImps) {
+        ## MCEM estimates:
+        scores       <- scoreItems(keys  = keys, items = mcemImps[[m]])$scores
+        mcemRes[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                          mA = mean(scores[ , "agree"]),
+                          mE = mean(scores[ , "extra"])
+                          )
+        ## Bayes estimates:
+        scores        <- scoreItems(keys  = keys, items = bayesImps[[m]])$scores
+        bayesRes[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                           mA = mean(scores[ , "agree"]),
+                           mE = mean(scores[ , "extra"])
+                           )
+    }
+    
+    list(mcem  = colMeans(do.call(rbind, mcemRes)),
+         bayes = colMeans(do.call(rbind, bayesRes))
+         )
+} # END testFun()
+
+
+nReps <- 20
+nImps <- 100
+keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
+              extra = c("-E1", "-E2", "E3", "E4", "E5")
+              )
+
+parms            <- list()
+parms$cn         <- cn
+parms$targets    <- targets
+parms$marPreds   <- marPreds
+parms$pm         <- pm
+parms$snr        <- snr
+parms$nImps      <- nImps
+parms$keys       <- keys
+parms$verbose    <- FALSE
+parms$miben      <- TRUE
+parms$samSizes   <- c(500, 500)
+parms$iterations <- c(50, 10)
+parms$l1Par      <- c(1.0, 0.1)
+parms$l2Par      <- c(1.0, 0.1)
+
+simOut <- mclapply(X        = c(1 : nReps),
+                   FUN      = testFun2,
+                   data     = bfi2,
+                   parms    = parms,
+                   mc.cores = 4)
+
+tmp  <- do.call(rbind, lapply(simOut, unlist))
+
+mcemFrame  <- tmp[ , grep("mcem", colnames(tmp))]
+bayesFrame <- tmp[ , grep("bayes", colnames(tmp))]
+
 
 ## Complete data result: 
 scores  <- scoreItems(keys = keys, items = bfi2)$scores
@@ -238,12 +366,13 @@ compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
              mE = mean(scores[ , "extra"])
              )
 
+## Difference in two methods (as proportion of complete-data result):
+100 * colMeans(mcemFrame - bayesFrame) / compRes
+
 ## Percent Relative Bias:
-100 * (colMeans(mibenFrame) - compRes) / compRes
-100 * (colMeans(miblFrame) - compRes) / compRes
-100 * (colMeans(miceFrame) - compRes) / compRes
+100 * (colMeans(mcemFrame) - compRes) / compRes
+100 * (colMeans(bayesFrame) - compRes) / compRes
 
 # Monte Carlo SD:
-apply(mibenFrame, 2, sd)
-apply(miblFrame, 2, sd)
-apply(miceFrame, 2, sd)
+apply(mcemFrame, 2, sd)
+apply(bayesFrame, 2, sd)

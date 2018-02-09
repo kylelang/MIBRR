@@ -84,6 +84,10 @@ predictMibrr <- function(mibrrFit,
 }
 
 
+## Access arbitrary fields in a 'MibrrFit' object via a familiar interface:
+inspect <- function(mibrrFit, what) mibbrFit$field(what)
+
+
 ## Calculate the potential scale reduction factor (R-Hat)
                                         #calcRHat <- function(simsIn, nChains = 1)
                                         #{

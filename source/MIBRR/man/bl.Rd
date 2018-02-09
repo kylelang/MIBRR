@@ -4,19 +4,20 @@
 Bayesian LASSO
 }
 \description{
-  This function will fit the Bayesian LASSO to incomplete data.
+  This function will fit the Bayesian LASSO to (possibly) incomplete data.
 }
 \usage{
 bl(data,
    y,
-   X              = NULL,
-   iterations     = c(100, 10),
-   sampleSizes    = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-   missCode       = NULL,
-   returnConvInfo = TRUE,
-   verbose        = TRUE,
-   seed           = NULL,
-   control        = list()
+   X            = NULL,
+   iterations   = c(100, 10),
+   sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+   lam1PriorPar = NULL,
+   doMcem       = TRUE,
+   missCode     = NULL,
+   verbose      = TRUE,
+   seed         = NULL,
+   control      = list()
    )  
 }
 \arguments{
@@ -38,21 +39,27 @@ bl(data,
     Defaults to \code{iterations = c(100, 10)}.
   }
   \item{sampleSizes}{
-    A list containing three two-element numeric vectors giving the number of
-    MCMC draws discarded as burn-in and retained, respectively, during the MCEM
-    approximation, tuning, and sampling phases.\cr
-    Defaults to \code{sampleSizes = list(rep(25, 2), rep(250, 2), rep(500, 2))}. 
+    A list or vector giving the desired Gibbs sample sizes (see
+    Details for more information).\cr 
+    Defaults to \code{sampleSizes = list(rep(25, 2), rep(250, 2),
+      rep(500, 2))}.
+  }
+  \item{doMcem}{
+    A logical switch: Should the model be estimated using Markov Chain
+    Expectation Maximization (MCEM)? If \code{doMcem = FALSE} the model
+    is estimated as a fully Bayesian model by assigning hyper-priors to
+    the penalty parameter.\cr
+    Defaults to \code{doMcem = TRUE}.
+  }
+  \item{lam1PriorPar}{
+    A two-element numeric vector giving the prior shape and rate
+    parameters, respectively, for the squared LASSO penalty parameter's,
+    \eqn{\lambda_1^2}{lambda1^2}, gamma prior.
   }
   \item{missCode}{
     An optional integer-valued code used to flag the missing data in
     \code{data}. Should take a value that cannot naturally occur in
     \code{data}. Not needed when the missing data are coded as \code{NA}.
-  }
-  \item{returnConvInfo}{
-    A logical switch: Should convergence information for the imputation model
-    (i.e., history of the optimized penalty parameters and R-Hat values for
-    final parameter estimates) be returned?\cr
-    Defaults to \code{returnConvInfo = TRUE}. 
   }
   \item{verbose}{
     A logical switch: Should verbose output be printed to stdout?\cr
@@ -68,12 +75,23 @@ bl(data,
   }
 }
 \details{
+  The \code{sampleSizes} argument must be a three-element list when
+  \code{doMcem = TRUE}. In this case, the list must contain three
+  two-element numeric (integer) vectors giving the number of MCMC draws
+  to discard as burn-in and to retain, respectively, during the MCEM
+  approximation, tuning, and sampling phases.
+
+  When \code{doMcem = FALSE}, only a single Gibbs sample is drawn, so
+  the\code{sampleSizes} argument must be a   two-element numeric
+  (integer) vector giving the number of MCMC draws   to discard as
+  burn-in and the number to retain in the final Gibbs sample.
+  
   \code{control} is a list containing the following named elements:
   \describe{
     \item{convThresh:}{
-      The R-Hat value used to judge convergence. R-Hat
-      values < \code{convThresh} arising during the MCEM tuning phase will
-      trigger a warning.\cr
+      The R-Hat value used to judge convergence. R-Hat values <
+      \code{convThresh} arising from the final, retained Gibbs sample
+      will trigger a warning.\cr
       Defaults to \code{convThres = 1.1}.
     }
     \item{lambda1Starts:}{
@@ -151,11 +169,19 @@ bl(data,
       saturated model is estimated using \pkg{lavaan}.\cr
       Defaults to \code{fimlStarts = FALSE}.
     }
+    \item{checkConv:}{
+      A logical switch: Should the stationary Gibbs samples be checked
+      for convergence?\cr
+      Defaults to \code{checkConv = TRUE}.
+    }
   }
 }
 \value{
-  A list containing the Gibbs samples of all model parameters and
-  whatever additional output is requested via \code{returnConvInfo}.
+  A reference class object with class \code{MibrrFit}. This object
+  contains a great deal of metadata and various pieces of output. Key
+  output can be accessed via the convenience function
+  \code{\link{getParams}}, and the \code{\link{inspect}} function. See
+  documentation for \code{\link{MibbrFit}} for more details.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -181,14 +207,24 @@ bl(data,
   function is \strong{absolutely not} ready for use in real-world analyses!
 }
 \seealso{
-\code{\link{ben}}
+\code{\link{ben}}, \code{\link{getParams}}, \code{\link{inspect}}
 }
 \examples{
 data(mibrrExampleData)
 
+## MCEM estimation:
 blOut <- bl(data       = mibrrExampleData,
             y          = "y",
             X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
             iterations = c(50, 10)
+            )
+
+## Fully Bayesian estimation:
+blOut <- bl(data         = mibrrExampleData,
+            y            = "y",
+            X            = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            doMcem       = FALSE,
+            sampleSizes  = c(500, 500),
+            lam1PriorPar = c(1.0, 0.1)
             )
 }

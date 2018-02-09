@@ -34,13 +34,11 @@ Maintainer: \packageMaintainer{MIBRR}
 data(mibrrExampleData)
 
 mibenOut <- miben(data       = mibrrExampleData,
-                  nImps      = 100,
                   iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
 
 miblOut <- mibl(data       = mibrrExampleData,
-                nImps      = 100,
                 iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
