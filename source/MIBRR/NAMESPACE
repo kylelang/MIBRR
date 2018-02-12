@@ -1,6 +1,7 @@
 useDynLib(MIBRR)
 
 import(RcppEigen)
+import(methods)
 
 importFrom(Rcpp, evalCpp)
 importFrom(mice, mice, quickpred, complete)
@@ -16,6 +17,12 @@ importFrom(stats,
            rnorm,
            sd,
            var)
+importFrom(rlecuyer,
+           .lec.SetPackageSeed,
+           .lec.CreateStream,
+           .lec.ResetNextSubstream,
+           .lec.GetState,
+           .lec.DeleteStream)
 
 export(mibl,
        miben,
@@ -23,8 +30,9 @@ export(mibl,
        mibrrL,
        ben,
        bl,
-       predictMibrr,
-       complete,
+       postPredict,
+       getImpData,
+       getField,
        getParams)
 
 ### NOTE: The following non-exported, undocumented functions are available for

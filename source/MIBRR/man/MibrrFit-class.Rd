@@ -26,8 +26,8 @@
     mibrrFit$copy()}).
 }
 \seealso{
-\code{\link{complete}}, \code{\link{getParams}}, \code{\link{inspect}},
-\code{\link{predictMibrr}}
+\code{\link{getImpData}}, \code{\link{getParams}}, \code{\link{getField}},
+\code{\link{postPredict}}
 }
 \section{Warning}{
   This function is in a highly unstable \emph{alpha} level of development. Please
@@ -47,23 +47,23 @@ showClass("MibrrFit")
   refer to the source code of the class' definition for details.
 
   Any field in the \code{MibrrFit} object can be accessed via the
-  \code{\link{inspect}} function. The most interesting fields are
-  described in the \code{\link{inspect}} function's documentation.
+  \code{\link{getField}} function. The most interesting fields are
+  described in the \code{\link{getField}} function's documentation.
 
   After running \code{miben} or \code{mibl}, a set of imputed datasets
-  can be generated with the \code{\link{complete}} function.
+  can be generated with the \code{\link{getImpData}} function.
 
   After running any of the primary modeling functions (i.e.,
   \code{miben}, \code{mibl}, \code{ben}, \code{bl}), the model
   parameters' posterior Gibbs samples can be extracted via the
   \code{\link{getParams}} function and predictions can be generated via
-  the \code{\link{predictMibrr}} function.
+  the \code{\link{postPredict}} function.
 }
 \section{Fields}{
   The \code{MibrrFit} class contains the following fields (which are not
   intended to be directly access by users). Interesting data, results,
   and metadata can be extracted from a fitted \code{MibrrFit} object via
-  the functions described in the preceding \code{methods} section.
+  the functions described in the preceding \dQuote{methods} section.
   
   \describe{
     \item{\code{data}:}{Object of class \code{data.frame} ~~ }

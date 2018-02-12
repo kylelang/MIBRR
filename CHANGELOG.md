@@ -19,6 +19,12 @@ NOTE:
 ### Changed
 - Updated all documentation files (they still need work, though).
 - Updated the development branch README file.
+- Improved the way random numbers are passed to C++ to seed the samplers class.
+- Header file extension changed from '.hpp' to '.h' to appease CRAN checks.
+- Cleaning up doc files
+- `complete` function renamed to `getImpData`
+- `predictMibrr` renamed to `postPredict`
+- `inspect` function renamed to `getField`
 
 ### Added 
 - Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters

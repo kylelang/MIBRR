@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2018-FEB-06
-### Modified: 2018-FEB-09
+### Modified: 2018-FEB-12
 
 rm(list = ls(all = TRUE))
 
@@ -200,7 +200,7 @@ testFun1 <- function(rp, data, parms) {
 } # END testFun()
 
 
-nReps <- 20
+nReps <- 10
 nImps <- 100
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
@@ -215,7 +215,7 @@ parms$snr      <- snr
 parms$nImps    <- nImps
 parms$keys     <- keys
 parms$verbose  <- FALSE
-parms$miben    <- FALSE
+parms$miben    <- TRUE
 parms$samSizes <- c(500, 500)
 
 if(parms$miben) {

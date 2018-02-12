@@ -1,5 +1,5 @@
-\name{predictMibrr}
-\alias{predictMibrr}
+\name{postPredict}
+\alias{postPredict}
 \title{
 Generate Posterior Predictions from MIBRR Models
 }
@@ -8,10 +8,7 @@ Generate Posterior Predictions from MIBRR Models
   using \code{miben}, \code{mibl}, \code{ben}, or \code{bl}.
 }
 \usage{
-predictMibrr(mibrrFit,
-             newData,
-             targetVar = NULL,
-             nDraws    = 0)
+postPredict(mibrrFit, newData, targetVars = NULL, nDraws = 0)
 }
 \arguments{
   \item{mibrrFit}{
@@ -22,7 +19,7 @@ predictMibrr(mibrrFit,
     A data.frame containing new predictor data from which to generate the
     posterior predictions.   
   }
-  \item{targetVar}{
+  \item{targetVars}{
     An optional character vector giving the column labels for the outcome
     variables for which to generate posterior predictions. When \code{targetVar
       = NULL} predictions are generated for all target variables contained in
@@ -72,14 +69,11 @@ benOut <- ben(data       = predictData$train,
               )
 
 ## Generate posterior predictions for 'y':
-benPred <- predictMibrr(mibrrFit = benOut, newData = predictData$test)
+benPred <- postPredict(mibrrFit = benOut, newData = predictData$test)
 
 ## Fit chained Bayesian elastic net models to support MI:
-mibenOut <- miben(data         = predictData$incomplete,
-                  nImps        = 100,
-                  iterations   = c(30, 10),
-                  returnParams = TRUE)
+mibenOut <- miben(data = predictData$incomplete, iterations = c(30, 10))
 
 ## Generate posterior predictions from elementary imputation models:
-benPred <- predictMibrr(mibrrFit = mibenOut, newData = predictData$test)
+mibenPred <- postPredict(mibrrFit = mibenOut, newData = predictData$test)
 }

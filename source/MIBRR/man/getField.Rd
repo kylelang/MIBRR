@@ -1,14 +1,14 @@
-\name{inspect}
-\alias{inspect}
+\name{getField}
+\alias{getField}
 \title{
   Access arbitrary fields in a MibrrFit object.
 }
 \description{
   This function will access any field in a fitted \code{MibrrFit} object
-  using a familiar, S3-like interface.
+  using a familiar, \sQuote{inspect}-like interface.
 }
 \usage{
-inspect(mibrrFit, what)
+getField(mibrrFit, what)
 }
 \arguments{
   \item{mibrrFit}{
@@ -62,13 +62,12 @@ data(mibrrExampleData)
 benOut <- ben(data         = mibrrExampleData,
               y            = "y",
               X            = paste0("x", c(1 : 3)),
-              ignoreVars   = "idNum",
               sampleSizes  = c(500, 500),
               doMcem       = FALSE,
-              lam1PriorPar = c(1.0, 0.1)
+              lam1PriorPar = c(1.0, 0.1),
               lam2PriorPar = c(1.0, 0.1)
               )
 
 ## Extract the potential scale reduction factors:
-mibenPars <- inspect(mibrrFit = benOut, what = "rHats")
+benRHats <- getField(mibrrFit = benOut, what = "rHats")
 }

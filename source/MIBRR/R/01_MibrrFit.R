@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-08
+### Modified: 2018-FEB-12
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
@@ -195,35 +195,43 @@ MibrrFit$methods(
                      rawNames <<- colnames(data)
                      
                      ## Set aside the 'ignored' columns:
-                     ignoredColumns <<- as.data.frame(data[ , ignoreVars])
-                     if(length(ignoreVars) == 1)
-                         colnames(ignoredColumns) <<- ignoreVars
-                   
+                     if(length(ignoreVars) > 0) {
+                         ignoredColumns <<- as.data.frame(data[ , ignoreVars])
+                         if(length(ignoreVars) == 1)
+                             colnames(ignoredColumns) <<- ignoreVars
+                         data <<- data[ , setdiff(colnames(data), ignoreVars)]
+                     }
+                     
+                     ## Deal with empty 'targetVars':
+                                        #if(length(targetVars) == 0)
+                                        #    targetVars <- setdiff(colnames(data), ignoreVars)
+                     
                      ## Re-order non-ignored data columns and store as data
-                     data <<- data.frame(
-                         data[ , targetVars],
-                         data[ , setdiff(colnames(data),
-                                         c(targetVars, ignoreVars)
-                                         )
-                              ]
-                     )
+                     #if(length(targetVars) > 0)
+                     #data <<- data.frame(
+                     #    data[ , targetVars],
+                     #    data[ , setdiff(colnames(data),
+                     #                    c(targetVars, ignoreVars)
+                     #                    )
+                     #         ]
+                     #)
                      
                      ## Hack to deal with 1D matrix conversion to vector:
-                     if(length(targetVars) == 1)
-                         colnames(data)[1] <<- targetVars
+                     #if(length(targetVars) == 1)
+                     #    colnames(data)[1] <<- targetVars
                      
                      ## Store some useful metadata:
-                     nTargets <<- as.integer(length(targetVars))
+                     #nTargets <<- as.integer(length(targetVars))
                      nVar     <<- as.integer(ncol(.self$data))
                      nPreds   <<- as.integer(.self$nVar - 1)
                      nObs     <<- as.integer(nrow(.self$data))
                      
-                     tauStarts <<- betaStarts <<-
-                         matrix(NA, .self$nPreds, .self$nTargets)
+                     #tauStarts <<- betaStarts <<-
+                     #    matrix(NA, .self$nPreds, .self$nTargets)
 
                      ## Initialize penalty parameter-related stuff:
-                     lambda1Starts <<- rep(0.5, .self$nTargets)
-                     lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
+                     #lambda1Starts <<- rep(0.5, .self$nTargets)
+                     #lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
                      
                      if(doMcem) {
                          smoothingWindow <<- as.integer(
@@ -232,15 +240,15 @@ MibrrFit$methods(
                          
                          totalIters <<- sum(iterations)
                          
-                         lambdaHistory <<-
-                             lapply(targetVars,
-                                    function(x) {
-                                        tmp <-
-                                            matrix(NA, .self$totalIters - 1, 2)
-                                        colnames(tmp) <- c("lambda1", "lambda2")
-                                        tmp
-                                    })
-                         names(lambdaHistory) <<- targetVars
+                         #lambdaHistory <<-
+                         #    lapply(targetVars,
+                         #           function(x) {
+                         #               tmp <-
+                         #                   matrix(NA, .self$totalIters - 1, 2)
+                         #               colnames(tmp) <- c("lambda1", "lambda2")
+                         #               tmp
+                         #           })
+                         #names(lambdaHistory) <<- targetVars
                      }
                                         
                      rHats <<- list()
@@ -370,13 +378,13 @@ MibrrFit$methods(
              },
 
 ###---------------------------------------------------------------------------###
-             
+
              checkInputs = function() {
                  "Check the user inputs and isolate a set of target variables"
                  
                  ## Check for target variables. When no targets are given, all
                  ## incomplete variables not listed in 'ignoreVars' are imputed.
-                 if(is.null(targetVars)) {
+                 if(length(targetVars) == 0) {
                      if(doImp) {
                          targetCandidates <-
                              colnames(data)[!colnames(data) %in% ignoreVars]
@@ -418,6 +426,44 @@ MibrrFit$methods(
                                     "} are fully observed.\nThese items will not be imputed.\n")
                          )
                  }
+
+                 ## Do some housekeeping that needs veridical 'targetVars' ##
+                 
+                 ## Re-order non-ignored data columns and store as data:
+                 data <<- data.frame(
+                     data[ , targetVars],
+                     data[ , setdiff(colnames(data), targetVars)]
+                 )
+                 
+                 ## Hack to deal with 1D matrix conversion to vector:
+                 if(length(targetVars) == 1)
+                     colnames(data)[1] <<- targetVars
+
+                 ## How many targets?
+                 nTargets <<- as.integer(length(targetVars))
+
+                 ## Make some starting value containers:
+                 tauStarts <<- betaStarts <<- matrix(NA,  nPreds, nTargets)
+                 
+                 ## Initialize penalty parameter-related stuff:
+                 lambda1Starts <<- rep(0.5, nTargets)
+                 lambda2Starts <<- rep(nPreds / 10, nTargets)
+                                 
+                 if(doMcem) {
+                     lambdaHistory <<-
+                         lapply(targetVars,
+                                function(x) {
+                                    tmp <-
+                                        matrix(NA, totalIters - 1, 2)
+                                    colnames(tmp) <- c("lambda1", "lambda2")
+                                    tmp
+                                })
+                     names(lambdaHistory) <<- targetVars
+                 }
+                 
+                 rHats <<- list()
+                 for(j in targetVars)
+                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
              },
 
 ###---------------------------------------------------------------------------###
@@ -604,6 +650,7 @@ MibrrFit$methods(
                      if(usePcStarts) getLambdaStarts()
                      lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
                  }
+                 
                  rownames(lambdaMat) <<- targetVars
                  colnames(lambdaMat) <<- c("lambda1", "lambda2")
                  

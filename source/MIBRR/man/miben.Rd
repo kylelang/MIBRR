@@ -16,7 +16,7 @@ miben(data,
       doMcem       = TRUE,
       lam1PriorPar = NULL,
       lam2PriorPar = NULL,
-      missCode     = NULL,
+      missCode     = NA,
       verbose      = TRUE,
       seed         = NULL,
       control      = list()
@@ -226,9 +226,9 @@ miben(data,
   A reference class object with class \code{MibrrFit}. This object
   contains a great deal of metadata and various pieces of output. Key
   output can be accessed via the convenience functions
-  \code{\link{complete}} and \code{\link{getParams}} as well as the
-  \code{\link{inspect}} function. See documentation for
-  \code{\link{MibbrFit}} for more details.
+  \code{\link{getImpData}} and \code{\link{getParams}} as well as the
+  \code{\link{getField}} function. See documentation for
+  \code{\link{MibrrFit}} for more details.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -251,7 +251,7 @@ miben(data,
 }
 \seealso{
 \code{\link{mibl}}, \code{\link[optimx]{optimx}},
-  \code{\link{complete}}, \code{\link{getParams}}, \code{\link{inspect}}
+  \code{\link{getImpData}}, \code{\link{getParams}}, \code{\link{getField}}
 }
 \examples{
 data(mibrrExampleData)

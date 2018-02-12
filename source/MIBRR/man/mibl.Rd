@@ -9,14 +9,13 @@ Multiple Imputation with the Bayesian LASSO
 }
 \usage{
 mibl(data,
-     nImps,
      targetVars   = NULL,
      ignoreVars   = NULL,
      iterations   = c(100, 10),
      sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
      doMcem       = TRUE,
      lam1PriorPar = NULL,
-     missCode     = NULL,
+     missCode     = NA,
      verbose      = TRUE,
      seed         = NULL,
      control      = list()
@@ -26,9 +25,6 @@ mibl(data,
   \item{data}{
     An incomplete, numeric data matrix or data frame for which to create the
     imputations.
-  }
-  \item{nImps}{
-    An integer giving the number of imputations to create.
   }
   \item{targetVars}{
     An optional character vector giving the column labels for the variables to
@@ -191,9 +187,9 @@ mibl(data,
   A reference class object with class \code{MibrrFit}. This object
   contains a great deal of metadata and various pieces of output. Key
   output can be accessed via the convenience functions
-  \code{\link{complete}} and \code{\link{getParams}} as well as the
-  \code{\link{inspect}} function. See documentation for
-  \code{\link{MibbrFit}} for more details. 
+  \code{\link{getImpData}} and \code{\link{getParams}} as well as the
+  \code{\link{getField}} function. See documentation for
+  \code{\link{MibrrFit}} for more details. 
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -219,15 +215,14 @@ mibl(data,
   function is \strong{absolutely not} ready for use in real-world analyses!
 }
 \seealso{
-\code{\link{miben}}, \code{\link{complete}}, \code{\link{getParams}},
-\code{\link{inspect}}
+\code{\link{miben}}, \code{\link{getImpData}}, \code{\link{getParams}},
+\code{\link{getField}}
 }
 \examples{
 data(mibrrExampleData)
 
 ## MCEM estimation:
 miblOut <- mibl(data       = mibrrExampleData,
-                nImps      = 100,
                 iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")

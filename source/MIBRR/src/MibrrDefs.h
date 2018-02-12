@@ -1,10 +1,10 @@
 // Title:    Header file to hold my global parameter definitions
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-25
-// Modified: 2017-NOV-27
+// Modified: 2018-FEB-12
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //

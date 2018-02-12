@@ -1,10 +1,10 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-NOV-27
+// Modified: 2018-FEB-12
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -23,8 +23,8 @@
 //-----------------------------------------------------------------------------//
 
 #include <RcppEigen.h>
-#include "MibrrData.hpp"
-#include "MibrrSamplers.hpp"
+#include "MibrrData.h"
+#include "MibrrSamplers.h"
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGamma(int n, double shape, double scale)

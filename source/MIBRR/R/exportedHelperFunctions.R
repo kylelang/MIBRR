@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2018-FEB-08
+### Modified: 2018-FEB-12
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -25,7 +25,7 @@
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
-complete <- function(mibrrFit, nImps) {
+getImpData <- function(mibrrFit, nImps) {
     impList <- list()
     for(m in 1 : nImps) impList[[m]] <- mibrrFit$getImpDataset()
     impList
@@ -47,12 +47,8 @@ getParams <- function(mibrrFit, target) {
 
 
 
-## Generate predictions from a fitted BEN or BL model:
-predictMibrr <- function(mibrrFit,
-                         newData,
-                         targetVars = NULL,
-                         nDraws     = 0)
-{
+## Generate posterior predictions from a fitted BEN or BL model:
+postPredict <- function(mibrrFit, newData, targetVars = NULL, nDraws = 0) {
     if(!is.data.frame(newData)) stop("'newData' must be a data.frame")
     if(is.null(targetVars))     targetVars <- mibrrFit$targetVars
     
@@ -84,8 +80,8 @@ predictMibrr <- function(mibrrFit,
 }
 
 
-## Access arbitrary fields in a 'MibrrFit' object via a familiar interface:
-inspect <- function(mibrrFit, what) mibbrFit$field(what)
+## Access arbitrary fields in a 'MibrrFit' object:
+getField <- function(mibrrFit, what) mibrrFit$field(what)
 
 
 ## Calculate the potential scale reduction factor (R-Hat)

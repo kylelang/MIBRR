@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-09
+### Modified: 2018-FEB-12
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -38,8 +38,6 @@ init <- function(doBl,
                  seed,
                  control)
 {
-    if(!is.null(seed)) set.seed(seed)
-    
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
     
     ## Initialize a new MibrrFit object:
@@ -54,14 +52,20 @@ init <- function(doBl,
                          doMcem      = doMcem,
                          doBl        = doBl)
 
+    ## Check the user inputs and resolve a set of target variables:
+    mibrrFit$checkInputs()
+
+    ## Setup the PRNG (make sure each target variable gets its own independent
+    ## RNG stream):
+    if(!is.null(seed))
+        .lec.SetPackageSeed(rep(seed, 6))
+    .lec.CreateStream(paste0("mibrrStream", c(1 : length(mibrrFit$targetVars))))
+    
     ## Store Lambda's prior parameters:
     if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
                                          l2 = as.numeric(lam2PriorPar)
                                          )
     
-    ## Check the user inputs and resolve a set of target variables:
-    mibrrFit$checkInputs()
-       
     ## Update any user-specified control parameters:
     if(length(control) > 0) mibrrFit$setControl(control)
     
@@ -153,6 +157,9 @@ postProcess <- function(mibrrFit) {
     
     ## Provide some pretty names for the output objects:
     mibrrFit$nameOutput()
+
+    ## Clean up the RNG state:
+    .lec.DeleteStream(paste0("mibrrStream", c(1 : mibrrFit$nTargets)))
     
 mibrrFit
 }# END postProcess()

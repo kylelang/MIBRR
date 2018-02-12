@@ -1,5 +1,5 @@
-\name{complete}
-\alias{complete}
+\name{getImpData}
+\alias{getImpData}
 \title{
   Generate multiply imputed datasets.
 }
@@ -9,7 +9,7 @@
   imputed data.
 }
 \usage{
-complete(mibrrFit, nImps)
+getImpData(mibrrFit, nImps)
 }
 \arguments{
   \item{mibrrFit}{
@@ -58,10 +58,10 @@ mibenOut <- miben(data         = mibrrExampleData,
                   ignoreVars   = "idNum",
                   sampleSizes  = c(500, 500),
                   doMcem       = FALSE,
-                  lam1PriorPar = c(1.0, 0.1)
+                  lam1PriorPar = c(1.0, 0.1),
                   lam2PriorPar = c(1.0, 0.1)
                   )
 
 ## Generate 25 imputed datasets:
-mibenImps <- complete(mibrrFit = benOut, nImps = 25)
+mibenImps <- getImpData(mibrrFit = mibenOut, nImps = 25)
 }

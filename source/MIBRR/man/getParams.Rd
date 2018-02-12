@@ -57,13 +57,12 @@ data(mibrrExampleData)
 benOut <- ben(data         = mibrrExampleData,
               y            = "y",
               X            = paste0("x", c(1 : 3)),
-              ignoreVars   = "idNum",
               sampleSizes  = c(500, 500),
               doMcem       = FALSE,
-              lam1PriorPar = c(1.0, 0.1)
+              lam1PriorPar = c(1.0, 0.1),
               lam2PriorPar = c(1.0, 0.1)
               )
 
 ## Extract posterior parameter samples:
-mibenPars <- getParams(mibrrFit = benOut, target = "y")
+benPars <- getParams(mibrrFit = benOut, target = "y")
 }

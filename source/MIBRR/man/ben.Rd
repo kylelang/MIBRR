@@ -15,7 +15,7 @@ ben(data,
     doMcem       = TRUE,
     lam1PriorPar = NULL,
     lam2PriorPar = NULL,
-    missCode     = NULL,
+    missCode     = NA,
     verbose      = TRUE,
     seed         = NULL,
     control      = list()
@@ -221,8 +221,8 @@ ben(data,
   A reference class object with class \code{MibrrFit}. This object
   contains a great deal of metadata and various pieces of output. Key
   output can be accessed via the convenience function
-  \code{\link{getParams}}, and the \code{\link{inspect}} function. See
-  documentation for \code{\link{MibbrFit}} for more details.
+  \code{\link{getParams}}, and the \code{\link{getField}} function. See
+  documentation for \code{\link{MibrrFit}} for more details.
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
@@ -244,7 +244,7 @@ ben(data,
   function is \strong{absolutely not} ready for use in real-world analyses!
 }
 \seealso{
-  \code{\link{bl}}, \code{\link[optimx]{optimx}}, \code{\link{getParams}}, \code{\link{inspect}}
+  \code{\link{bl}}, \code{\link[optimx]{optimx}}, \code{\link{getParams}}, \code{\link{getField}}
 }
 \examples{
 data(mibrrExampleData)

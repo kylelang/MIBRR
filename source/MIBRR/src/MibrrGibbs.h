@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-08
+// Modified: 2018-FEB-12
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -27,8 +27,8 @@
 #ifndef MIBRRGIBBS_H
 #define MIBRRGIBBS_H
 
-#include "MibrrData.hpp"
-#include "MibrrSamplers.hpp"
+#include "MibrrData.h"
+#include "MibrrSamplers.h"
 
 class MibrrGibbs: public MibrrSamplers {
 

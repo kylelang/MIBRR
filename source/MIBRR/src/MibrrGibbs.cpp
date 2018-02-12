@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-09
+// Modified: 2018-FEB-12
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -24,7 +24,7 @@
 //  with this program. If not, see <http://www.gnu.org/licenses/>.             //
 //-----------------------------------------------------------------------------//
 
-#include "MibrrGibbs.hpp"
+#include "MibrrGibbs.h"
 
 //////////////////////// CONSTRUCTORS / DESTRUCTOR //////////////////////////////
   
