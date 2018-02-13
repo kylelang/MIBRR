@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2017-NOV-08
+### Modified: 2018-FEB-13
 
 rm(list = ls(all = TRUE))
 
@@ -12,11 +12,10 @@ library(devtools)
 library(parallel)
 library(MCMCpack)
 library(statmod)
+library(HyperbolicDist)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
-
-saveDate <- format(Sys.time(), "%Y%m%d")
 
 ###---------------------------------------------------------------------------###
 
@@ -32,7 +31,7 @@ colnames(ed.d) <-
 male            <- tmp$gender
 male[male == 2] <- 0
 
-parms$cn <- cn <- setdiff(colnames(bfi), c("gender", "education"))
+cn   <- setdiff(colnames(bfi), c("gender", "education"))
 bfi2 <- data.frame(tmp[ , cn], male, ed.d)
 
 rownames(bfi2) <- NULL
@@ -101,7 +100,7 @@ for(v in 1 : ncol(dat3)) {
 
 ###---------------------------------------------------------------------------###
 
-### Check MIBEN and MIBL ###
+### Test MIBEN and MIBL ###
 
 testFun <- function(rp, data, env) {
     cn       <- env$cn
@@ -119,23 +118,19 @@ testFun <- function(rp, data, env) {
                            pm      = pm,
                            snr     = snr)$data
 
-    mibenOut <- miben(data           = dat2,
-                      nImps          = nImps,
-                      targetVars     = targets$mar,
-                      ignoreVars     = NULL,
-                      iterations     = c(50, 10),
-                      returnConvInfo = FALSE,
-                      returnParams   = FALSE,
-                      verbose        = FALSE)
-
-    miblOut <- mibl(data           = dat2,
-                    nImps          = nImps,
-                    targetVars     = targets$mar,
-                    ignoreVars     = NULL,
-                    iterations     = c(50, 10),
-                    returnConvInfo = FALSE,
-                    returnParams   = FALSE,
-                    verbose        = FALSE)
+    mibenOut <- miben(data       = dat2,
+                      targetVars = targets$mar,
+                      ignoreVars = NULL,
+                      iterations = c(50, 10),
+                      verbose    = FALSE)
+    mibenImps <- getImpData(mibenOut, 100)
+    
+    miblOut <- mibl(data       = dat2,
+                    targetVars = targets$mar,
+                    ignoreVars = NULL,
+                    iterations = c(50, 10),
+                    verbose    = FALSE)
+    miblImps <- getImpData(miblOut, 100)
     
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
@@ -144,21 +139,21 @@ testFun <- function(rp, data, env) {
     for(m in 1 : nImps) {
         ## MIBEN estimates:
         scores         <- scoreItems(keys  = keys,
-                                     items = mibenOut$imps[[m]])$scores
+                                     items = mibenImps[[m]])$scores
         mibenList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                             mA = mean(scores[ , "agree"]),
                             mE = mean(scores[ , "extra"])
                             )
         ## MIBL estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = miblOut$imps[[m]])$scores
+                                    items = miblImps[[m]])$scores
         miblList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
                            )
         ## MICE estimates:
         scores        <- scoreItems(keys  = keys,
-                                    items = complete(miceOut, m))$scores
+                                    items = mice::complete(miceOut, m))$scores
         miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
                            mA = mean(scores[ , "agree"]),
                            mE = mean(scores[ , "extra"])
@@ -171,8 +166,8 @@ testFun <- function(rp, data, env) {
          )
 } # END testFun()
 
-nReps <- 8
-nImps <- 20
+nReps <- 4
+nImps <- 10
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
               )
@@ -217,7 +212,7 @@ mvnMu <- rep(10, 3)
 mvnSigma <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- MIBRR:::drawMVN(nObs, mvnMu, mvnSigma)
+out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -245,6 +240,18 @@ out3.2 <- rinvgauss(nObs, igMu, igLam)
 
 plot(density(out3.1), col = "red")
 lines(density(out3.2), col = "blue")
+
+## GIG sampler:
+gigLam <- 1
+gigChi <- 2
+gigPsi <- 2
+
+out4.1 <- MIBRR:::drawGig(nObs, gigLam, gigChi, gigPsi)
+out4.2 <- rgig(nObs, c(gigLam, gigChi, gigPsi))
+
+plot(density(out4.1), col = "red")
+lines(density(out4.2), col = "blue")
+
 
 ## Incomplte gamma calculation:
 incGamShape <- 10
@@ -325,14 +332,14 @@ testFun <- function(rp, parms) {
                               predReliability = lamSq)
         
         if(class(enOut) != "try-error") {
-            enPred       <- predictMibrr(object  = enOut, newData = testDat)$y
+            enPred       <- postPredict(mibrrFit = enOut, newData = testDat)$y
             mseMat[i, 1] <- mean((enPred - testDat$y)^2)
         } else {
             mseMat[i, 1] <- NA
         }
         
         if(class(blOut) != "try-error") {
-            blPred       <- predictMibrr(object  = blOut, newData = testDat)$y
+            blPred       <- postPredict(mibrrFit = blOut, newData = testDat)$y
             mseMat[i, 2] <- mean((blPred - testDat$y)^2)
         } else {
             mseMat[i, 2] <- NA
@@ -393,52 +400,182 @@ mseList
 
 ### Check Documentation Examples ###
 
-## Datasets:
-data(mibrrExampleData)
-data(predictData)
 
-## MIBEN:
+## MIBEN ##
+?miben
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 mibenOut <- miben(data       = mibrrExampleData,
-                  nImps      = 100,
                   iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
 
-## MIBL:
+## Fully Bayesian estimation:
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+
+## MIBL ##
+?mibl
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 miblOut <- mibl(data       = mibrrExampleData,
-                nImps      = 100,
                 iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
 
-## BEN:
+## Fully Bayesian estimation:
+miblOut <- mibl(data         = mibrrExampleData,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                ignoreVars   = "idNum",
+                sampleSizes  = c(500, 500),
+                doMcem       = FALSE,
+                lam1PriorPar = c(1.0, 0.1)
+                )
+
+
+## BEN ##
+?ben
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 benOut <- ben(data       = mibrrExampleData,
               y          = "y",
               X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
               iterations = c(30, 10)
               )
 
-## BL:
+## Fully Bayesian estimation:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+              doMcem       = FALSE,
+              sampleSizes  = c(500, 500),
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+     
+## BL ##
+?bl
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 blOut <- bl(data       = mibrrExampleData,
             y          = "y",
             X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
             iterations = c(50, 10)
             )
 
-## predictMibrr:
+## Fully Bayesian estimation:
+blOut <- bl(data         = mibrrExampleData,
+            y            = "y",
+            X            = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            doMcem       = FALSE,
+            sampleSizes  = c(500, 500),
+            lam1PriorPar = c(1.0, 0.1)
+            )
+     
+## postPredict ##
+?postPredict
+
+data(predictData)
+
+## Fit a Bayesian elastic net model:
 benOut <- ben(data       = predictData$train,
               y          = "agree",
               X          = setdiff(colnames(predictData$train), "agree"),
               iterations = c(30, 10)
               )
-benPred <- predictMibrr(object = benOut, newData = predictData$test)
 
-mibenOut <- miben(data         = predictData$incomplete,
-                  nImps        = 100,
-                  iterations   = c(30, 10),
-                  returnParams = TRUE)
-mibenPred <- predictMibrr(object = mibenOut, newData = predictData$test)
+## Generate 10 posterior predictions for 'y':
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = 10)
 
-## Info Functions:
+## Generate posterior predictions for 'y' using MAP scores (the default):
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = 0)
+
+## Generate posterior predictions for 'y' using EAP scores:
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = -1)
+
+## Fit chained Bayesian elastic net models to support MI:
+mibenOut <- miben(data = predictData$incomplete, iterations = c(30, 10))
+
+## Generate posterior predictions from elementary imputation models:
+mibenPred <- postPredict(mibrrFit = mibenOut, newData = predictData$test)
+
+## getImpData ##
+?getImpData
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+
+## Generate 25 imputed datasets:
+mibenImps <- getImpData(mibrrFit = mibenOut, nImps = 25)
+
+## getParams ##
+?getParams
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = paste0("x", c(1 : 3)),
+              sampleSizes  = c(500, 500),
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+
+## Extract posterior parameter samples:
+benPars <- getParams(mibrrFit = benOut, target = "y")
+
+## getField ##
+?getField
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = paste0("x", c(1 : 3)),
+              sampleSizes  = c(500, 500),
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+
+## Extract the potential scale reduction factors:
+benRHats <- getField(mibrrFit = benOut, what = "rHats")
+
+## Info Functions ##
+?mibrrL
 mibrrL()
+
+?mibrrW
 mibrrW()

@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2018-FEB-12
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -24,7 +24,7 @@
 //  with this program. If not, see <http://www.gnu.org/licenses/>.             //
 //-----------------------------------------------------------------------------//
 
-#include "MibrrData.hpp"
+#include "MibrrData.h"
 
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
 
@@ -40,8 +40,6 @@ MibrrData::MibrrData(const MatrixXd        &data,
   _respCounts  = respCounts;
   _noMiss      = noMiss;
 }
-
-MibrrData::MibrrData() {}
 
 MibrrData::~MibrrData() {}
 
@@ -86,8 +84,12 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
   MatrixXd tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
   MatrixXd outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
+
+  // Scale the data columns, if necessary
+  //if(_scale) MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
+  //else       MatrixXd tmpMat = _data;
   
-  if(_noMiss) {  // Return full predictor matrix:
+  if(_noMiss) {// Return full predictor matrix:
     outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
     
     outMat.rightCols(nVars - (targetIndex + 1)) =
@@ -225,20 +227,3 @@ int MibrrData::nMiss (int targetIndex) const
 {
   return _data.rows() - _respCounts[targetIndex];
 }
-
-
-/////////////////////////// RANDOM VARIATE SAMPLERS /////////////////////////////
-
-
-VectorXd MibrrData::drawMVN(VectorXd &meanVec, MatrixXd &covMat) const
-{
-  int      nVars = meanVec.size();
-  MatrixXd covCholesky;
-  VectorXd normDraws(nVars);
-  
-  covCholesky = covMat.llt().matrixL();
-  for(int i = 0; i < nVars; i++) normDraws[i] = norm_rand();
-  //VectorXd testVec = covCholesky * normDraws;
-  
-  return meanVec + (covCholesky * normDraws);
-}// END drawMVN()

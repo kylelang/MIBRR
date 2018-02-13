@@ -1,10 +1,10 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-NOV-17
+// Modified: 2018-FEB-12
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -23,43 +23,53 @@
 //-----------------------------------------------------------------------------//
 
 #include <RcppEigen.h>
-#include "MibrrData.hpp"
-#include "MibrrGibbs.hpp"
+#include "MibrrData.h"
+#include "MibrrSamplers.h"
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGamma(int n, double shape, double scale)
 {
-  MibrrGibbs mibrrGibbs;
-  VectorXd   out(n);
-  for(int i = 0; i < n; i++) out[i] = mibrrGibbs.drawInvGamma(shape, scale);
+  MibrrSamplers mibrrSamplers;
+  VectorXd      out(n);
+  for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGamma(shape, scale);
   return out;
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd drawMVN(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat)
+Eigen::MatrixXd drawMvn(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat)
 {
-  MibrrData mibrrData;
-  int       v = meanVec.size();
-  MatrixXd  out(n, v);
-  for(int i = 0; i < n; i++) out.row(i) = mibrrData.drawMVN(meanVec, covMat);
+  MibrrSamplers mibrrSamplers;
+  int          v = meanVec.size();
+  MatrixXd     out(n, v);
+  for(int i = 0; i < n; i++) out.row(i) = mibrrSamplers.drawMvn(meanVec, covMat);
   return out;
 }
 
 // [[Rcpp::export]]
 double calcIncGamma(double shape, double cutVal, bool lowerTail)
 {
-  MibrrGibbs mibrrGibbs;
-  return mibrrGibbs.calcIncGamma(shape, cutVal, lowerTail);
+  MibrrSamplers mibrrSamplers;
+  return mibrrSamplers.calcIncGamma(shape, cutVal, lowerTail);
 }
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGauss(int n, double mu, double lambda)
 {
-  MibrrGibbs mibrrGibbs;
-  VectorXd   out(n);
-  for(int i = 0; i < n; i++) out[i] = mibrrGibbs.drawInvGauss(mu, lambda);
+  MibrrSamplers mibrrSamplers;
+  VectorXd      out(n);
+  for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGauss(mu, lambda);
   return out;
 }
+
+// [[Rcpp::export]]
+Eigen::VectorXd drawGig(int n, double lambda, double chi, double psi)
+{
+  MibrrSamplers mibrrSamplers;
+  VectorXd      out(n);
+  for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawGig(lambda, chi, psi);
+  return out;
+}
+
 
 // [[Rcpp::export]]
 std::vector<int>

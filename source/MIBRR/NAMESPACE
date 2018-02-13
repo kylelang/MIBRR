@@ -1,6 +1,7 @@
 useDynLib(MIBRR)
 
 import(RcppEigen)
+import(methods)
 
 importFrom(Rcpp, evalCpp)
 importFrom(mice, mice, quickpred, complete)
@@ -15,7 +16,14 @@ importFrom(stats,
            rgamma,
            rnorm,
            sd,
-           var)
+           var,
+           density)
+importFrom(rlecuyer,
+           .lec.SetPackageSeed,
+           .lec.CreateStream,
+           .lec.ResetNextSubstream,
+           .lec.GetState,
+           .lec.DeleteStream)
 
 export(mibl,
        miben,
@@ -23,14 +31,17 @@ export(mibl,
        mibrrL,
        ben,
        bl,
-       predictMibrr)
-   
+       postPredict,
+       getImpData,
+       getField,
+       getParams)
+
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their
 ###       implementation.
 
 ## drawInvGamma
-## drawMVN
+## drawMvn
 ## calcIncGamma
 ## drawInvGauss
 ## printObsIndices

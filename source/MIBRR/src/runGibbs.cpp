@@ -1,12 +1,12 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2017-NOV-17
+// Modified: 2018-FEB-12
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -24,32 +24,34 @@
 //  with this program. If not, see <http://www.gnu.org/licenses/>.             //
 //-----------------------------------------------------------------------------//
 
-#include <RcppEigen.h>
-#include "MibrrDefs.hpp"
-#include "MibrrData.hpp"
-#include "MibrrGibbs.hpp"
+#include "MibrrData.h"
+#include "MibrrGibbs.h"
 
 // The following plugin should allow us to use C++11:
 // [[Rcpp::plugins(cpp11)]]
 
 // [[Rcpp::export]]
-Rcpp::List runGibbs(Eigen::MatrixXd data,
-		    Eigen::VectorXd dataScales,
-		    int             nTargets,  
-		    Rcpp::List      missList,
-		    Eigen::VectorXi respCounts,
-		    Eigen::VectorXd lambda1,
-		    Eigen::VectorXd lambda2,
-		    Eigen::VectorXd sigmaStarts,
-		    Eigen::MatrixXd tauStarts,
-		    Eigen::MatrixXd betaStarts,
-		    int             burnSams,
-		    int             totalSams,
-		    bool            verbose,
-		    bool            doBl,
-		    bool            adaptScales,
-		    bool            simpleIntercept,
-		    bool            noMiss)
+Rcpp::List runGibbs(Eigen::MatrixXd           data,
+		    Eigen::VectorXd           dataScales,
+		    int                       nTargets,  
+		    Rcpp::List                missList,
+		    Eigen::VectorXi           respCounts,
+		    Eigen::VectorXd           lambda1,
+		    Eigen::VectorXd           lambda2,
+		    Eigen::VectorXd           l1Parms,
+		    Eigen::VectorXd           l2Parms,
+		    Eigen::VectorXd           sigmaStarts,
+		    Eigen::MatrixXd           tauStarts,
+		    Eigen::MatrixXd           betaStarts,
+		    int                       burnSams,
+		    int                       totalSams,
+		    bool                      verbose,
+		    bool                      doBl,
+		    bool                      fullBayes,
+		    bool                      adaptScales,
+		    bool                      simpleIntercept,
+		    bool                      noMiss,
+		    std::vector<unsigned int> seeds)
 {
   // Unpack the list of missing row indices:
   std::vector< std::vector<int> > missIndices;
@@ -65,7 +67,16 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
 
     if(doBl) mibrrGibbs[j].doBl(); // Using Bayesian LASSO?
-        
+
+    if(fullBayes) { // Fully Bayesian estimation?
+      mibrrGibbs[j].doFullBayes(); 
+      mibrrGibbs[j].setLam1Parms(l1Parms);
+
+      if(!doBl) mibrrGibbs[j].setLam2Parms(l2Parms);
+    }
+    
+    mibrrGibbs[j].seedRng(seeds[j]);
+    
     mibrrGibbs[j].startParameters(betaStartVec,
 				  tauStartArray,
 				  sigmaStarts[j],
@@ -110,10 +121,11 @@ Rcpp::List runGibbs(Eigen::MatrixXd data,
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++)
     outList[j] = 
-      RList::create(Rcpp::Named("imps" ) = mibrrGibbs[j].getImpSam(), 
-		    Rcpp::Named("beta" ) = mibrrGibbs[j].getBetaSam(),
-		    Rcpp::Named("tau"  ) = mibrrGibbs[j].getTauSam(),
-		    Rcpp::Named("sigma") = mibrrGibbs[j].getSigmaSam()
+      RList::create(Rcpp::Named("imps" )  = mibrrGibbs[j].getImpSam(), 
+		    Rcpp::Named("beta" )  = mibrrGibbs[j].getBetaSam(),
+		    Rcpp::Named("tau"  )  = mibrrGibbs[j].getTauSam(),
+		    Rcpp::Named("sigma")  = mibrrGibbs[j].getSigmaSam(),
+		    Rcpp::Named("lambda") = mibrrGibbs[j].getLambdaSam()
 		    );    
 
   return outList;

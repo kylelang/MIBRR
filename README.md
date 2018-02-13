@@ -17,14 +17,14 @@ Thank you for your interest in the MIBRR project! I hope you find my software
 useful!
 
 ## Installation
-The best way to install `MIBRR` is to use the `devtools::install_github` 
-function.
+The best way to install (the development version of) `MIBRR` is to use the 
+`devtools::install_github` function.
 
 1. First, make sure that you have `devtools` installed on your system
 2. Next, execute the following lines:
 
 		library(devtools)
-		install_github("kylelang/MIBRR/source/MIBRR")
+		install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
     
 3. Finally, load `MIBRR` and enjoy:
 
@@ -45,33 +45,56 @@ version number for the tar-ball that you downloaded.
 ## Examples
 
 The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and 
-`bl`. 
+`bl`.
 
+- The underlying model in each of these four primary functions can be estimated
+  using either Markov Chain Expectation Maximization (MCEM) or fully Bayesian
+  modeling.
 - The `miben` and `mibl` functions do multiple imputation using the Bayesian 
-  elastic net and Bayesian LASSO, respectively. 
-- The `ben` and `bl` functions fit Bayesian elastic net and Bayesian LASSO
-  models to incomplete data without returning and imputed datasets.
+  elastic net and Bayesian LASSO, respectively.
+  
+    - A list of imputed datasets can be generated using the `getImpData` 
+	  function.
+	
 - Basic missing data treatments using `miben` or `mibl` might look like the 
   following:
 
 		## Load some data:
 		data(mibrrExampleData)
 
-		## Create M = 100 multiply imputed datasets:
+		## Estimate the imputation models using MCEM:
 		mibenOut <- miben(data       = mibrrExampleData,
-                          nImps      = 100,
                           targetVars = c("y", paste0("x", c(1 : 3))),
                           ignoreVars = "idNum")
 			  
 		miblOut <- mibl(data       = mibrrExampleData,
-                        nImps      = 100,
                         targetVars = c("y", paste0("x", c(1 : 3))),
                         ignoreVars = "idNum")
+						
+		## Estimate the imputation models using fully Bayesian modeling:
+		mibenOut <- miben(data         = mibrrExampleData,
+		                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                          ignoreVars   = "idNum",
+                          doMcem       = FALSE,
+                          sampleSizes  = c(500, 500),
+                          lam1PriorPar = c(1.0, 0.1),
+                          lam2PriorPar = c(1.0, 0.1)
+                          )
+			  
+		miblOut <- mibl(data         = mibrrExampleData,
+		                targetVars   = c("y", paste0("x", c(1 : 3))),
+                        ignoreVars   = "idNum",
+                        doMcem       = FALSE,
+                        sampleSizes  = c(500, 500),
+                        lam1PriorPar = c(1.0, 0.1)
+                        )
 				
-		## Extract list of imputed datasets:
-		mibenImps <- mibenOut$imps
-		miblImps  <- miblOut$imps
+		## Extract list of 100 imputed datasets:
+		mibenImps <- getImpData(mibrrFit = mibenOut, nImps = 100)
+		miblImps  <- getImpData(mibrrFit = miblOut, nImps = 100)
 		
+- The `ben` and `bl` functions fit Bayesian elastic net and Bayesian LASSO
+  models to incomplete data without returning and imputed datasets.
 - Use the following to fit models using `ben` or `bl`:
 
 		## Load some data:
@@ -80,21 +103,44 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		trainData <- predictData$train
 		testData  <- predictData$test
 		
-		## Estimate a Bayesian elastic net model:
+		## Estimate a Bayesian elastic net model using MCEM:
 		benOut <- ben(data = trainData,
                       y    = "agree",
                       X    = setdiff(colnames(trainData), "agree")
                       )
 		   
-		## Estimate a Bayesian LASSO model:
+		## Estimate a Bayesian LASSO model using MCEM:
 		blOut <- bl(data = trainData,
                     y    = "agree",
                     X    = setdiff(colnames(trainData), "agree")
                     )
 
+		## Estimate a Bayesian elastic net model using full Bayes:
+		benOut <- ben(data         = trainData,
+                      y            = "agree",
+                      X            = setdiff(colnames(trainData), "agree"),
+                      doMcem       = FALSE,
+                      sampleSizes  = c(500, 500),
+                      lam1PriorPar = c(1.0, 0.1),
+                      lam2PriorPar = c(1.0, 0.1)
+                      )
+		   
+		## Estimate a Bayesian LASSO model using full Bayes:
+		blOut <- bl(data         = trainData,
+                    y            = "agree",
+                    X            = setdiff(colnames(trainData), "agree"),
+                    doMcem       = FALSE,
+                    sampleSizes  = c(500, 500),
+                    lam1PriorPar = c(1.0, 0.1)
+                    )
+					
+		## Extract posterior parameter samples:
+		benPars <- getParams(mibrrFit = benOut, target = "agree")
+		blPars  <- getParams(mibrrFit = blOut, target = "agree")
+		
 		## Generate out-of-sample predictions:
-	    benPred <- predictMibrr(object = benOut, newData = testData)
-		blPred  <- predictMibrr(object = blOut, newData = testData)
+	    benPred <- postPredict(mibrrFit = benOut, newData = testData)
+		blPred  <- postPredict(mibrrFit = blOut, newData = testData)
 		
 - Posterior predictions can also be generated from `miben` and `mibl` models:
 
@@ -104,13 +150,13 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		missData <- predictData$incomplete
 		testData <- predictData$test
 		
-		## Create M = 100 multiply imputed datasets:
-		mibenOut <- miben(data = missData, nImps = 100)
-		miblOut  <- mibl(data = missData, nImps  = 100)
+		## Estimate the imputation models:
+		mibenOut <- miben(data = missData)
+		miblOut  <- mibl(data = missData)
 		
 		## Generate out-of-sample predictions:
-	    mibenPred <- predictMibrr(object = mibenOut, newData = testData)
-		miblPred  <- predictMibrr(object = miblOut, newData = testData)
+	    mibenPred <- postPredict(mibrrFit = mibenOut, newData = testData)
+		miblPred  <- postPredict(mibrrFit = miblOut, newData = testData)
 		
 		
 [builds]:  https://github.com/kylelang/MIBRR/tree/master/builds/

@@ -1,12 +1,12 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2017-NOV-17
+// Modified: 2018-FEB-12
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
 //                                                                             //
 //  This file is part of MIBRR.                                                //
 //                                                                             //
@@ -27,12 +27,10 @@
 #ifndef MIBRRGIBBS_H
 #define MIBRRGIBBS_H
 
-#include "MibrrData.hpp"
+#include "MibrrData.h"
+#include "MibrrSamplers.h"
 
-using namespace std;
-using namespace Eigen;
-
-class MibrrGibbs {
+class MibrrGibbs: public MibrrSamplers {
 
 public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
@@ -64,6 +62,9 @@ public:
   MatrixXd getImpSam() const;
   // @return: (burnt in) Gibbs sample of the DV
 
+  MatrixXd getLambdaSam() const;
+  // @return: (burnt in) Gibbs sample of the penalty parameters
+  
   int getNDraws() const;
   // @return: current number of retained Gibbs sampling draws
 
@@ -121,6 +122,18 @@ public:
   // @effect: use the unconditional mean of the target as the mean of the
   //          intercept's posterior
 
+  void doFullBayes();
+  // @effect: set the estimation method to fully Bayesian Gibbs sampling
+
+  void setLam1Parms  (VectorXd&);
+  // @param: new value of lambda1 prior parameters
+  
+  void setLam2Parms  (VectorXd&);
+  // @param: new value of lambda2^2 prior parameters
+  
+  void setLambdaParms  (VectorXd&);
+  // @param: concatenated values for lambda1 & lambda2^2 prior parameters
+  
   void setLambdas(VectorXd&);
   // @param: new value for Lambda
 
@@ -150,34 +163,11 @@ public:
   // @effect: start storing the parameters' Gibbs sampled values
 
 
-  ////////////////////////// RANDOM VARIATE SAMPLERS ////////////////////////////
-
-
-  double drawInvGamma(double, double) const;
-  // @param1: shape parameter
-  // @param2: scale parameter
-  // @return: random Inverse Gamma variate
-
-  double calcIncGamma(const double, const double, const bool);
-  // @param1: shape parameter of the underlying gamma distribution
-  // @param2: threshold value cutting off the upper or lower tail
-  // (i.e., the underlying variate whose probability or [1 - probability] 
-  // is being returned)
-  // @param3: true = lower incomplete gamma, false = upper incomplete gamma
-  // @return: value of the incomplete gamma function (i.e., the un-normalized 
-  // area under the upper or lower tail of the Gamma CDF).
-
-  // The following function was adapted from source code originally
-  // implemented by Robert E. Wheeler (2001-MAR) in the R package SuppDists:
-  double drawInvGauss(const double, const double);
-  // @param1: mean parameter (mu)
-  // @param2: shape parameter (lambda)
-  // @return: random variate from the inverse Gaussian distribution
-
-
   ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
-
+  void updateLambdas(const MibrrData&);
+  // @effect: update _lambdas based on current values of other member variables
+  
   void updateTaus(const MibrrData&);
   // @param:  an initialized MibrrData object
   // @effect: update _taus based on current values of other member variables
@@ -221,10 +211,13 @@ private:
   ArrayXd  _taus;
   double   _sigma;
   VectorXd _lambdas;
+  VectorXd _l1Parms;
+  VectorXd _l2Parms;
   MatrixXd _betaSam;
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;
   MatrixXd _impSam;
+  MatrixXd _lambdaSam;
   int      _targetIndex;
   int      _nDraws;
   int      _drawNum;
@@ -233,6 +226,7 @@ private:
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _simpleIntercept;
+  bool     _fullBayes;
 };
 
 #endif

@@ -1,5 +1,6 @@
 # Change Log
-All notable changes to the **MIBRR** project will be documented in this file.
+All notable changes to the **MIBRR** project (and some not so notable ones) will 
+be documented in this file.
 
 The format is based on [Keep a Changelog][kacl], and this project (attempts to) 
 adhere to [Semantic Versioning][sv].
@@ -13,6 +14,53 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
+## 0.0.0.9003 - 2018-02-13
+
+### Changed
+- Updated all documentation files (they still need work, though).
+- Updated the development branch README file.
+- Improved the way random numbers are passed to C++ to seed the samplers class.
+- Header file extension changed from '.hpp' to '.h' to appease CRAN checks.
+- Cleaning up doc files
+- `predictMibrr` renamed to `postPredict`
+- Cleaned up the `initialize()` member function and implemented it in a less 
+  stupid way
+
+### Added 
+- Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters
+- A `getImpData` function to replace missing values and generate the mulitply
+  imputed datasets after a run of `miben` or `mibl`.
+- A `getParams` function to extract the posterior samples of the model parameters
+  from a fitted `MibrrFit` object.
+- An `getField` function to extract arbitrary fields from a `MibrrFit` object.
+- Documentation for `getImpData`, `getField`, `getParams` functions and for the 
+  `MibrrFit` class.
+- Options to generate predictions for MAP scores and EAP scores in `postPredict`
+
+## 0.0.0.9002 - 2018-02-08
+
+### Changed
+- Removed the `mibrr` function. The new `init`, `mcem`, and `postProcess` 
+  subroutines are directly wrapped by `miben`, `mibl`, `ben`, `bl`.
+- Pulled all main exported functions into new source file: 
+  "exportedPrimaryFunctions.R"
+- Broke core estimation subroutines into a new source files "subroutines.R"
+- Pulled all samplers into a seperate class `MibrrSamplers`
+
+    - `MibrrGibbs` now extends `MibrrSamplers`
+
+- Moved many R functions into the `MibrrFit` class as methods
+- Broke optimization/Gibbs sampling routines out into a seperate source file: 
+  "02_EstimationMethods.R"
+- Broke exported helper functions into a seperate source file: 
+  "exportedHelperFunctions.R"
+	  
+### Added
+- A generalized inverse Gaussian sampler
+- A metadata Reference Class: `MibrrFit`
+
+    - Objects returned by `MIBRR` calls will now have class `MibrrFit`
+	
 ## 0.0.0.9001 - 2018-02-06
 
 ### Added
