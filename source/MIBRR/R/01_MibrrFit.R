@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-12
+### Modified: 2018-FEB-13
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
@@ -94,19 +94,14 @@ MibrrFit$methods(
                           iterations        = as.integer(NA),
                           sampleSizes       = list(),
                           missCode          = as.integer(NA),
-                          seed              = as.integer(NA),
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
                           doBl              = as.logical(NA),
+                          seed              = as.integer(NA),
                           checkConv         = TRUE,
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
-                          lambda1Starts     = as.numeric(NA),
-                          lambda2Starts     = as.numeric(NA),
-                          l1Pars            = as.numeric(NA),
-                          l2Pars            = as.numeric(NA),
                           usePcStarts       = FALSE,
-                          smoothingWindow   = as.numeric(NA),
                           center            = TRUE,
                           scale             = TRUE,
                           adaptScales       = TRUE,
@@ -121,28 +116,7 @@ MibrrFit$methods(
                           optCheckKkt       = TRUE,
                           optMethod         = "L-BFGS-B",
                           optBoundLambda    = TRUE,
-                          dataMeans         = as.numeric(NA),
-                          dataScales        = as.numeric(NA),
-                          gibbsOut          = list(),
-                          ignoredColumns    = data.frame(NULL),
-                          rawNames          = "",
-                          impRowsPool       = as.integer(NA),
-                          missList          = list(),
-                          nChains           = 1L,
-                          rHats             = list(),
-                          lambdaMat         = matrix(NA),
-                          lambdaHistory     = list(),
-                          betaStarts        = matrix(NA),
-                          tauStarts         = matrix(NA),
-                          sigmaStarts       = as.numeric(NA),
-                          userMissCode      = as.logical(NA),
-                          missCounts        = as.integer(NA),
-                          nTargets          = as.integer(NA),
-                          nVar              = as.integer(NA),
-                          nPreds            = as.integer(NA),
-                          nObs              = as.integer(NA),
-                          totalIters        = as.integer(NA)
-                          )
+                          nChains           = 1L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -151,15 +125,13 @@ MibrrFit$methods(
                      iterations        <<- iterations
                      sampleSizes       <<- sampleSizes
                      missCode          <<- missCode
-                     seed              <<- seed
                      doImp             <<- doImp
                      doMcem            <<- doMcem
                      doBl              <<- doBl
+                     seed              <<- seed
                      checkConv         <<- checkConv
                      verbose           <<- verbose
                      convThresh        <<- convThresh
-                     l1Pars            <<- l1Pars
-                     l2Pars            <<- l2Pars
                      usePcStarts       <<- usePcStarts
                      center            <<- center
                      scale             <<- scale
@@ -175,108 +147,7 @@ MibrrFit$methods(
                      optCheckKkt       <<- optCheckKkt
                      optMethod         <<- optMethod
                      optBoundLambda    <<- optBoundLambda
-                     dataMeans         <<- dataMeans
-                     dataScales        <<- dataScales
-                     gibbsOut          <<- gibbsOut
-                     ignoredColumns    <<- ignoredColumns
-                     rawNames          <<- rawNames
-                     impRowsPool       <<- impRowsPool
-                     missList          <<- missList
                      nChains           <<- nChains
-                     lambdaMat         <<- lambdaMat
-                     betaStarts        <<- betaStarts
-                     tauStarts         <<- tauStarts
-                     sigmaStarts       <<- sigmaStarts
-                     
-                     ## Don't use FIML for summary stats when they're not used:
-                     if(!center & !scale) fimlStarts <<- FALSE
-                     
-                     ## Save the original variable names:
-                     rawNames <<- colnames(data)
-                     
-                     ## Set aside the 'ignored' columns:
-                     if(length(ignoreVars) > 0) {
-                         ignoredColumns <<- as.data.frame(data[ , ignoreVars])
-                         if(length(ignoreVars) == 1)
-                             colnames(ignoredColumns) <<- ignoreVars
-                         data <<- data[ , setdiff(colnames(data), ignoreVars)]
-                     }
-                     
-                     ## Deal with empty 'targetVars':
-                                        #if(length(targetVars) == 0)
-                                        #    targetVars <- setdiff(colnames(data), ignoreVars)
-                     
-                     ## Re-order non-ignored data columns and store as data
-                     #if(length(targetVars) > 0)
-                     #data <<- data.frame(
-                     #    data[ , targetVars],
-                     #    data[ , setdiff(colnames(data),
-                     #                    c(targetVars, ignoreVars)
-                     #                    )
-                     #         ]
-                     #)
-                     
-                     ## Hack to deal with 1D matrix conversion to vector:
-                     #if(length(targetVars) == 1)
-                     #    colnames(data)[1] <<- targetVars
-                     
-                     ## Store some useful metadata:
-                     #nTargets <<- as.integer(length(targetVars))
-                     nVar     <<- as.integer(ncol(.self$data))
-                     nPreds   <<- as.integer(.self$nVar - 1)
-                     nObs     <<- as.integer(nrow(.self$data))
-                     
-                     #tauStarts <<- betaStarts <<-
-                     #    matrix(NA, .self$nPreds, .self$nTargets)
-
-                     ## Initialize penalty parameter-related stuff:
-                     #lambda1Starts <<- rep(0.5, .self$nTargets)
-                     #lambda2Starts <<- rep(.self$nPreds / 10, .self$nTargets)
-                     
-                     if(doMcem) {
-                         smoothingWindow <<- as.integer(
-                             min(10, ceiling(iterations[1] / 10))
-                         )
-                         
-                         totalIters <<- sum(iterations)
-                         
-                         #lambdaHistory <<-
-                         #    lapply(targetVars,
-                         #           function(x) {
-                         #               tmp <-
-                         #                   matrix(NA, .self$totalIters - 1, 2)
-                         #               colnames(tmp) <- c("lambda1", "lambda2")
-                         #               tmp
-                         #           })
-                         #names(lambdaHistory) <<- targetVars
-                     }
-                                        
-                     rHats <<- list()
-                     for(j in targetVars)
-                         rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
-                   
-                     ## Replace missCode entries in data with NAs
-                     if(!is.na(missCode)) {
-                         userMissCode                 <<- TRUE
-                         data[.self$data == missCode] <<- NA
-                     }
-                     else {
-                         userMissCode <<- FALSE
-                         missCode     <<- -999L
-                     }
-
-                     missCounts <<-
-                         sapply(colSums(is.na(.self$data)), as.integer)
-                     
-                     ## Create a list of missing elements in each target variable
-                     ## NOTE: Subtract 1 from each index vector to base indices
-                     ##       at 0 for C++
-                     missList <<-
-                         lapply(.self$data, function(x) which(is.na(x)) - 1)
-
-                     ## Generate a pool of potential imputation indices:
-                     if(doImp) impRowsPool <<-
-                                   1 : sampleSizes[[length(sampleSizes)]][2]
                  },
              
 ################################### MUTATORS ####################################
@@ -340,7 +211,8 @@ MibrrFit$methods(
              
              getImpDataset = function(reset = FALSE) {
                  "Fill missing values to produce a single imputed dataset"
-                 if(reset) impRowsPool <<- 1 : sampleSizes[[3]][2]
+                 if(reset)
+                     impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
                  
                  tmp <- data # Make a local copy of 'data'
                  
@@ -354,8 +226,10 @@ MibrrFit$methods(
                  }
                  
                  ## Restructure imputed data to match the raw data layout:
-                 if(preserveStructure)
+                 if(preserveStructure & length(ignoreVars) > 0)
                      data.frame(tmp, ignoredColumns)[ , rawNames]
+                 else if(preserveStructure)
+                     tmp[ , rawNames]
                  else
                      tmp
              },
@@ -379,8 +253,64 @@ MibrrFit$methods(
 
 ###---------------------------------------------------------------------------###
 
-             checkInputs = function() {
-                 "Check the user inputs and isolate a set of target variables"
+             processInputs = function() {
+                 "Process and check the user inputs and isolate a set of target variables"
+                 
+                 ## Process the Raw Inputs ##
+                 
+                 ## Don't use FIML for summary stats when they're not used:
+                 if(!center & !scale) fimlStarts <<- FALSE
+                 
+                 ## Save the original variable names:
+                 rawNames <<- colnames(data)
+               
+                 ## Set aside the 'ignored' columns:
+                 if(length(ignoreVars) > 0) {
+                     ignoredColumns <<- as.data.frame(data[ , ignoreVars])
+                     if(length(ignoreVars) == 1)
+                         colnames(ignoredColumns) <<- ignoreVars
+                     data <<- data[ , setdiff(colnames(data), ignoreVars)]
+                 }
+                                 
+                 ## Store some useful metadata:
+                 nVar   <<- as.integer(ncol(data))
+                 nPreds <<- as.integer(nVar - 1)
+                 nObs   <<- as.integer(nrow(data))
+
+                 if(doMcem) {
+                     smoothingWindow <<- as.integer(
+                         min(10, ceiling(iterations[1] / 10))
+                     )
+                     
+                     totalIters <<- sum(iterations)
+                 }
+                 
+                 rHats <<- list()
+                 for(j in targetVars)
+                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
+                 
+                 ## Replace missCode entries in data with NAs
+                 if(!is.na(missCode)) {
+                     userMissCode           <<- TRUE
+                     data[data == missCode] <<- NA
+                 }
+                 else {
+                     userMissCode <<- FALSE
+                     missCode     <<- -999L
+                 }
+
+                 missCounts <<- sapply(colSums(is.na(data)), as.integer)
+                 
+                 ## Create a list of missing elements in each target variable
+                 ## NOTE: Subtract 1 from each index vector to base indices
+                 ##       at 0 for C++
+                 missList <<- lapply(data, function(x) which(is.na(x)) - 1)
+
+                 ## Generate a pool of potential imputation indices:
+                 if(doImp)
+                     impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
+
+                 ## Check Inputs' Admissability ##
                  
                  ## Check for target variables. When no targets are given, all
                  ## incomplete variables not listed in 'ignoreVars' are imputed.
@@ -388,7 +318,9 @@ MibrrFit$methods(
                      if(doImp) {
                          targetCandidates <-
                              colnames(data)[!colnames(data) %in% ignoreVars]
-                         warning("You did not specify any target variables, so I will impute the missing data on\nevery variable in 'data' that is not listed in 'ignoreVars'.\n")        
+                         warning("You did not specify any target variables, so I will impute the missing data on\nevery variable in 'data' that is not listed in 'ignoreVars'.\n",
+                                 call.      = FALSE,
+                                 immediate. = TRUE)        
                      } else {
                          stop("Please specify a DV.")
                      }
@@ -419,12 +351,12 @@ MibrrFit$methods(
                  if(doImp) {
                      targetVars <<- targetCandidates[!completeTargets]
                      if(any(completeTargets))
-                         warning(
-                             paste0("The potential target variables {",
-                                    paste(targetCandidates[completeTargets],
-                                          collapse = ", "),
-                                    "} are fully observed.\nThese items will not be imputed.\n")
-                         )
+                         warning(paste0("The potential target variables {",
+                                        paste(targetCandidates[completeTargets],
+                                              collapse = ", "),
+                                        "} are fully observed.\nThese items will not be imputed.\n"),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
                  }
 
                  ## Do some housekeeping that needs veridical 'targetVars' ##
@@ -594,8 +526,9 @@ MibrrFit$methods(
                                         convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxBetaRHat, 4),
-                                        ".\nConsider increasing the size of the (retained) Gibbs samples.")
-                                 )
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
                      }
                      if(badTauCount > 0) {
                          warning(paste0("While imputing ",
@@ -606,8 +539,9 @@ MibrrFit$methods(
                                         convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxTauRHat, 4),
-                                        ".\nConsider increasing the size of the (retained) Gibbs samples.")
-                                 )
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
                      }
                      if(badSigmaFlag) {
                          warning(paste0("While imputing ",
@@ -615,7 +549,9 @@ MibrrFit$methods(
                                         ", Sigma's final Gibbs sample ",
                                         "may not have converged.\nR-Hat = ",
                                         round(sigmaRHat, 4),
-                                        ".\nConsider increasing the size of the (retained) Gibbs samples."))
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
                      }
                  }# CLOSE for(j in targetVars)
              },

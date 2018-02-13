@@ -1,11 +1,9 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2018-FEB-09
+### Modified: 2018-FEB-13
 
 rm(list = ls(all = TRUE))
-
-                                        #install.packages("HyperbolicDist", repos = "http://cloud.r-project.org")
 
 library(mitools)
 library(psych)
@@ -18,8 +16,6 @@ library(HyperbolicDist)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
-
-saveDate <- format(Sys.time(), "%Y%m%d")
 
 ###---------------------------------------------------------------------------###
 
@@ -127,14 +123,14 @@ testFun <- function(rp, data, env) {
                       ignoreVars = NULL,
                       iterations = c(50, 10),
                       verbose    = FALSE)
-    mibenImps <- MIBRR::complete(mibenOut, 100)
+    mibenImps <- getImpData(mibenOut, 100)
     
     miblOut <- mibl(data       = dat2,
                     targetVars = targets$mar,
                     ignoreVars = NULL,
                     iterations = c(50, 10),
                     verbose    = FALSE)
-    miblImps <- MIBRR::complete(miblOut, 100)
+    miblImps <- getImpData(miblOut, 100)
     
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
@@ -170,7 +166,7 @@ testFun <- function(rp, data, env) {
          )
 } # END testFun()
 
-nReps <- 3
+nReps <- 4
 nImps <- 10
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
@@ -180,7 +176,7 @@ simOut <- mclapply(X        = c(1 : nReps),
                    FUN      = testFun,
                    data     = bfi2,
                    env      = parent.frame(),
-                   mc.cores = 3)
+                   mc.cores = 4)
 
 tmp <- do.call(rbind, lapply(simOut, unlist))
 
@@ -336,14 +332,14 @@ testFun <- function(rp, parms) {
                               predReliability = lamSq)
         
         if(class(enOut) != "try-error") {
-            enPred       <- predictMibrr(mibrrFit = enOut, newData = testDat)$y
+            enPred       <- postPredict(mibrrFit = enOut, newData = testDat)$y
             mseMat[i, 1] <- mean((enPred - testDat$y)^2)
         } else {
             mseMat[i, 1] <- NA
         }
         
         if(class(blOut) != "try-error") {
-            blPred       <- predictMibrr(mibrrFit = blOut, newData = testDat)$y
+            blPred       <- postPredict(mibrrFit = blOut, newData = testDat)$y
             mseMat[i, 2] <- mean((blPred - testDat$y)^2)
         } else {
             mseMat[i, 2] <- NA
@@ -404,63 +400,182 @@ mseList
 
 ### Check Documentation Examples ###
 
-## Datasets:
-data(mibrrExampleData)
-data(predictData)
 
-## MIBEN:
+## MIBEN ##
+?miben
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 mibenOut <- miben(data       = mibrrExampleData,
-                  nImps      = 100,
                   iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
 
-## MIBL:
+## Fully Bayesian estimation:
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+
+## MIBL ##
+?mibl
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 miblOut <- mibl(data       = mibrrExampleData,
-                nImps      = 100,
                 iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
 
-## BEN:
+## Fully Bayesian estimation:
+miblOut <- mibl(data         = mibrrExampleData,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                ignoreVars   = "idNum",
+                sampleSizes  = c(500, 500),
+                doMcem       = FALSE,
+                lam1PriorPar = c(1.0, 0.1)
+                )
+
+
+## BEN ##
+?ben
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 benOut <- ben(data       = mibrrExampleData,
               y          = "y",
               X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
               iterations = c(30, 10)
               )
 
-## BL:
+## Fully Bayesian estimation:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+              doMcem       = FALSE,
+              sampleSizes  = c(500, 500),
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+     
+## BL ##
+?bl
+
+data(mibrrExampleData)
+
+## MCEM estimation:
 blOut <- bl(data       = mibrrExampleData,
             y          = "y",
             X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
             iterations = c(50, 10)
             )
 
-## predictMibrr:
+## Fully Bayesian estimation:
+blOut <- bl(data         = mibrrExampleData,
+            y            = "y",
+            X            = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
+            doMcem       = FALSE,
+            sampleSizes  = c(500, 500),
+            lam1PriorPar = c(1.0, 0.1)
+            )
+     
+## postPredict ##
+?postPredict
+
+data(predictData)
+
+## Fit a Bayesian elastic net model:
 benOut <- ben(data       = predictData$train,
               y          = "agree",
               X          = setdiff(colnames(predictData$train), "agree"),
               iterations = c(30, 10)
               )
-benPred <- predictMibrr(object = benOut, newData = predictData$test)
 
-mibenOut <- miben(data         = predictData$incomplete,
-                  nImps        = 100,
-                  iterations   = c(30, 10),
-                  returnParams = TRUE)
-mibenPred <- predictMibrr(object = mibenOut, newData = predictData$test)
+## Generate 10 posterior predictions for 'y':
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = 10)
 
-## Info Functions:
-mibrrL()
-mibrrW()
+## Generate posterior predictions for 'y' using MAP scores (the default):
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = 0)
 
-## Look at documentation:
-?miben
-?mibl
-?MibrrFit
-?inspect
-?predictMibrr
-?ben
-?bl
-?complete
+## Generate posterior predictions for 'y' using EAP scores:
+benPred <- postPredict(mibrrFit = benOut,
+                       newData  = predictData$test,
+                       nDraws   = -1)
+
+## Fit chained Bayesian elastic net models to support MI:
+mibenOut <- miben(data = predictData$incomplete, iterations = c(30, 10))
+
+## Generate posterior predictions from elementary imputation models:
+mibenPred <- postPredict(mibrrFit = mibenOut, newData = predictData$test)
+
+## getImpData ##
+?getImpData
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+
+## Generate 25 imputed datasets:
+mibenImps <- getImpData(mibrrFit = mibenOut, nImps = 25)
+
+## getParams ##
 ?getParams
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = paste0("x", c(1 : 3)),
+              sampleSizes  = c(500, 500),
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+
+## Extract posterior parameter samples:
+benPars <- getParams(mibrrFit = benOut, target = "y")
+
+## getField ##
+?getField
+
+data(mibrrExampleData)
+
+## Fit a Bayesian elastic net model:
+benOut <- ben(data         = mibrrExampleData,
+              y            = "y",
+              X            = paste0("x", c(1 : 3)),
+              sampleSizes  = c(500, 500),
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1)
+              )
+
+## Extract the potential scale reduction factors:
+benRHats <- getField(mibrrFit = benOut, what = "rHats")
+
+## Info Functions ##
+?mibrrL
+mibrrL()
+
+?mibrrW
+mibrrW()

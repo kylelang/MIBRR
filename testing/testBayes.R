@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2018-FEB-06
-### Modified: 2018-FEB-12
+### Modified: 2018-FEB-13
 
 rm(list = ls(all = TRUE))
 
@@ -9,6 +9,7 @@ library(mitools)
 library(psych)
 library(MIBRR)
 library(parallel)
+library(devtools)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
@@ -65,8 +66,7 @@ mibenOut <- miben(data         = dat2,
                   lam2PriorPar = c(1.0, 0.1),
                   verbose      = TRUE)
 
-mibenImps <- MIBRR::complete(mibenOut, 100)
-
+mibenImps <- getImpData(mibenOut, 100)
 
 miblOut <- mibl(data         = dat2,
                 targetVars   = targets$mar,
@@ -76,7 +76,7 @@ miblOut <- mibl(data         = dat2,
                 lam1PriorPar = c(1.0, 0.1),
                 verbose      = TRUE)
 
-miblImps <- MIBRR::complete(miblOut, 100)
+miblImps <- getImpData(miblOut, 100)
 
 benOut <- ben(data         = bfi2,
               y            = "A1",
@@ -87,7 +87,7 @@ benOut <- ben(data         = bfi2,
               lam2PriorPar = c(1.0, 0.1),
               verbose      = TRUE)
 
-benPars <- MIBRR:::getParams(benOut, "A1")
+benPars <- getParams(benOut, "A1")
             
 blOut <- bl(data         = bfi2,
             y            = "A1",
@@ -97,7 +97,7 @@ blOut <- bl(data         = bfi2,
             lam1PriorPar = c(1.0, 0.1),
             verbose      = TRUE)
 
-blPars <- MIBRR:::getParams(blOut, "A1")
+blPars <- getParams(blOut, "A1")
 
 ###---------------------------------------------------------------------------###
 
@@ -179,7 +179,7 @@ testFun1 <- function(rp, data, parms) {
                         sampleSizes  = parms$samSizes,
                         lam1PriorPar = c(1.0, vals[1]),
                         verbose      = parms$verbose)
-        imps <- MIBRR::complete(fit, nImps)
+        imps <- getImpData(fit, nImps)
         
         resList <- list()
         for(m in 1 : nImps) {
@@ -249,7 +249,6 @@ lines(tmp3[ , 3], col = "blue")
 
 ### Compare Fully Bayesian and MCEM Estimation ###
 
-
 testFun2 <- function(rp, data, parms) {
     cat(paste0("Doing replication ", rp, "\n"))
     
@@ -274,7 +273,7 @@ testFun2 <- function(rp, data, parms) {
                          ignoreVars = NULL,
                          iterations = parms$iterations,
                          verbose    = parms$verbose)
-        mcemImps <- MIBRR::complete(mcemFit, nImps)
+        mcemImps <- getImpData(mcemFit, nImps)
         
         bayesFit <- miben(data         = dat2,
                           targetVars   = targets$mar,
@@ -284,7 +283,7 @@ testFun2 <- function(rp, data, parms) {
                           lam1PriorPar = parms$l1Par,
                           lam2PriorPar = parms$l2Par,
                           verbose      = parms$verbose)
-        bayesImps <- MIBRR::complete(bayesFit, nImps)
+        bayesImps <- getImpData(bayesFit, nImps)
     }
     else {
         mcemFit <- mibl(data       = dat2,
@@ -292,7 +291,7 @@ testFun2 <- function(rp, data, parms) {
                         ignoreVars = NULL,
                         iterations = parms$iterations,
                         verbose    = parms$verbose)
-        mcemImps <- MIBRR::complete(mcemFit, nImps)
+        mcemImps <- getImpData(mcemFit, nImps)
         
         bayesFit <- mibl(data         = dat2,
                          targetVars   = targets$mar,
@@ -301,7 +300,7 @@ testFun2 <- function(rp, data, parms) {
                          sampleSizes  = parms$samSizes,
                          lam1PriorPar = parms$l1Par,
                          verbose      = parms$verbose)
-        bayesImps <- MIBRR::complete(bayesFit, nImps)
+        bayesImps <- getImpData(bayesFit, nImps)
     }
     
     mcemRes <- bayesRes <- list()
@@ -326,7 +325,7 @@ testFun2 <- function(rp, data, parms) {
 } # END testFun()
 
 
-nReps <- 20
+nReps <- 8
 nImps <- 100
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
               extra = c("-E1", "-E2", "E3", "E4", "E5")
@@ -357,7 +356,6 @@ tmp  <- do.call(rbind, lapply(simOut, unlist))
 
 mcemFrame  <- tmp[ , grep("mcem", colnames(tmp))]
 bayesFrame <- tmp[ , grep("bayes", colnames(tmp))]
-
 
 ## Complete data result: 
 scores  <- scoreItems(keys = keys, items = bfi2)$scores

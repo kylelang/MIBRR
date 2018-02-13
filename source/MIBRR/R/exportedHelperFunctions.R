@@ -56,13 +56,8 @@ postPredict <- function(mibrrFit, newData, targetVars = NULL, nDraws = 0) {
     for(nm in targetVars) {
         pars     <- getParams(mibrrFit, nm)
         testData <- cbind(1, as.matrix(newData[ , colnames(pars$tau)]))
-        
-        if(nDraws == 0) {
-            beta  <- matrix(colMeans(pars$beta))
-            sigma <- mean(pars$sigma)
-            
-            out <- testData %*% beta + rnorm(1, 0, sqrt(sigma))
-        } else if(nDraws > 0) {
+
+        if(nDraws > 0) {
             index <- sample(c(1 : length(pars$sigma)), nDraws)
             beta  <- pars$beta[index, ]
             sigma <- pars$sigma[index]
@@ -71,8 +66,17 @@ postPredict <- function(mibrrFit, newData, targetVars = NULL, nDraws = 0) {
             for(j in 1 : nDraws)
                 out[ , j] <- testData %*% matrix(beta[j, ]) +
                     rnorm(1, 0, sqrt(sigma[j]))
-        } else {
-            stop("nDraws must be non-negative.")
+        }
+        else {
+            if(nDraws == 0) {
+                beta  <- matrix(apply(pars$beta, 2, estMode))
+                sigma <- estMode(pars$sigma)
+            }
+            else {# nDraws < 0
+                beta  <- matrix(colMeans(pars$beta))
+                sigma <- mean(pars$sigma)
+            }
+            out <- testData %*% beta + rnorm(1, 0, sqrt(sigma))
         }
         outList[[nm]] <- out
     }

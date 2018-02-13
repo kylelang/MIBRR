@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-12
+### Modified: 2018-FEB-13
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
@@ -52,8 +52,8 @@ init <- function(doBl,
                          doMcem      = doMcem,
                          doBl        = doBl)
 
-    ## Check the user inputs and resolve a set of target variables:
-    mibrrFit$checkInputs()
+    ## Process and check the user inputs:
+    mibrrFit$processInputs()
 
     ## Setup the PRNG (make sure each target variable gets its own independent
     ## RNG stream):

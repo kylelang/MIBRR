@@ -14,7 +14,7 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9003 - XXXX-XX-XX
+## 0.0.0.9003 - 2018-02-13
 
 ### Changed
 - Updated all documentation files (they still need work, though).
@@ -22,20 +22,21 @@ NOTE:
 - Improved the way random numbers are passed to C++ to seed the samplers class.
 - Header file extension changed from '.hpp' to '.h' to appease CRAN checks.
 - Cleaning up doc files
-- `complete` function renamed to `getImpData`
 - `predictMibrr` renamed to `postPredict`
-- `inspect` function renamed to `getField`
+- Cleaned up the `initialize()` member function and implemented it in a less 
+  stupid way
 
 ### Added 
 - Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters
-- A `complete` function to replace missing values and generate the mulitply
+- A `getImpData` function to replace missing values and generate the mulitply
   imputed datasets after a run of `miben` or `mibl`.
 - A `getParams` function to extract the posterior samples of the model parameters
   from a fitted `MibrrFit` object.
-- An `inspect` function to extract arbitrary fields from a `MibrrFit` object.
-- Documentation for `complete`, `inspect`, `getParams` functions and for the 
+- An `getField` function to extract arbitrary fields from a `MibrrFit` object.
+- Documentation for `getImpData`, `getField`, `getParams` functions and for the 
   `MibrrFit` class.
-  
+- Options to generate predictions for MAP scores and EAP scores in `postPredict`
+
 ## 0.0.0.9002 - 2018-02-08
 
 ### Changed

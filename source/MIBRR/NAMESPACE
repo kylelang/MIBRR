@@ -16,7 +16,8 @@ importFrom(stats,
            rgamma,
            rnorm,
            sd,
-           var)
+           var,
+           density)
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,

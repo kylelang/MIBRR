@@ -1,6 +1,6 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2017-NOV-06
+## Last Update: 2018-FEB-13
 
 ## Add a check for completely empty rows
 - Check for fully missing rows, remove them, and add back after model fitting
@@ -31,7 +31,7 @@
 
 - Still need to add the deterministic update step for BL lambda
 
-## Assess the current state of the package
+## Assess the current state of the package - DONE (2018-FEB-13)
 
 - What works, what does not?
 

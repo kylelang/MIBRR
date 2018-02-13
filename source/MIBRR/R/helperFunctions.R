@@ -1,10 +1,10 @@
 ### Title:    Helper Functions for mibrr
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2017-NOV-29
+### Modified: 2018-FEB-13
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2017 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
 ##                                                                             ##
 ##  This file is part of MIBRR.                                                ##
 ##                                                                             ##
@@ -180,3 +180,10 @@ simpleImpute <- function(object, covsOnly = FALSE) {
 
 ## Print 'x' only if 'verbose = TRUE':
 vcat <- function(x) if(parent.frame()$mibrrFit$verbose) cat(x)
+
+
+## Estimate the mode of a continous vector:
+estMode <- function(x) {
+    dens <- density(x, na.rm = TRUE)
+    dens$x[which.max(dens$y)]
+}
