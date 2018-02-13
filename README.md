@@ -17,14 +17,14 @@ Thank you for your interest in the MIBRR project! I hope you find my software
 useful!
 
 ## Installation
-The best way to install (the development version of) `MIBRR` is to use the 
-`devtools::install_github` function.
+The best way to install `MIBRR` is to use the `devtools::install_github` 
+function.
 
 1. First, make sure that you have `devtools` installed on your system
 2. Next, execute the following lines:
 
 		library(devtools)
-		install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
+		install_github("kylelang/MIBRR/source/MIBRR")
     
 3. Finally, load `MIBRR` and enjoy:
 
