@@ -53,7 +53,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 - The `miben` and `mibl` functions do multiple imputation using the Bayesian 
   elastic net and Bayesian LASSO, respectively.
   
-    - A list of imputed datasets can be generated using the `complete` function.
+    - A list of imputed datasets can be generated using the `getImpData` 
+	  function.
 	
 - Basic missing data treatments using `miben` or `mibl` might look like the 
   following:
@@ -89,8 +90,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
                         )
 				
 		## Extract list of 100 imputed datasets:
-		mibenImps <- complete(mibrrFit = mibenOut, nImps = 100)
-		miblImps  <- complete(mibrrFit = miblOut, nImps = 100)
+		mibenImps <- getImpData(mibrrFit = mibenOut, nImps = 100)
+		miblImps  <- getImpData(mibrrFit = miblOut, nImps = 100)
 		
 - The `ben` and `bl` functions fit Bayesian elastic net and Bayesian LASSO
   models to incomplete data without returning and imputed datasets.
@@ -138,8 +139,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		blPars  <- getParams(mibrrFit = blOut, target = "agree")
 		
 		## Generate out-of-sample predictions:
-	    benPred <- predictMibrr(mibrrFit = benOut, newData = testData)
-		blPred  <- predictMibrr(mibrrFit = blOut, newData = testData)
+	    benPred <- postPredict(mibrrFit = benOut, newData = testData)
+		blPred  <- postPredict(mibrrFit = blOut, newData = testData)
 		
 - Posterior predictions can also be generated from `miben` and `mibl` models:
 
@@ -154,8 +155,8 @@ The `MIBRR` package contains four primary functions: `miben`, `mibl`, `ben`, and
 		miblOut  <- mibl(data = missData)
 		
 		## Generate out-of-sample predictions:
-	    mibenPred <- predictMibrr(mibrrFit = mibenOut, newData = testData)
-		miblPred  <- predictMibrr(mibrrFit = miblOut, newData = testData)
+	    mibenPred <- postPredict(mibrrFit = mibenOut, newData = testData)
+		miblPred  <- postPredict(mibrrFit = miblOut, newData = testData)
 		
 		
 [builds]:  https://github.com/kylelang/MIBRR/tree/develop/builds/
