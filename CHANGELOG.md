@@ -14,6 +14,11 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
+## 0.0.0.9004 - XXXX-XX-XX
+
+### Fixed
+- Removed some unused variables from the C++ source.
+
 ## 0.0.0.9003 - 2018-02-13
 
 ### Changed

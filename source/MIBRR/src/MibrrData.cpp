@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-12
+// Modified: 2018-FEB-14
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -128,7 +128,6 @@ VectorXd MibrrData::getDV(int targetIndex) const
     return _data.col(targetIndex);
   }
   else {
-    int          nObs     = _data.rows();
     int          rowIndex = 0;
     VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
     vector<int>  obsRows  = getObsRows(targetIndex);
@@ -190,8 +189,6 @@ void MibrrData::computeDataScales()
 
 void MibrrData::fillMissing(const MatrixXd &newTargets)
 {
-  int nObs     = _data.rows();
-  int nVars    = _data.cols();
   int nTargets = newTargets.cols();
   
   for(int j = 0; j < nTargets; j++) {
