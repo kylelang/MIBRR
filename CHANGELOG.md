@@ -18,6 +18,7 @@ NOTE:
 
 ### Fixed
 - Removed some unused variables from the C++ source.
+- Bug causing crashes when a Sigma's R-Hat fails convergence checks.
 
 ## 0.0.0.9003 - 2018-02-13
 

@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-13
+### Modified: 2018-FEB-15
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
@@ -548,7 +548,7 @@ MibrrFit$methods(
                                         j,
                                         ", Sigma's final Gibbs sample ",
                                         "may not have converged.\nR-Hat = ",
-                                        round(sigmaRHat, 4),
+                                        round(rHats[[j]]$sigma, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
                                  call.      = FALSE,
                                  immediate. = TRUE)
