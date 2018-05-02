@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-FEB-12
+### Modified: 2018-MAY-02
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -176,26 +176,22 @@ MibrrFit$methods(
                      return()
                  }
                  
-                 if(optBoundLambda) {
-                     lowBounds <- c(1e-5, 1e-5)
-                     method    <- "L-BFGS-B"
-                 } else {
-                     lowBounds <- -Inf
-                 }
+                 if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)
+                 else               lowBounds <- -Inf
                  
                  options(warn = ifelse(verbose, 0, -1))
                  
                  if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
                  else                            nullFile <- "nul"
                  
-                 sink(nullFile) # Don't show optimx output
+                 if(optTraceLevel == 0) sink(nullFile) # Suppress optimx output
                  
                  lapply(1 : nTargets,
                         FUN       = .self$optWrap,
-                        method    = method,
+                        method    = optMethod,
                         lowBounds = lowBounds)
                  
-                 sink()
+                 if(optTraceLevel == 0) sink()
                  options(warn = 0)
 
                  for(j in 1 : nTargets) {
