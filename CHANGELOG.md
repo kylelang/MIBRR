@@ -14,6 +14,23 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
+## 0.0.0.9005 - XXXX-XX-XX
+
+### Fixed
+- Bug keeping user from changing optimization algorithm used for MCEM
+- Bug keeping 'lambdaHistory' from filling when using `mibl`.
+
+### Changed
+- Removed restriction that forced 'L-BFGS-B' as the optimization method when 
+  doing contstrained optimization for MCEM
+- Improved implementation of 'mibrrW' and 'mibrrL' functions.
+
+## 0.0.0.9004 - 2018-02-15
+
+### Fixed
+- Removed some unused variables from the C++ source.
+- Bug causing crashes when a Sigma's R-Hat fails convergence checks.
+
 ## 0.0.0.9003 - 2018-02-13
 
 ### Changed

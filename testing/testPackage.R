@@ -400,7 +400,6 @@ mseList
 
 ### Check Documentation Examples ###
 
-
 ## MIBEN ##
 ?miben
 
@@ -441,7 +440,6 @@ miblOut <- mibl(data         = mibrrExampleData,
                 doMcem       = FALSE,
                 lam1PriorPar = c(1.0, 0.1)
                 )
-
 
 ## BEN ##
 ?ben

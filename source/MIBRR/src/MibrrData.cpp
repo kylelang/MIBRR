@@ -1,32 +1,32 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-04
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
-//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
-//                                                                             //
-//  This file is part of MIBRR.                                                //
-//                                                                             //
-//  This program is free software: you can redistribute it and/or modify it    //
-//  under the terms of the GNU General Public License as published by the      //
-//  Free Software Foundation, either version 3 of the License, or (at you      //
-//  option) any later version.                                                 //
-//                                                                             //
-//  This program is distributed in the hope that it will be useful, but        //
-//  WITHOUT ANY WARRANTY; without even the implied warranty of                 //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   //
-//  Public License for more details.                                           //
-//                                                                             //
-//  You should have received a copy of the GNU General Public License along    //
-//  with this program. If not, see <http://www.gnu.org/licenses/>.             //
-//-----------------------------------------------------------------------------//
+//--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//                                                                            //
+//  This file is part of MIBRR.                                               //
+//                                                                            //
+//  This program is free software: you can redistribute it and/or modify it   //
+//  under the terms of the GNU General Public License as published by the     //
+//  Free Software Foundation, either version 3 of the License, or (at you     //
+//  option) any later version.                                                //
+//                                                                            //
+//  This program is distributed in the hope that it will be useful, but       //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  //
+//  Public License for more details.                                          //
+//                                                                            //
+//  You should have received a copy of the GNU General Public License along   //
+//  with this program. If not, see <http://www.gnu.org/licenses/>.            //
+//----------------------------------------------------------------------------//
 
 #include "MibrrData.h"
 
-///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
+///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrData::MibrrData(const MatrixXd        &data,
 		     const VectorXd        &dataScales,
@@ -44,7 +44,7 @@ MibrrData::MibrrData(const MatrixXd        &data,
 MibrrData::~MibrrData() {}
 
 
-///////////////////////////////// ACCESSORS /////////////////////////////////////
+///////////////////////////////// ACCESSORS ////////////////////////////////////
 
 
 vector<int> MibrrData::getObsRows(int targetIndex) const
@@ -78,17 +78,13 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
 { 
-  int      nVars    = _data.cols();
-  int      rowIndex = 0;
-  int      nObs     = _data.rows();
-  MatrixXd tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
-  MatrixXd outMat   = MatrixXd::Zero(nObs, nVars - 1);
+  int         nVars    = _data.cols();
+  int         rowIndex = 0;
+  int         nObs     = _data.rows();
+  MatrixXd    tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
+  MatrixXd    outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
-
-  // Scale the data columns, if necessary
-  //if(_scale) MatrixXd tmpMat = _data * _dataScales.asDiagonal().inverse();
-  //else       MatrixXd tmpMat = _data;
-  
+ 
   if(_noMiss) {// Return full predictor matrix:
     outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
     
@@ -128,7 +124,6 @@ VectorXd MibrrData::getDV(int targetIndex) const
     return _data.col(targetIndex);
   }
   else {
-    int          nObs     = _data.rows();
     int          rowIndex = 0;
     VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
     vector<int>  obsRows  = getObsRows(targetIndex);
@@ -153,13 +148,13 @@ vector<int> MibrrData::getMissIndices(int targetIndex) const
   return _missIndices[targetIndex];
 }
 
-MatrixXd MibrrData::getData()       const { return _data;                       }
-VectorXd MibrrData::getDataScales() const { return _dataScales;                 }
+MatrixXd MibrrData::getData()       const { return _data;                      }
+VectorXd MibrrData::getDataScales() const { return _dataScales;                }
 
-///////////////////////////////// MUTATORS //////////////////////////////////////
+///////////////////////////////// MUTATORS /////////////////////////////////////
 
 
-void MibrrData::setData(const MatrixXd &newData) { _data = newData;             }
+void MibrrData::setData(const MatrixXd &newData) { _data = newData;            }
 
 
 void MibrrData::setDV(const VectorXd &newDV, const int targetIndex)
@@ -190,8 +185,6 @@ void MibrrData::computeDataScales()
 
 void MibrrData::fillMissing(const MatrixXd &newTargets)
 {
-  int nObs     = _data.rows();
-  int nVars    = _data.cols();
   int nTargets = newTargets.cols();
   
   for(int j = 0; j < nTargets; j++) {
@@ -216,12 +209,16 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 }// END fillMissing()
 
 
-//////////////////////////// DESCRIPTIVE FUNCTIONS //////////////////////////////
+//////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
 
 
-int MibrrData::nObs  ()                const { return _data.rows();             }
-int MibrrData::nPreds()                const { return _data.cols() - 1;         }
-int MibrrData::nResp (int targetIndex) const { return _respCounts[targetIndex]; }
+int MibrrData::nObs  ()                const { return _data.rows();            }
+int MibrrData::nPreds()                const { return _data.cols() - 1;        }
+
+int MibrrData::nResp (int targetIndex) const
+{
+  return _respCounts[targetIndex];
+}
 
 int MibrrData::nMiss (int targetIndex) const
 {

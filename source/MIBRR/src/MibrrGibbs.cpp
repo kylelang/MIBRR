@@ -1,32 +1,32 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
-//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
-//                                                                             //
-//  This file is part of MIBRR.                                                //
-//                                                                             //
-//  This program is free software: you can redistribute it and/or modify it    //
-//  under the terms of the GNU General Public License as published by the      //
-//  Free Software Foundation, either version 3 of the License, or (at you      //
-//  option) any later version.                                                 //
-//                                                                             //
-//  This program is distributed in the hope that it will be useful, but        //
-//  WITHOUT ANY WARRANTY; without even the implied warranty of                 //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   //
-//  Public License for more details.                                           //
-//                                                                             //
-//  You should have received a copy of the GNU General Public License along    //
-//  with this program. If not, see <http://www.gnu.org/licenses/>.             //
-//-----------------------------------------------------------------------------//
+//--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//                                                                            //
+//  This file is part of MIBRR.                                               //
+//                                                                            //
+//  This program is free software: you can redistribute it and/or modify it   //
+//  under the terms of the GNU General Public License as published by the     //
+//  Free Software Foundation, either version 3 of the License, or (at you     //
+//  option) any later version.                                                //
+//                                                                            //
+//  This program is distributed in the hope that it will be useful, but       //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  //
+//  Public License for more details.                                          //
+//                                                                            //
+//  You should have received a copy of the GNU General Public License along   //
+//  with this program. If not, see <http://www.gnu.org/licenses/>.            //
+//----------------------------------------------------------------------------//
 
 #include "MibrrGibbs.h"
 
-//////////////////////// CONSTRUCTORS / DESTRUCTOR //////////////////////////////
+//////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
   
 MibrrGibbs::MibrrGibbs() 
 {
@@ -44,21 +44,21 @@ MibrrGibbs::MibrrGibbs()
 
 MibrrGibbs::~MibrrGibbs() {}
 
-//////////////////////////////// ACCESSORS //////////////////////////////////////
+//////////////////////////////// ACCESSORS /////////////////////////////////////
 
-VectorXd MibrrGibbs::getBetas()           const { return _betas;                }
-ArrayXd  MibrrGibbs::getTaus()            const { return _taus;                 }
-double   MibrrGibbs::getSigma()           const { return _sigma;                }
-MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;              }
-ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;               }
-VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;             }
-MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;               }
-MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;            }
-int      MibrrGibbs::getNDraws()          const { return _nDraws;               }
-bool     MibrrGibbs::getVerbosity()       const { return _verbose;              }
-bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;        }
-bool     MibrrGibbs::getDoImp()           const { return _doImp;                }
-bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;      }
+VectorXd MibrrGibbs::getBetas()           const { return _betas;               }
+ArrayXd  MibrrGibbs::getTaus()            const { return _taus;                }
+double   MibrrGibbs::getSigma()           const { return _sigma;               }
+MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;             }
+ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;              }
+VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;            }
+MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;              }
+MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;           }
+int      MibrrGibbs::getNDraws()          const { return _nDraws;              }
+bool     MibrrGibbs::getVerbosity()       const { return _verbose;             }
+bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;       }
+bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
+bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;     }
 
 
 VectorXd MibrrGibbs::getLambdas() const
@@ -76,22 +76,22 @@ double MibrrGibbs::getLambdas(int index) const
 }
 
 
-//////////////////////////////// MUTATORS ///////////////////////////////////////
+//////////////////////////////// MUTATORS //////////////////////////////////////
 
 
-void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas = betas;            }
-void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus = taus;              }
-void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;            }
-void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;      }
-void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;          }
-void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;            }
-void MibrrGibbs::beQuiet       ()                  { _verbose = false;          }
-void MibrrGibbs::doBl          ()                  { _useElasticNet = false;    }
-void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;   }
-void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;         }
-void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms = l1Parms;        }
-void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms = l2Parms;        }
-void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;        }
+void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas = betas;           }
+void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus = taus;             }
+void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;           }
+void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;     }
+void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;         }
+void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;           }
+void MibrrGibbs::beQuiet       ()                  { _verbose = false;         }
+void MibrrGibbs::doBl          ()                  { _useElasticNet = false;   }
+void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;  }
+void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;        }
+void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms = l1Parms;       }
+void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms = l2Parms;       }
+void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;       }
 
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
@@ -164,7 +164,7 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 }
 
 
-////////////////////////// PARAMETER UPDATE FUNCTIONS ///////////////////////////
+////////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
 
 
 void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
@@ -403,7 +403,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 }// END doGibbsIteration()
 
 
-///////////////////////// EXCEPTION HANDLING FUNCTIONS //////////////////////////
+///////////////////////// EXCEPTION HANDLING FUNCTIONS /////////////////////////
 
 
 void MibrrGibbs::tauError(int errorCode) const

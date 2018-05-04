@@ -1,28 +1,28 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-04
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
-//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
-//                                                                             //
-//  This file is part of MIBRR.                                                //
-//                                                                             //
-//  This program is free software: you can redistribute it and/or modify it    //
-//  under the terms of the GNU General Public License as published by the      //
-//  Free Software Foundation, either version 3 of the License, or (at you      //
-//  option) any later version.                                                 //
-//                                                                             //
-//  This program is distributed in the hope that it will be useful, but        //
-//  WITHOUT ANY WARRANTY; without even the implied warranty of                 //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   //
-//  Public License for more details.                                           //
-//                                                                             //
-//  You should have received a copy of the GNU General Public License along    //
-//  with this program. If not, see <http://www.gnu.org/licenses/>.             //
-//-----------------------------------------------------------------------------//
+//--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//                                                                            //
+//  This file is part of MIBRR.                                               //
+//                                                                            //
+//  This program is free software: you can redistribute it and/or modify it   //
+//  under the terms of the GNU General Public License as published by the     //
+//  Free Software Foundation, either version 3 of the License, or (at you     //
+//  option) any later version.                                                //
+//                                                                            //
+//  This program is distributed in the hope that it will be useful, but       //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  //
+//  Public License for more details.                                          //
+//                                                                            //
+//  You should have received a copy of the GNU General Public License along   //
+//  with this program. If not, see <http://www.gnu.org/licenses/>.            //
+//----------------------------------------------------------------------------//
 
 #include "MibrrData.h"
 #include "MibrrGibbs.h"
@@ -92,15 +92,28 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
-    bool check0 = verbose & (i % (totalSams / 10) == 0); 
-    if(check0) {
+    // Print a nice progress message:
+    if(verbose) {
+      int marg, max;
+      bool check0;
       if(i < burnSams) {
-	Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
-	Rcpp::Rcout << " of " << burnSams << endl;
+	marg   = burnSams % 5;
+	max    = burnSams - marg;
+	check0 = (i % (max / 5) == 0) & ((burnSams - i) > marg);
+	if(check0) {
+	  Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
+	  Rcpp::Rcout << " of " << burnSams << endl;
+	}
       }
       else {
-	Rcpp::Rcout << "Doing Gibbs sampling iteration " << (i + 1) - burnSams;
-	Rcpp::Rcout << " of " << totalSams - burnSams << endl;
+	marg   = (totalSams - burnSams) % 5;
+	max    = (totalSams - burnSams) - marg;
+	check0 = ((i - burnSams) % (max / 5) == 0) & ((totalSams - i) > marg);
+	if(check0) {
+	  Rcpp::Rcout <<
+	    "Doing Gibbs sampling iteration " << (i + 1) - burnSams;
+	  Rcpp::Rcout << " of " << totalSams - burnSams << endl;
+	}
       }
     }
     // Improve the output's aesthetics:

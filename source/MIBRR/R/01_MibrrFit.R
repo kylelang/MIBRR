@@ -1,27 +1,27 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-FEB-13
+### Modified: 2018-MAY-04
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
-##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
-##                                                                             ##
-##  This file is part of MIBRR.                                                ##
-##                                                                             ##
-##  This program is free software: you can redistribute it and/or modify it    ##
-##  under the terms of the GNU General Public License as published by the      ##
-##  Free Software Foundation, either version 3 of the License, or (at you      ##
-##  option) any later version.                                                 ##
-##                                                                             ##
-##  This program is distributed in the hope that it will be useful, but        ##
-##  WITHOUT ANY WARRANTY; without even the implied warranty of                 ##
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   ##
-##  Public License for more details.                                           ##
-##                                                                             ##
-##  You should have received a copy of the GNU General Public License along    ##
-##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
-##-----------------------------------------------------------------------------##
+##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##                                                                            ##
+##  This file is part of MIBRR.                                               ##
+##                                                                            ##
+##  This program is free software: you can redistribute it and/or modify it   ##
+##  under the terms of the GNU General Public License as published by the     ##
+##  Free Software Foundation, either version 3 of the License, or (at you     ##
+##  option) any later version.                                                ##
+##                                                                            ##
+##  This program is distributed in the hope that it will be useful, but       ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of                ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  ##
+##  Public License for more details.                                          ##
+##                                                                            ##
+##  You should have received a copy of the GNU General Public License along   ##
+##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
+##----------------------------------------------------------------------------##
 
 MibrrFit <- setRefClass("MibrrFit",
                         fields = list(
@@ -85,7 +85,7 @@ MibrrFit <- setRefClass("MibrrFit",
 
 MibrrFit$methods(
 
-################################ CONSTRUCTOR ####################################
+################################ CONSTRUCTOR ###################################
              
              initialize =
                  function(data              = data.frame(NULL),
@@ -150,16 +150,16 @@ MibrrFit$methods(
                      nChains           <<- nChains
                  },
              
-################################### MUTATORS ####################################
+################################### MUTATORS ###################################
 
-             setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans   },
-             setDataScales = function(dataScales) { dataScales <<- dataScales  },
+             setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans  },
+             setDataScales = function(dataScales) { dataScales <<- dataScales },
             
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
-             setData = function(data) { data[ , colnames(data)] <<- data       },
+             setData = function(data) { data[ , colnames(data)] <<- data      },
              
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              setControl = function(x) {
                  "Assign the control parameters"
@@ -171,20 +171,20 @@ MibrrFit$methods(
                  }
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              setLambdaParams = function(l1, l2) {
                  l1Pars <<- l1
                  l2Pars <<- l2
              },
              
-################################# ACCESSORS #####################################
+################################# ACCESSORS ####################################
 
-             dataNames    = function() { colnames(data)                        },
-             targets      = function() { targetVars                            },
-             countMissing = function() { missCounts                            },
+             dataNames    = function() { colnames(data)                       },
+             targets      = function() { targetVars                           },
+             countMissing = function() { missCounts                           },
              
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              getControl = function () {
                  "Return the 'control' list"
@@ -207,7 +207,7 @@ MibrrFit$methods(
                       optBoundLambda    = optBoundLambda)
              },
              
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              getImpDataset = function(reset = FALSE) {
                  "Fill missing values to produce a single imputed dataset"
@@ -234,7 +234,7 @@ MibrrFit$methods(
                      tmp
              },
           
-########################## COMPLEX METHODS/SUBROUTINES ##########################
+######################### COMPLEX METHODS/SUBROUTINES ##########################
              
              applyMissCode = function(revert = FALSE) {
                  "Replace 'NA' with an integer-valued missing data code"
@@ -251,7 +251,7 @@ MibrrFit$methods(
                  }
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              processInputs = function() {
                  "Process and check the user inputs and isolate a set of target variables"
@@ -398,7 +398,7 @@ MibrrFit$methods(
                      rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              computeStats = function(useFiml = FALSE) {
                  "Compute the data means and standard deviations for scaling purposes"
@@ -450,7 +450,7 @@ MibrrFit$methods(
                  else        data <<- data + meanFrame
              },
              
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
@@ -464,8 +464,7 @@ MibrrFit$methods(
                  }
              },
 
-
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              calcRHat = function(sims) {
                  "Compute a single split-chain Potential Scale Reduction Factor"
@@ -493,7 +492,7 @@ MibrrFit$methods(
                  sqrt(tVar / wVar)
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              computeRHats = function() {
                  "Compute the potential scale reduction factors"
@@ -504,7 +503,7 @@ MibrrFit$methods(
                  }
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              checkGibbsConv = function() {
                  "Check that the Gibb's sampler has converged everywhere"
@@ -548,7 +547,7 @@ MibrrFit$methods(
                                         j,
                                         ", Sigma's final Gibbs sample ",
                                         "may not have converged.\nR-Hat = ",
-                                        round(sigmaRHat, 4),
+                                        round(rHats[[j]]$sigma, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
                                  call.      = FALSE,
                                  immediate. = TRUE)
@@ -556,7 +555,7 @@ MibrrFit$methods(
                  }# CLOSE for(j in targetVars)
              },
              
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
              startParams = function(restart = FALSE) {    
                  "Provide starting values for all parameters"
@@ -630,7 +629,7 @@ MibrrFit$methods(
                  }# CLOSE for(j in 1 : nTargets)
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              smoothLambda = function() {
                  "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
@@ -641,7 +640,7 @@ MibrrFit$methods(
                      lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              simpleImpute = function(covsOnly = FALSE) {
                  "Initially fill the missing values via single imputation"
@@ -679,7 +678,7 @@ MibrrFit$methods(
                  setData(mice::complete(miceOut, 1)[ , rFlags])
              },
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
              
              getLambdaStarts = function(nSamples = 25) {
                  "Use a variant of the method recommended by Park and Casella (2008) to get starting values for the MIBL penalty parameters"
