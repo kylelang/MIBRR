@@ -19,6 +19,7 @@ NOTE:
 ### Fixed
 - Bug keeping user from changing optimization algorithm used for MCEM
 - Bug keeping 'lambdaHistory' from filling when using `mibl`.
+- Added the correct 'LICENSE' file to the repository root directory
 
 ### Changed
 - Removed restriction that forced 'L-BFGS-B' as the optimization method when 
