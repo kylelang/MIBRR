@@ -1,28 +1,28 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-MAY-02
+### Modified: 2018-MAY-04
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
-##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
-##                                                                             ##
-##  This file is part of MIBRR.                                                ##
-##                                                                             ##
-##  This program is free software: you can redistribute it and/or modify it    ##
-##  under the terms of the GNU General Public License as published by the      ##
-##  Free Software Foundation, either version 3 of the License, or (at you      ##
-##  option) any later version.                                                 ##
-##                                                                             ##
-##  This program is distributed in the hope that it will be useful, but        ##
-##  WITHOUT ANY WARRANTY; without even the implied warranty of                 ##
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   ##
-##  Public License for more details.                                           ##
-##                                                                             ##
-##  You should have received a copy of the GNU General Public License along    ##
-##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
-##-----------------------------------------------------------------------------##
+##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##                                                                            ##
+##  This file is part of MIBRR.                                               ##
+##                                                                            ##
+##  This program is free software: you can redistribute it and/or modify it   ##
+##  under the terms of the GNU General Public License as published by the     ##
+##  Free Software Foundation, either version 3 of the License, or (at you     ##
+##  option) any later version.                                                ##
+##                                                                            ##
+##  This program is distributed in the hope that it will be useful, but       ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of                ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  ##
+##  Public License for more details.                                          ##
+##                                                                            ##
+##  You should have received a copy of the GNU General Public License along   ##
+##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
+##----------------------------------------------------------------------------##
 
 
 MibrrFit$methods(
@@ -68,9 +68,10 @@ MibrrFit$methods(
                  ## Update the parameters' starting values:
                  if(doMcem)
                      for(j in 1 : nTargets) {
-                         betaStarts[ , j] <<- colMeans(gibbsOut[[j]]$beta[ , -1])
                          sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
                          tauStarts[ , j]  <<- colMeans(gibbsOut[[j]]$tau)
+                         betaStarts[ , j] <<-
+                             colMeans(gibbsOut[[j]]$beta[ , -1])
                      }
              },
              
@@ -173,27 +174,29 @@ MibrrFit$methods(
                  ## Use simple update rule and return early when doing BL:
                  if(doBl) {
                      lapply(1 : nTargets, .self$updateBlLambda)
-                     return()
                  }
+                 else {
+                     if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)
+                     else               lowBounds <- -Inf
+                     
+                     options(warn = ifelse(verbose, 0, -1))
+                     
+                     ## Define a location in which to sink unwanted output:
+                     if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
+                     else                            nullFile <- "nul"
+                     
+                     if(optTraceLevel == 0) sink(nullFile) # Suppress optimx output
+                     
+                     ## Apply over targets to optimize lambdas:
+                     lapply(1 : nTargets,
+                            FUN       = .self$optWrap,
+                            method    = optMethod,
+                            lowBounds = lowBounds)
+                     
+                     if(optTraceLevel == 0) sink()
+                     options(warn = 0)
+                 }# CLOSE if(doBl); else
                  
-                 if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)
-                 else               lowBounds <- -Inf
-                 
-                 options(warn = ifelse(verbose, 0, -1))
-                 
-                 if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
-                 else                            nullFile <- "nul"
-                 
-                 if(optTraceLevel == 0) sink(nullFile) # Suppress optimx output
-                 
-                 lapply(1 : nTargets,
-                        FUN       = .self$optWrap,
-                        method    = optMethod,
-                        lowBounds = lowBounds)
-                 
-                 if(optTraceLevel == 0) sink()
-                 options(warn = 0)
-
                  for(j in 1 : nTargets) {
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
                      

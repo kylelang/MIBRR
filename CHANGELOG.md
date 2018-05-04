@@ -18,10 +18,12 @@ NOTE:
 
 ### Fixed
 - Bug keeping user from changing optimization algorithm used for MCEM
+- Bug keeping 'lambdaHistory' from filling when using `mibl`.
 
 ### Changed
 - Removed restriction that forced 'L-BFGS-B' as the optimization method when 
   doing contstrained optimization for MCEM
+- Improved implementation of 'mibrrW' and 'mibrrL' functions.
 
 ## 0.0.0.9004 - 2018-02-15
 

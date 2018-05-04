@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-04
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -10,34 +10,34 @@
 //           original implementations is due to the original authors, and any
 //           bugs induced by the port are my own responsibility. 
 
-//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
-//                                                                             //
-//  This file is part of MIBRR.                                                //
-//                                                                             //
-//  This program is free software: you can redistribute it and/or modify it    //
-//  under the terms of the GNU General Public License as published by the      //
-//  Free Software Foundation, either version 3 of the License, or (at you      //
-//  option) any later version.                                                 //
-//                                                                             //
-//  This program is distributed in the hope that it will be useful, but        //
-//  WITHOUT ANY WARRANTY; without even the implied warranty of                 //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   //
-//  Public License for more details.                                           //
-//                                                                             //
-//  You should have received a copy of the GNU General Public License along    //
-//  with this program. If not, see <http://www.gnu.org/licenses/>.             //
-//-----------------------------------------------------------------------------//
+//--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//                                                                            //
+//  This file is part of MIBRR.                                               //
+//                                                                            //
+//  This program is free software: you can redistribute it and/or modify it   //
+//  under the terms of the GNU General Public License as published by the     //
+//  Free Software Foundation, either version 3 of the License, or (at you     //
+//  option) any later version.                                                //
+//                                                                            //
+//  This program is distributed in the hope that it will be useful, but       //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  //
+//  Public License for more details.                                          //
+//                                                                            //
+//  You should have received a copy of the GNU General Public License along   //
+//  with this program. If not, see <http://www.gnu.org/licenses/>.            //
+//----------------------------------------------------------------------------//
 
 #include "MibrrSamplers.h"
 
-///////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
+///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrSamplers::MibrrSamplers() {}
 
 MibrrSamplers::~MibrrSamplers() {}
 
-////////////////////////////////// MUTATORS /////////////////////////////////////
+////////////////////////////////// MUTATORS ////////////////////////////////////
 
 void MibrrSamplers::seedRng(const unsigned int seed)
 {
@@ -48,11 +48,11 @@ void MibrrSamplers::seedRng(const unsigned int seed)
   _gen.seed(seed);
 }
 
-////////////////////////////////// ACCESSORS ////////////////////////////////////
+////////////////////////////////// ACCESSORS ///////////////////////////////////
 
-unsigned int MibrrSamplers::getSeed() const { return _seed;                     }
+unsigned int MibrrSamplers::getSeed() const { return _seed;                    }
 
-///////////////////////////// SAMPLING FUNCTIONS ////////////////////////////////
+///////////////////////////// SAMPLING FUNCTIONS ///////////////////////////////
 
 double MibrrSamplers::drawNorm(const double mean, const double sd)
 {
@@ -100,7 +100,7 @@ double MibrrSamplers::drawInvGauss(const double mu, const double lambda)
     double v   = pow(tmp, 2); // Chi-Squared with df = 1
     
     if (mu <= 0.0)
-      throw invalid_argument("The Inverse Gaussian's mean is non-positive.\n");  
+      throw invalid_argument("The Inverse Gaussian's mean is non-positive.\n");
     
     else if (lambda <= 0.0) 
       throw invalid_argument("The Inverse Gaussian's scale is non-positive.\n");
@@ -192,7 +192,7 @@ double MibrrSamplers::drawGig(const double lambda,
   }
 } // END drawGig()
 
-////////////////////////////// Private Functions ////////////////////////////////
+////////////////////////////// Private Functions ///////////////////////////////
 
 double MibrrSamplers::_gigMode() const
 {
@@ -207,17 +207,17 @@ double MibrrSamplers::_gigMode() const
 
 
 double MibrrSamplers::_gigRouNoShift()
-//-----------------------------------------------------------------------------//
-// Type 1: Ratio-of-uniforms without shift.                                    //
-//   Dagpunar (1988, Sect.4.6.2); Lehner (1989)                                //
-//-----------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+// Type 1: Ratio-of-uniforms without shift.                                   //
+//   Dagpunar (1988, Sect.4.6.2); Lehner (1989)                               //
+//----------------------------------------------------------------------------//
 {
   double nc;      // normalization constant
   double ym, um;  // location of maximum of x * sqrt(f(x)); umax of MBR
   double s, t;    // auxiliary variables
   double U, V, X; // random variables
  
-  //--Setup--------------------------------------------------------------------//
+  //--Setup-------------------------------------------------------------------//
   
   // shortcuts
   t = 0.5 * (_gigLam - 1.0);
@@ -239,7 +239,7 @@ double MibrrSamplers::_gigRouNoShift()
   //   right hand boundary: umax = ym * sqrt(f(ym)) / sqrt(f(_mode))
   um = exp(0.5 * (_gigLam + 1.0) * log(ym) - s * (ym + 1.0 / ym) - nc);
 
-  //--Generate sample----------------------------------------------------------//
+  //--Generate sample---------------------------------------------------------//
   
   // Run rejection algorithm:
   bool reject = true;
@@ -257,10 +257,10 @@ double MibrrSamplers::_gigRouNoShift()
 
 
 double MibrrSamplers::_gigNewApproach()
-//-----------------------------------------------------------------------------//
-// Type 4: New approach, constant hat in log-concave part.                     //
-//   Case: 0 < _gigLam < 1, 0 < _omega < 1                                     //
-//-----------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+// Type 4: New approach, constant hat in log-concave part.                    //
+//   Case: 0 < _gigLam < 1, 0 < _omega < 1                                    //
+//----------------------------------------------------------------------------//
 {
   // parameters for hat function
   double A[3], Atot; // area below hat
@@ -273,12 +273,12 @@ double MibrrSamplers::_gigNewApproach()
   double U, V, X; // random numbers
   double hx;      // hat at X
   
-  //--Check arguments----------------------------------------------------------//
+  //--Check arguments---------------------------------------------------------//
 
   if(_gigLam >= 1.0 || _omega > 1.0)
     throw invalid_argument("Invalid parameters for 'Type 4' GIG simulation.\n)");
   
-  //--Setup--------------------------------------------------------------------//
+  //--Setup-------------------------------------------------------------------//
 
   // splitting point
   x0 = _omega / (1.0 - _gigLam);
@@ -310,7 +310,7 @@ double MibrrSamplers::_gigNewApproach()
   // total area
   Atot = A[0] + A[1] + A[2];
 
-  //--Generate sample----------------------------------------------------------//
+  //--Generate sample---------------------------------------------------------//
   
   bool accept = false; // flag for rejection algorithm
   while(!accept) {
@@ -360,10 +360,11 @@ double MibrrSamplers::_gigNewApproach()
 
 
 double MibrrSamplers::_gigRouShiftAlt()
-//-----------------------------------------------------------------------------//
-// Type 8: Ratio-of-uniforms with shift by 'mode', alternative implementation. //
-//   Dagpunar (1989); Lehner (1989)                                            //
-//-----------------------------------------------------------------------------//
+//----------------------------------------------------------------------------//
+// Type 8:                                                                    //
+// Ratio-of-uniforms with shift by 'mode', alternative implementation.        //
+//   Dagpunar (1989); Lehner (1989)                                           //
+//----------------------------------------------------------------------------//
 {
   double nc;      // c = log(f(_mode)) normalization constant
   double s, t;    // auxiliary variables
@@ -377,7 +378,7 @@ double MibrrSamplers::_gigRouShiftAlt()
 
   double uplus, uminus; // maximum and minimum of x * sqrt(f(x + m))
 
-  //--Setup--------------------------------------------------------------------//
+  //--Setup-------------------------------------------------------------------//
 
   // shortcuts
   t = 0.5 * (_gigLam - 1.);
@@ -414,7 +415,7 @@ double MibrrSamplers::_gigRouShiftAlt()
   uplus  = (y1 - _mode) * exp(t * log(y1) - s * (y1 + 1.0 / y1) - nc);
   uminus = (y2 - _mode) * exp(t * log(y2) - s * (y2 + 1.0 / y2) - nc);
 
-  //--Generate sample----------------------------------------------------------//
+  //--Generate sample---------------------------------------------------------//
 
   // Run rejection sampling:
   bool reject = true;

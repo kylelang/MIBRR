@@ -1,33 +1,33 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2018-FEB-09
+### Modified: 2018-MAY-04
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
 ###           elementary imputation method.
-### Notes:    - The ben and bl functions simply fit the Bayesian elastic net and
-###             Bayesian LASSO models to (possibly) incomplete data without
-###             returning any missing data imputations.
+### Notes:    The ben and bl functions simply fit the Bayesian elastic net and
+###           Bayesian LASSO models to (possibly) incomplete data without
+###           returning any missing data imputations.
 
-##--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          ##  
-##                                                                             ##
-##  This file is part of MIBRR.                                                ##
-##                                                                             ##
-##  This program is free software: you can redistribute it and/or modify it    ##
-##  under the terms of the GNU General Public License as published by the      ##
-##  Free Software Foundation, either version 3 of the License, or (at you      ##
-##  option) any later version.                                                 ##
-##                                                                             ##
-##  This program is distributed in the hope that it will be useful, but        ##
-##  WITHOUT ANY WARRANTY; without even the implied warranty of                 ##
-##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   ##
-##  Public License for more details.                                           ##
-##                                                                             ##
-##  You should have received a copy of the GNU General Public License along    ##
-##  with this program. If not, see <http://www.gnu.org/licenses/>.             ##
-##-----------------------------------------------------------------------------##
+##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
+##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##                                                                            ##
+##  This file is part of MIBRR.                                               ##
+##                                                                            ##
+##  This program is free software: you can redistribute it and/or modify it   ##
+##  under the terms of the GNU General Public License as published by the     ##
+##  Free Software Foundation, either version 3 of the License, or (at you     ##
+##  option) any later version.                                                ##
+##                                                                            ##
+##  This program is distributed in the hope that it will be useful, but       ##
+##  WITHOUT ANY WARRANTY; without even the implied warranty of                ##
+##  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  ##
+##  Public License for more details.                                          ##
+##                                                                            ##
+##  You should have received a copy of the GNU General Public License along   ##
+##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
+##----------------------------------------------------------------------------##
 
 
 ### Specify a wrapper function to implement Multiple Imputation with the
