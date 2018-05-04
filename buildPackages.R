@@ -8,7 +8,7 @@ rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-ver <- "0.0.0.9005"
+ver <- "0.0.0.9005-0000"
 
 system("rm source/MIBRR/src/RcppExports.cpp \
         rm source/MIBRR/R/RcppExports.R")

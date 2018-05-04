@@ -31,7 +31,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             iterations        = "integer",
                             sampleSizes       = "list",
                             missCode          = "integer",
-                            seed              = "integer",
+                            seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
                             doBl              = "logical",
@@ -97,7 +97,6 @@ MibrrFit$methods(
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
                           doBl              = as.logical(NA),
-                          seed              = as.integer(NA),
                           checkConv         = TRUE,
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
@@ -116,7 +115,8 @@ MibrrFit$methods(
                           optCheckKkt       = TRUE,
                           optMethod         = "L-BFGS-B",
                           optBoundLambda    = TRUE,
-                          nChains           = 1L)
+                          nChains           = 1L,
+                          seed              = NULL)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -128,7 +128,6 @@ MibrrFit$methods(
                      doImp             <<- doImp
                      doMcem            <<- doMcem
                      doBl              <<- doBl
-                     seed              <<- seed
                      checkConv         <<- checkConv
                      verbose           <<- verbose
                      convThresh        <<- convThresh
@@ -148,13 +147,14 @@ MibrrFit$methods(
                      optMethod         <<- optMethod
                      optBoundLambda    <<- optBoundLambda
                      nChains           <<- nChains
+                     seed              <<- seed
                  },
              
 ################################### MUTATORS ###################################
 
              setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans  },
              setDataScales = function(dataScales) { dataScales <<- dataScales },
-            
+             
 ###--------------------------------------------------------------------------###
              
              setData = function(data) { data[ , colnames(data)] <<- data      },
@@ -177,7 +177,48 @@ MibrrFit$methods(
                  l1Pars <<- l1
                  l2Pars <<- l2
              },
-             
+
+###--------------------------------------------------------------------------###
+
+             saveSeed = function(seed0) {
+                 if(is.character(seed0))
+                     seed <<- list(name = seed0, value = .lec.GetState(seed0))
+                 else
+                     seed <<- list(name = NULL, value = seed0)
+             },
+
+###--------------------------------------------------------------------------###
+
+             setupRng = function() {
+                 "Start up the l'ecuyer RNG streams"
+                 if(is.null(seed))           # No user-supplied seed
+                     saveSeed(round(runif(6) * 1e8))
+                 else if(is.numeric(seed))   # Numeric user-supplied seed
+                     saveSeed(rep(seed, length.out = 6))
+                 else if(is.character(seed)) # 'seed' names an extant RNG stream
+                     saveSeed(seed)
+                 else
+                     stop(paste0("The value provided for 'seed' has the wrong type (i.e., ",
+                                 class(seed),
+                                 ").")
+                          )
+                 
+                 ## Seed the l'ecuyer RNG:
+                 .lec.SetPackageSeed(seed$value)
+                 
+                 ## Generate the l'ecuyer RNG streams:
+                 .lec.CreateStream(
+                     paste0("mibrrStream", c(0 : length(targetVars)))
+                 )
+             },
+
+###--------------------------------------------------------------------------###
+
+             cleanRng = function() {
+                 "Clean up the RNG state"
+                 .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
+             },
+
 ################################# ACCESSORS ####################################
 
              dataNames    = function() { colnames(data)                       },
@@ -215,10 +256,16 @@ MibrrFit$methods(
                      impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
                  
                  tmp <- data # Make a local copy of 'data'
+
+                 ## Use the l'ecuyer 'master' stream for RNG:
+                 .lec.CurrentStream("mibrrStream0")
                  
                  ## Randomly choose a posterior draw to use as imputations:
                  impRow      <-  sample(impRowsPool, 1)
                  impRowsPool <<- setdiff(impRowsPool, impRow)
+
+                 ## Turn-off the l'ecuyer 'master' stream:
+                 .lec.CurrentStreamEnd()
                  
                  for(j in targetVars) {
                      impSam <- gibbsOut[[j]]$imps[impRow, ]
@@ -440,7 +487,9 @@ MibrrFit$methods(
                                                 
                  names(dataMeans) <<- names(dataScales) <<- colnames(data)
              },
-             
+
+###--------------------------------------------------------------------------###
+
              meanCenter = function(revert = FALSE) {
                  "Mean center the columns of data"
                  meanFrame <- data.frame(
@@ -559,7 +608,7 @@ MibrrFit$methods(
 
              startParams = function(restart = FALSE) {    
                  "Provide starting values for all parameters"
-                 
+
                  if(restart) {
                      for(j in 1 : nTargets) {
                          sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
@@ -591,7 +640,10 @@ MibrrFit$methods(
                  
                  ## Populate starting values for betas, taus, and sigma:
                  sigmaStarts <<- dataScales[targetVars]
-                                
+
+                 ## Use the l'ecuyer 'master' stream for RNG:
+                 .lec.CurrentStream("mibrrStream0")
+                 
                  for(j in 1 : nTargets) {
                      if(!doBl) {
                          lam1 <- lambdaMat[j, 1]
@@ -627,6 +679,9 @@ MibrrFit$methods(
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
                  }# CLOSE for(j in 1 : nTargets)
+
+                 ## Turn-off the l'ecuyer 'master' stream:
+                 .lec.CurrentStreamEnd()
              },
 
 ###--------------------------------------------------------------------------###
@@ -657,7 +712,10 @@ MibrrFit$methods(
     
                  ## Don't try to impute fully observed targets:
                  if(!any(rFlags)) return()
-    
+
+                 ## Use the l'ecuyer 'master' stream for RNG:
+                 .lec.CurrentStream("mibrrStream0")
+                 
                  ## Construct a predictor matrix for mice() to use:
                  predMat <- quickpred(data, mincor = minPredCor)
                  
@@ -676,12 +734,18 @@ MibrrFit$methods(
                  
                  ## Replace missing values with their imputations:
                  setData(mice::complete(miceOut, 1)[ , rFlags])
+                 
+                 ## Turn-off the l'ecuyer 'master' stream:
+                 .lec.CurrentStreamEnd()
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              getLambdaStarts = function(nSamples = 25) {
                  "Use a variant of the method recommended by Park and Casella (2008) to get starting values for the MIBL penalty parameters"
+
+                 ## Use the l'ecuyer 'master' stream for RNG:
+                 .lec.CurrentStream("mibrrStream0")
                  
                  ## Fill any missing data with rough guesses:
                  predMat <- quickpred(data)
@@ -714,6 +778,8 @@ MibrrFit$methods(
                          lambda1Starts[i] <<- mean(tmpLambda)
                      }    
                  }
+                 ## Turn-off the l'ecuyer 'master' stream:
+                 .lec.CurrentStreamEnd()
              }             
              
          )# END MibrrFit$methods()

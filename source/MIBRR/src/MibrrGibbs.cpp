@@ -189,8 +189,6 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
     _lambdas[0] = sqrt(drawGamma(shape, rate));
     
     // sample new value of lambda2:
-    //double fBeta = _betas.tail(nPreds).asArray().square().sum(); 
-    
     double chi = _l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
     double psi =
       _l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
@@ -377,8 +375,10 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
-  VectorXd tmpImps = _betas[0] * tmpBiasVector +
-    mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) + errorVector;
+  //VectorXd tmpImps = _betas[0] * tmpBiasVector +
+  //  mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) + errorVector;
+
+  VectorXd tmpImps = VectorXd::Zero(nMiss);
   
   // Replace the missing data in the target variable with the imputations:
   mibrrData.fillMissing(tmpImps, _targetIndex);

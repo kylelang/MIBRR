@@ -50,17 +50,15 @@ init <- function(doBl,
                          verbose     = verbose,
                          doImp       = doImp,
                          doMcem      = doMcem,
-                         doBl        = doBl)
+                         doBl        = doBl,
+                         seed        = seed)
 
     ## Process and check the user inputs:
     mibrrFit$processInputs()
-
-    ## Setup the PRNG (make sure each target variable gets its own independent
-    ## RNG stream):
-    if(!is.null(seed))
-        .lec.SetPackageSeed(rep(seed, 6))
-    .lec.CreateStream(paste0("mibrrStream", c(1 : length(mibrrFit$targetVars))))
     
+    ## Setup the PRNG (each target variable gets an independent RNG stream):
+    mibrrFit$setupRng()
+
     ## Store Lambda's prior parameters:
     if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
                                          l2 = as.numeric(lam2PriorPar)
@@ -83,16 +81,16 @@ init <- function(doBl,
         mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
    
     if(mibrrFit$center) mibrrFit$meanCenter()
-    
+  
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()
-    
+  
     ## Fill remaining missing data with an integer code:
     if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
 
     mibrrFit
-}# END preProcess()
+}# END init()
 
 
 ## Estimate a model using MCEM:
@@ -138,7 +136,7 @@ mcem <- function(mibrrFit) {
     }# END for(i in 1 : totalIters)
     
     mibrrFit
-}# END runMcem()
+}# END mcem()
 
 
 postProcess <- function(mibrrFit) {
@@ -158,8 +156,8 @@ postProcess <- function(mibrrFit) {
     ## Provide some pretty names for the output objects:
     mibrrFit$nameOutput()
 
-    ## Clean up the RNG state:
-    .lec.DeleteStream(paste0("mibrrStream", c(1 : mibrrFit$nTargets)))
+    ## Clean the RNG state:
+    mibrrFit$cleanRng()
     
-mibrrFit
+    mibrrFit
 }# END postProcess()
