@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-09
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -57,6 +57,13 @@ public:
   
   ///////////////////////////// SAMPLING FUNCTIONS /////////////////////////////
 
+  double drawNorm();
+  // @return: random standard normal variate
+  
+  VectorXd drawNorm(const int);
+  // @param:  number of variates to draw
+  // @return: vector of random standard normal variates
+  
   double drawNorm(const double, const double);
   // @param1: mean parameter
   // @param2: SD parameter

@@ -1,7 +1,7 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-07
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
@@ -27,20 +27,62 @@
 #include "MibrrSamplers.h"
 
 // [[Rcpp::export]]
-Eigen::VectorXd drawInvGamma(int n, double shape, double scale)
+Eigen::VectorXd drawNorm(int          n,
+			 double       mean,
+			 double       sd,
+			 unsigned int seed)
 {
   MibrrSamplers mibrrSamplers;
-  VectorXd      out(n);
+  mibrrSamplers.seedRng(seed);
+  
+  VectorXd out(n);
+
+  for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawNorm(mean, sd);
+  return out;
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd drawGamma(int          n,
+			  double       shape,
+			  double       rate,
+			  unsigned int seed)
+{
+  MibrrSamplers mibrrSamplers;
+  mibrrSamplers.seedRng(seed);
+  
+  VectorXd out(n);
+
+  for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawGamma(shape, rate);
+  return out;
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd drawInvGamma(int          n,
+			     double       shape,
+			     double       scale,
+			     unsigned int seed)
+{
+  MibrrSamplers mibrrSamplers;
+  mibrrSamplers.seedRng(seed);
+  
+  VectorXd out(n);
+
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGamma(shape, scale);
   return out;
 }
 
 // [[Rcpp::export]]
-Eigen::MatrixXd drawMvn(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat)
+Eigen::MatrixXd drawMvn(int             n,
+			Eigen::VectorXd meanVec,
+			Eigen::MatrixXd covMat,
+			unsigned int    seed)
 {
   MibrrSamplers mibrrSamplers;
-  int          v = meanVec.size();
-  MatrixXd     out(n, v);
+  mibrrSamplers.seedRng(seed);
+  
+  int      v = meanVec.size();
+  MatrixXd out(n, v);
+  
   for(int i = 0; i < n; i++)
     out.row(i) = mibrrSamplers.drawMvn(meanVec, covMat);
   return out;
@@ -54,19 +96,29 @@ double calcIncGamma(double shape, double cutVal, bool lowerTail)
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd drawInvGauss(int n, double mu, double lambda)
+Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
 {
   MibrrSamplers mibrrSamplers;
-  VectorXd      out(n);
+  mibrrSamplers.seedRng(seed);
+  
+  VectorXd out(n);
+  
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGauss(mu, lambda);
   return out;
 }
 
 // [[Rcpp::export]]
-Eigen::VectorXd drawGig(int n, double lambda, double chi, double psi)
+Eigen::VectorXd drawGig(int          n,
+			double       lambda,
+			double       chi,
+			double       psi,
+			unsigned int seed)
 {
   MibrrSamplers mibrrSamplers;
-  VectorXd      out(n);
+  mibrrSamplers.seedRng(seed);
+  
+  VectorXd out(n);
+
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawGig(lambda, chi, psi);
   return out;
 }

@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-04
+### Modified: 2018-MAY-07
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -78,7 +78,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             nVar              = "integer",
                             nPreds            = "integer",
                             nObs              = "integer",
-                            totalIters        = "integer"
+                            totalIters        = "integer",
+                            rng0              = "character"
                         )
                         )
 
@@ -157,7 +158,7 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             setData = function(data) { data[ , colnames(data)] <<- data      },
+             setData = function(dat1) { data[ , colnames(dat1)] <<- dat1      },
              
 ###--------------------------------------------------------------------------###
              
@@ -210,12 +211,16 @@ MibrrFit$methods(
                  .lec.CreateStream(
                      paste0("mibrrStream", c(0 : length(targetVars)))
                  )
+
+                 ## Set the 'master' RNG stream:
+                 rng0 <<- .lec.CurrentStream("mibrrStream0")
              },
 
 ###--------------------------------------------------------------------------###
 
              cleanRng = function() {
                  "Clean up the RNG state"
+                 .lec.CurrentStreamEnd(rng0)
                  .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
              },
 
@@ -256,16 +261,10 @@ MibrrFit$methods(
                      impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
                  
                  tmp <- data # Make a local copy of 'data'
-
-                 ## Use the l'ecuyer 'master' stream for RNG:
-                 .lec.CurrentStream("mibrrStream0")
                  
                  ## Randomly choose a posterior draw to use as imputations:
                  impRow      <-  sample(impRowsPool, 1)
                  impRowsPool <<- setdiff(impRowsPool, impRow)
-
-                 ## Turn-off the l'ecuyer 'master' stream:
-                 .lec.CurrentStreamEnd()
                  
                  for(j in targetVars) {
                      impSam <- gibbsOut[[j]]$imps[impRow, ]
@@ -558,11 +557,11 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
-                     maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badTauCount  <- sum(rHats[[j]]$tau > convThresh)
-                     maxTauRHat   <- max(rHats[[j]]$tau)
-                     badSigmaFlag <- rHats[[j]]$sigma > convThresh
+                     badBetaCount <- 0 #sum(rHats[[j]]$beta > convThresh)
+                     maxBetaRHat  <- 0 #max(rHats[[j]]$beta)
+                     badTauCount  <- 0 #sum(rHats[[j]]$tau > convThresh)
+                     maxTauRHat   <- 0 #max(rHats[[j]]$tau)
+                     badSigmaFlag <- 0 #rHats[[j]]$sigma > convThresh
                      
                      ## Return warnings about possible failures of convergence:
                      if(badBetaCount > 0) {
@@ -640,9 +639,6 @@ MibrrFit$methods(
                  
                  ## Populate starting values for betas, taus, and sigma:
                  sigmaStarts <<- dataScales[targetVars]
-
-                 ## Use the l'ecuyer 'master' stream for RNG:
-                 .lec.CurrentStream("mibrrStream0")
                  
                  for(j in 1 : nTargets) {
                      if(!doBl) {
@@ -679,11 +675,8 @@ MibrrFit$methods(
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
                  }# CLOSE for(j in 1 : nTargets)
-
-                 ## Turn-off the l'ecuyer 'master' stream:
-                 .lec.CurrentStreamEnd()
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              smoothLambda = function() {
@@ -712,9 +705,6 @@ MibrrFit$methods(
     
                  ## Don't try to impute fully observed targets:
                  if(!any(rFlags)) return()
-
-                 ## Use the l'ecuyer 'master' stream for RNG:
-                 .lec.CurrentStream("mibrrStream0")
                  
                  ## Construct a predictor matrix for mice() to use:
                  predMat <- quickpred(data, mincor = minPredCor)
@@ -734,18 +724,12 @@ MibrrFit$methods(
                  
                  ## Replace missing values with their imputations:
                  setData(mice::complete(miceOut, 1)[ , rFlags])
-                 
-                 ## Turn-off the l'ecuyer 'master' stream:
-                 .lec.CurrentStreamEnd()
              },
              
 ###--------------------------------------------------------------------------###
              
              getLambdaStarts = function(nSamples = 25) {
                  "Use a variant of the method recommended by Park and Casella (2008) to get starting values for the MIBL penalty parameters"
-
-                 ## Use the l'ecuyer 'master' stream for RNG:
-                 .lec.CurrentStream("mibrrStream0")
                  
                  ## Fill any missing data with rough guesses:
                  predMat <- quickpred(data)
@@ -759,7 +743,7 @@ MibrrFit$methods(
                  for(i in 1 : nTargets) {
                      check <- 0.90 * nObs > nPreds 
                      if(check) {# P << N
-                         lmOut            <- lm(impData[ , i] ~ impData[ , -i])
+                         lmOut            <-  lm(impData[ , i] ~ impData[ , -i])
                          lambda1Starts[i] <<- nPreds * sd(resid(lmOut)) /
                              sum(abs(coef(lmOut)[-1]))
                      } else {
@@ -778,8 +762,6 @@ MibrrFit$methods(
                          lambda1Starts[i] <<- mean(tmpLambda)
                      }    
                  }
-                 ## Turn-off the l'ecuyer 'master' stream:
-                 .lec.CurrentStreamEnd()
              }             
              
          )# END MibrrFit$methods()

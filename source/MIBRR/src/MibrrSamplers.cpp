@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-09
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -54,25 +54,36 @@ unsigned int MibrrSamplers::getSeed() const { return _seed;                    }
 
 ///////////////////////////// SAMPLING FUNCTIONS ///////////////////////////////
 
+double MibrrSamplers::drawNorm() { return _norm(_gen); }
+
+
+VectorXd MibrrSamplers::drawNorm(const int n)
+{
+  VectorXd out(n);
+  for(int i = 0; i < n; i++) out[i] = _norm(_gen);
+  return out;
+}
+
+
 double MibrrSamplers::drawNorm(const double mean, const double sd)
 {
-  normal_distribution<double> norm(mean, sd);
-  return norm(_gen);
-}//END drawNorm()
+  //normal_distribution<double> norm(0.0, sd);
+  return mean + sd * _norm(_gen);
+}
 
 
 double MibrrSamplers::drawGamma(const double shape, const double rate)
 {
-  gamma_distribution<double> gam(shape, 1 / rate);
+  gamma_distribution<double> gam(shape, 1.0 / rate);
   return gam(_gen);
-}//END drawGamma()
+}
 
 
 double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
   gamma_distribution<double> gam(shape, 1.0 / scale);
   return 1.0 / gam(_gen);
-}//END drawInvGamma()
+}
 
 
 double MibrrSamplers::calcIncGamma(const double shape, 
@@ -84,7 +95,7 @@ double MibrrSamplers::calcIncGamma(const double shape,
   int    logTran = 0; // Don't want log transform
   
   return Rf_pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
-}// END calcIncGamma()
+}
 
 
 double MibrrSamplers::drawInvGauss(const double mu, const double lambda)

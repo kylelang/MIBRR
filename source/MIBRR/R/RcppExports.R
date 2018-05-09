@@ -5,24 +5,32 @@ runGibbs <- function(data, dataScales, nTargets, missList, respCounts, lambda1, 
     .Call('_MIBRR_runGibbs', PACKAGE = 'MIBRR', data, dataScales, nTargets, missList, respCounts, lambda1, lambda2, l1Parms, l2Parms, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, verbose, doBl, fullBayes, adaptScales, simpleIntercept, noMiss, seeds)
 }
 
-drawInvGamma <- function(n, shape, scale) {
-    .Call('_MIBRR_drawInvGamma', PACKAGE = 'MIBRR', n, shape, scale)
+drawNorm <- function(n, mean, sd, seed) {
+    .Call('_MIBRR_drawNorm', PACKAGE = 'MIBRR', n, mean, sd, seed)
 }
 
-drawMvn <- function(n, meanVec, covMat) {
-    .Call('_MIBRR_drawMvn', PACKAGE = 'MIBRR', n, meanVec, covMat)
+drawGamma <- function(n, shape, rate, seed) {
+    .Call('_MIBRR_drawGamma', PACKAGE = 'MIBRR', n, shape, rate, seed)
+}
+
+drawInvGamma <- function(n, shape, scale, seed) {
+    .Call('_MIBRR_drawInvGamma', PACKAGE = 'MIBRR', n, shape, scale, seed)
+}
+
+drawMvn <- function(n, meanVec, covMat, seed) {
+    .Call('_MIBRR_drawMvn', PACKAGE = 'MIBRR', n, meanVec, covMat, seed)
 }
 
 calcIncGamma <- function(shape, cutVal, lowerTail) {
     .Call('_MIBRR_calcIncGamma', PACKAGE = 'MIBRR', shape, cutVal, lowerTail)
 }
 
-drawInvGauss <- function(n, mu, lambda) {
-    .Call('_MIBRR_drawInvGauss', PACKAGE = 'MIBRR', n, mu, lambda)
+drawInvGauss <- function(n, mu, lambda, seed) {
+    .Call('_MIBRR_drawInvGauss', PACKAGE = 'MIBRR', n, mu, lambda, seed)
 }
 
-drawGig <- function(n, lambda, chi, psi) {
-    .Call('_MIBRR_drawGig', PACKAGE = 'MIBRR', n, lambda, chi, psi)
+drawGig <- function(n, lambda, chi, psi, seed) {
+    .Call('_MIBRR_drawGig', PACKAGE = 'MIBRR', n, lambda, chi, psi, seed)
 }
 
 printObsIndices <- function(data, scales, missIndices, respCounts, noMiss, targetIndex) {

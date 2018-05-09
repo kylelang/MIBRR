@@ -37,29 +37,59 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// drawNorm
+Eigen::VectorXd drawNorm(int n, double mean, double sd, unsigned int seed);
+RcppExport SEXP _MIBRR_drawNorm(SEXP nSEXP, SEXP meanSEXP, SEXP sdSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type sd(sdSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawNorm(n, mean, sd, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
+// drawGamma
+Eigen::VectorXd drawGamma(int n, double shape, double rate, unsigned int seed);
+RcppExport SEXP _MIBRR_drawGamma(SEXP nSEXP, SEXP shapeSEXP, SEXP rateSEXP, SEXP seedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
+    Rcpp::traits::input_parameter< double >::type rate(rateSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawGamma(n, shape, rate, seed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // drawInvGamma
-Eigen::VectorXd drawInvGamma(int n, double shape, double scale);
-RcppExport SEXP _MIBRR_drawInvGamma(SEXP nSEXP, SEXP shapeSEXP, SEXP scaleSEXP) {
+Eigen::VectorXd drawInvGamma(int n, double shape, double scale, unsigned int seed);
+RcppExport SEXP _MIBRR_drawInvGamma(SEXP nSEXP, SEXP shapeSEXP, SEXP scaleSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
     Rcpp::traits::input_parameter< double >::type scale(scaleSEXP);
-    rcpp_result_gen = Rcpp::wrap(drawInvGamma(n, shape, scale));
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawInvGamma(n, shape, scale, seed));
     return rcpp_result_gen;
 END_RCPP
 }
 // drawMvn
-Eigen::MatrixXd drawMvn(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat);
-RcppExport SEXP _MIBRR_drawMvn(SEXP nSEXP, SEXP meanVecSEXP, SEXP covMatSEXP) {
+Eigen::MatrixXd drawMvn(int n, Eigen::VectorXd meanVec, Eigen::MatrixXd covMat, unsigned int seed);
+RcppExport SEXP _MIBRR_drawMvn(SEXP nSEXP, SEXP meanVecSEXP, SEXP covMatSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type meanVec(meanVecSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type covMat(covMatSEXP);
-    rcpp_result_gen = Rcpp::wrap(drawMvn(n, meanVec, covMat));
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawMvn(n, meanVec, covMat, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -77,21 +107,22 @@ BEGIN_RCPP
 END_RCPP
 }
 // drawInvGauss
-Eigen::VectorXd drawInvGauss(int n, double mu, double lambda);
-RcppExport SEXP _MIBRR_drawInvGauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP) {
+Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed);
+RcppExport SEXP _MIBRR_drawInvGauss(SEXP nSEXP, SEXP muSEXP, SEXP lambdaSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type mu(muSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(drawInvGauss(n, mu, lambda));
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawInvGauss(n, mu, lambda, seed));
     return rcpp_result_gen;
 END_RCPP
 }
 // drawGig
-Eigen::VectorXd drawGig(int n, double lambda, double chi, double psi);
-RcppExport SEXP _MIBRR_drawGig(SEXP nSEXP, SEXP lambdaSEXP, SEXP chiSEXP, SEXP psiSEXP) {
+Eigen::VectorXd drawGig(int n, double lambda, double chi, double psi, unsigned int seed);
+RcppExport SEXP _MIBRR_drawGig(SEXP nSEXP, SEXP lambdaSEXP, SEXP chiSEXP, SEXP psiSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -99,7 +130,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type chi(chiSEXP);
     Rcpp::traits::input_parameter< double >::type psi(psiSEXP);
-    rcpp_result_gen = Rcpp::wrap(drawGig(n, lambda, chi, psi));
+    Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(drawGig(n, lambda, chi, psi, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -138,11 +170,13 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 21},
-    {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 3},
-    {"_MIBRR_drawMvn", (DL_FUNC) &_MIBRR_drawMvn, 3},
+    {"_MIBRR_drawNorm", (DL_FUNC) &_MIBRR_drawNorm, 4},
+    {"_MIBRR_drawGamma", (DL_FUNC) &_MIBRR_drawGamma, 4},
+    {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 4},
+    {"_MIBRR_drawMvn", (DL_FUNC) &_MIBRR_drawMvn, 4},
     {"_MIBRR_calcIncGamma", (DL_FUNC) &_MIBRR_calcIncGamma, 3},
-    {"_MIBRR_drawInvGauss", (DL_FUNC) &_MIBRR_drawInvGauss, 3},
-    {"_MIBRR_drawGig", (DL_FUNC) &_MIBRR_drawGig, 4},
+    {"_MIBRR_drawInvGauss", (DL_FUNC) &_MIBRR_drawInvGauss, 4},
+    {"_MIBRR_drawGig", (DL_FUNC) &_MIBRR_drawGig, 5},
     {"_MIBRR_printObsIndices", (DL_FUNC) &_MIBRR_printObsIndices, 6},
     {"_MIBRR_printMissIndices", (DL_FUNC) &_MIBRR_printMissIndices, 6},
     {NULL, NULL, 0}

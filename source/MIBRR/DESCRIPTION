@@ -1,7 +1,7 @@
 Package: MIBRR
 Type: Package
 Title: Multiple Imputation with Bayesian Regularized Regression
-Version: 0.0.0.9005-0000
+Version: 0.0.0.9005-0001
 Date: 2018-05-04
 Author: Kyle M. Lang [aut, crt]
 Maintainer: Kyle M. Lang <k.m.lang@uvt.nl>
