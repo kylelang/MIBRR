@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-09
+// Modified: 2018-MAY-14
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -251,17 +251,20 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 {
   int             nPreds    = mibrrData.nPreds();
   int             nObs      = mibrrData.nResp(_targetIndex);
-  VectorXd        transTaus = VectorXd::Zero(nPreds + 1);
-  MatrixXd        X         = MatrixXd::Ones(nObs, nPreds + 1);
+  //VectorXd        transTaus = VectorXd::Zero(nPreds + 1);
+  VectorXd        transTaus = VectorXd::Zero(nPreds);
+  //MatrixXd        X         = MatrixXd::Ones(nObs, nPreds + 1);
   MatrixXd        penalty;
   LDLT <MatrixXd> aMatChol;
   
   if(_useElasticNet) {// MIBEN Version
-    transTaus.tail(nPreds) = _taus / (_taus - 1.0);
+    //transTaus.tail(nPreds) = _taus / (_taus - 1.0);
+    transTaus = _taus / (_taus - 1.0);
     penalty                = _lambdas[1] * transTaus.asDiagonal();    
   }
   else {              // MIBL Version
-    transTaus.tail(nPreds) = 1.0 / _taus;
+    //transTaus.tail(nPreds) = 1.0 / _taus;
+    transTaus = 1.0 / _taus;
     penalty                = transTaus.asDiagonal();
   }
   
@@ -275,13 +278,13 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   //ivMat.leftCols(1)       = VectorXd::Ones(nObs);
   //ivMat.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
 
-  X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
-  MatrixXd aMat       = X.transpose() * X + penalty;
+  //X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
+  //MatrixXd aMat       = X.transpose() * X + penalty;
 
   ///////////////////////////////////////////////////////////////////////////////
   
-  //MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
-  //  mibrrData.getIVs(_targetIndex, true) + tmpMat;
+  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
+    mibrrData.getIVs(_targetIndex, true) + penalty;
   
   VectorXd betaMeans;
   MatrixXd betaCov;
@@ -289,37 +292,43 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
     // Compute the Cholesky decomposition of the IV's penalized crossproducts,
     // and use it to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
-    betaMeans = aMatChol.solve(X.transpose() * mibrrData.getDV(_targetIndex)); 
+    //betaMeans = aMatChol.solve(X.transpose() * mibrrData.getDV(_targetIndex)); 
     
-    //betaMeans =
-    //  aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
-    //			    mibrrData.getDV(_targetIndex)); 
+    betaMeans =
+      aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
+		     mibrrData.getDV(_targetIndex)); 
     
     //tmpMat = _sigma * MatrixXd::Identity(nPreds + 1, nPreds + 1);   
     //tmpMat          = _sigma * MatrixXd::Identity(nPreds, nPreds);   
     
+    //betaCov =
+    //  aMatChol.solve(_sigma * MatrixXd::Identity(nPreds + 1, nPreds + 1));
     betaCov =
-      aMatChol.solve(_sigma * MatrixXd::Identity(nPreds + 1, nPreds + 1));
+      aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
   }
   catch(exception &e) { betaError(e); }
   
   // Draw new values of the regression slope coefficients:
   VectorXd newBetas(nPreds + 1); 
-  newBetas = drawMvn(betaMeans, betaCov);
-  //newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
+  //newBetas = drawMvn(betaMeans, betaCov);
+  newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
   
   // Draw a new value of the intercept term:
-  //double intSd = sqrt(_sigma / double(nObs));
-  //double intMean;
+  double intSd = sqrt(_sigma / double(nObs));
+  double intMean;
   //if(_simpleIntercept)
   //  intMean = mibrrData.getDV(_targetIndex).mean();
   //else
-  //  intMean = mibrrData.getDV(_targetIndex).mean() -
-  //    mibrrData.getIVs(_targetIndex, true).colwise().mean() *
-  //    newBetas.tail(nPreds);
+  bool dummyBool = !_simpleIntercept;
+  if(dummyBool)
+    intMean = mibrrData.getDV(_targetIndex).mean() -
+      mibrrData.getIVs(_targetIndex, true).colwise().mean() *
+      newBetas.tail(nPreds);
+  else
+    intMean = mibrrData.getDV(_targetIndex).mean();
   
-  //newBetas[0] = intMean + (intSd * drawNorm());
-
+  newBetas[0] = drawNorm(intMean, intSd); //intMean + intSd * drawNorm();
+  
   _betas = newBetas; // Store the updated Betas
   
   // Add the updated Betas to their Gibbs sample:
@@ -333,18 +342,19 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
   double   newSigma;
   int      nPreds = mibrrData.nPreds();
   int      nObs   = mibrrData.nResp(_targetIndex);
-  VectorXd bias   = _betas[0] * VectorXd::Ones(nObs);
+  //VectorXd bias   = _betas[0] * VectorXd::Ones(nObs);
   
   // Construct the predictor matrix:
-  MatrixXd X          = MatrixXd::Ones(nObs, nPreds + 1);
-  X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
+  //MatrixXd X          = MatrixXd::Ones(nObs, nPreds + 1);
+  //X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
   
   // Compute the linear predictor:
   VectorXd eta;
-  if(_simpleIntercept)
-    eta = bias + mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
-  else
-    eta = X * _betas;
+  //if(_simpleIntercept)
+    eta = _betas[0] * VectorXd::Ones(nObs) +
+      mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
+    //else
+    //eta = X * _betas;
   
   // Compute the regularized residual sum of squares:
   //double sse = (mibrrData.getDV(_targetIndex) - bias - eta).transpose() *
@@ -403,14 +413,15 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 {
   int      nMiss  = mibrrData.nMiss(_targetIndex);
   int      nPreds = mibrrData.nPreds();
-  VectorXd bias   = _betas[0] * VectorXd::Ones(nMiss);
-  VectorXd noise  = drawNorm(nMiss); 
+  //VectorXd bias   = _betas[0] * VectorXd::Ones(nMiss);
+  //VectorXd noise  = drawNorm(nMiss, 0.0, sqrt(_sigma)); 
   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
-  VectorXd tmpImps = bias +
+  VectorXd tmpImps = _betas[0] * VectorXd::Ones(nMiss) +
     mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) +
-    sqrt(_sigma) * noise;
+    drawNorm(nMiss, 0.0, sqrt(_sigma));
+  //sqrt(_sigma) * noise;
   
   // Replace the missing data in the target variable with the imputations:
   mibrrData.fillMissing(tmpImps, _targetIndex);

@@ -57,18 +57,20 @@ public:
   
   ///////////////////////////// SAMPLING FUNCTIONS /////////////////////////////
 
-  double drawNorm();
+  //double drawNorm();
   // @return: random standard normal variate
-  
-  VectorXd drawNorm(const int);
-  // @param:  number of variates to draw
-  // @return: vector of random standard normal variates
   
   double drawNorm(const double, const double);
   // @param1: mean parameter
   // @param2: SD parameter
   // @return: random normal variate
 
+  VectorXd drawNorm(const int, const double, const double);
+  // @param1: number of variates to draw
+  // @param2: mean parameter
+  // @param3: SD parameter
+  // @return: vector of random normal variates
+  
   double drawGamma(const double, const double);
   // @param1: shape parameter
   // @param2: rate parameter
