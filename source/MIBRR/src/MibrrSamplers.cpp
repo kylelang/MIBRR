@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-14
+// Modified: 2018-MAY-15
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -46,7 +46,6 @@ void MibrrSamplers::seedRng(const unsigned int seed)
   
   // Re-seed the PRNG:
   _gen.seed(seed);
-  //std::srand(seed);
 }
 
 ////////////////////////////////// ACCESSORS ///////////////////////////////////
@@ -55,12 +54,8 @@ unsigned int MibrrSamplers::getSeed() const { return _seed;                    }
 
 ///////////////////////////// SAMPLING FUNCTIONS ///////////////////////////////
 
-//double MibrrSamplers::drawNorm() { return _norm(_gen); }
-
-
 double MibrrSamplers::drawNorm(const double mean, const double sd)
 {
-  //normal_distribution<double> norm(mean, sd);
   return mean + sd * _norm(_gen);
 }
 

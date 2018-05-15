@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-14
+// Modified: 2018-MAY-15
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -58,7 +58,6 @@ int      MibrrGibbs::getNDraws()          const { return _nDraws;              }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;             }
 bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;       }
 bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
-bool     MibrrGibbs::getSimpleIntercept() const { return _simpleIntercept;     }
 
 
 VectorXd MibrrGibbs::getLambdas() const
@@ -87,7 +86,6 @@ void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;         }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;           }
 void MibrrGibbs::beQuiet       ()                  { _verbose = false;         }
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;   }
-void MibrrGibbs::useSimpleInt  ()                  { _simpleIntercept = true;  }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;        }
 void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms = l1Parms;       }
 void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms = l2Parms;       }
@@ -121,11 +119,11 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 double   lambda1Start,
 				 double   lambda2Start)
 {
-  _betas         = betaStarts;
-  _taus          = tauStarts;
-  _sigma         = sigmaStart;
-  _lambdas[0]    = lambda1Start;
-  _lambdas[1]    = lambda2Start;
+  _betas      = betaStarts;
+  _taus       = tauStarts;
+  _sigma      = sigmaStart;
+  _lambdas[0] = lambda1Start;
+  _lambdas[1] = lambda2Start;
 }
 
 
@@ -134,10 +132,10 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 double   sigmaStart,
 				 VectorXd &lambdaStartVec)
 {
-  _betas         = betaStarts;
-  _taus          = tauStarts;
-  _sigma         = sigmaStart;
-  _lambdas       = lambdaStartVec;
+  _betas   = betaStarts;
+  _taus    = tauStarts;
+  _sigma   = sigmaStart;
+  _lambdas = lambdaStartVec;
 }
 
 
@@ -251,38 +249,19 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 {
   int             nPreds    = mibrrData.nPreds();
   int             nObs      = mibrrData.nResp(_targetIndex);
-  //VectorXd        transTaus = VectorXd::Zero(nPreds + 1);
   VectorXd        transTaus = VectorXd::Zero(nPreds);
-  //MatrixXd        X         = MatrixXd::Ones(nObs, nPreds + 1);
   MatrixXd        penalty;
   LDLT <MatrixXd> aMatChol;
   
   if(_useElasticNet) {// MIBEN Version
-    //transTaus.tail(nPreds) = _taus / (_taus - 1.0);
     transTaus = _taus / (_taus - 1.0);
-    penalty                = _lambdas[1] * transTaus.asDiagonal();    
+    penalty   = _lambdas[1] * transTaus.asDiagonal();    
   }
   else {              // MIBL Version
-    //transTaus.tail(nPreds) = 1.0 / _taus;
     transTaus = 1.0 / _taus;
-    penalty                = transTaus.asDiagonal();
+    penalty   = transTaus.asDiagonal();
   }
-  
-  ///////////////////////////////////////////////////////////////////////////////
-  //MatrixXd tmpMat2 = MatrixXd::Zero(nPreds + 1, nPreds + 1);
-  //tmpMat2.bottomRightCorner(nPreds, nPreds) = tmpMat;
-  //tmpMat2.topRows(1)  = VectorXd::Zero(nPreds + 1).transpose();
-  //tmpMat2.leftCols(1) = VectorXd::Zero(nPreds + 1);
-
-  //MatrixXd ivMat(nObs, nPreds + 1);
-  //ivMat.leftCols(1)       = VectorXd::Ones(nObs);
-  //ivMat.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
-
-  //X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
-  //MatrixXd aMat       = X.transpose() * X + penalty;
-
-  ///////////////////////////////////////////////////////////////////////////////
-  
+    
   MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
     mibrrData.getIVs(_targetIndex, true) + penalty;
   
@@ -292,17 +271,9 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
     // Compute the Cholesky decomposition of the IV's penalized crossproducts,
     // and use it to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
-    //betaMeans = aMatChol.solve(X.transpose() * mibrrData.getDV(_targetIndex)); 
-    
     betaMeans =
       aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
 		     mibrrData.getDV(_targetIndex)); 
-    
-    //tmpMat = _sigma * MatrixXd::Identity(nPreds + 1, nPreds + 1);   
-    //tmpMat          = _sigma * MatrixXd::Identity(nPreds, nPreds);   
-    
-    //betaCov =
-    //  aMatChol.solve(_sigma * MatrixXd::Identity(nPreds + 1, nPreds + 1));
     betaCov =
       aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
   }
@@ -310,24 +281,16 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   
   // Draw new values of the regression slope coefficients:
   VectorXd newBetas(nPreds + 1); 
-  //newBetas = drawMvn(betaMeans, betaCov);
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
   
-  // Draw a new value of the intercept term:
-  double intSd = sqrt(_sigma / double(nObs));
-  double intMean;
-  //if(_simpleIntercept)
-  //  intMean = mibrrData.getDV(_targetIndex).mean();
-  //else
-  bool dummyBool = !_simpleIntercept;
-  if(dummyBool)
-    intMean = mibrrData.getDV(_targetIndex).mean() -
-      mibrrData.getIVs(_targetIndex, true).colwise().mean() *
-      newBetas.tail(nPreds);
-  else
-    intMean = mibrrData.getDV(_targetIndex).mean();
+  // Compute parameters of the intercept's distribution:
+  double intSd   = sqrt(_sigma / double(nObs));
+  double intMean = mibrrData.getDV(_targetIndex).mean() -
+    mibrrData.getIVs(_targetIndex, true).colwise().mean() *
+    newBetas.tail(nPreds);
   
-  newBetas[0] = drawNorm(intMean, intSd); //intMean + intSd * drawNorm();
+  // Draw a new value of the intercept term:  
+  newBetas[0] = drawNorm(intMean, intSd);
   
   _betas = newBetas; // Store the updated Betas
   
@@ -339,27 +302,15 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
 {
-  double   newSigma;
-  int      nPreds = mibrrData.nPreds();
-  int      nObs   = mibrrData.nResp(_targetIndex);
-  //VectorXd bias   = _betas[0] * VectorXd::Ones(nObs);
-  
-  // Construct the predictor matrix:
-  //MatrixXd X          = MatrixXd::Ones(nObs, nPreds + 1);
-  //X.rightCols(nPreds) = mibrrData.getIVs(_targetIndex, true);
+  double newSigma;
+  int    nPreds = mibrrData.nPreds();
+  int    nObs   = mibrrData.nResp(_targetIndex);
   
   // Compute the linear predictor:
-  VectorXd eta;
-  //if(_simpleIntercept)
-    eta = _betas[0] * VectorXd::Ones(nObs) +
-      mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
-    //else
-    //eta = X * _betas;
+  VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
+    mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
   
   // Compute the regularized residual sum of squares:
-  //double sse = (mibrrData.getDV(_targetIndex) - bias - eta).transpose() *
-  //  (mibrrData.getDV(_targetIndex) - bias - eta);
-  
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
     (mibrrData.getDV(_targetIndex) - eta);
   
@@ -411,23 +362,20 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 {
-  int      nMiss  = mibrrData.nMiss(_targetIndex);
-  int      nPreds = mibrrData.nPreds();
-  //VectorXd bias   = _betas[0] * VectorXd::Ones(nMiss);
-  //VectorXd noise  = drawNorm(nMiss, 0.0, sqrt(_sigma)); 
-  
+  int nMiss  = mibrrData.nMiss(_targetIndex);
+  int nPreds = mibrrData.nPreds();
+   
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
-  VectorXd tmpImps = _betas[0] * VectorXd::Ones(nMiss) +
+  VectorXd imps = _betas[0] * VectorXd::Ones(nMiss) +
     mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) +
     drawNorm(nMiss, 0.0, sqrt(_sigma));
-  //sqrt(_sigma) * noise;
   
   // Replace the missing data in the target variable with the imputations:
-  mibrrData.fillMissing(tmpImps, _targetIndex);
+  mibrrData.fillMissing(imps, _targetIndex);
   
   // Add the updated imputations to their Gibbs sample:
-  if(_storeGibbsSamples) _impSam.row(_drawNum) = tmpImps.transpose();
+  if(_storeGibbsSamples) _impSam.row(_drawNum) = imps.transpose();
 }// END updateImputations()
 
 

@@ -72,7 +72,7 @@ showClass("MibrrFit")
     \item{\code{iterations}:}{Object of class \code{integer} ~~ }
     \item{\code{sampleSizes}:}{Object of class \code{list} ~~ }
     \item{\code{missCode}:}{Object of class \code{integer} ~~ }
-    \item{\code{seed}:}{Object of class \code{integer} ~~ }
+    \item{\code{seed}:}{Object of class \code{list} ~~ }
     \item{\code{doImp}:}{Object of class \code{logical} ~~ }
     \item{\code{doMcem}:}{Object of class \code{logical} ~~ }
     \item{\code{doBl}:}{Object of class \code{logical} ~~ }
@@ -88,7 +88,6 @@ showClass("MibrrFit")
     \item{\code{center}:}{Object of class \code{logical} ~~ }
     \item{\code{scale}:}{Object of class \code{logical} ~~ }
     \item{\code{adaptScales}:}{Object of class \code{logical} ~~ }
-    \item{\code{simpleIntercept}:}{Object of class \code{logical} ~~ }
     \item{\code{minPredCor}:}{Object of class \code{numeric} ~~ }
     \item{\code{miceIters}:}{Object of class \code{integer} ~~ }
     \item{\code{miceRidge}:}{Object of class \code{numeric} ~~ }

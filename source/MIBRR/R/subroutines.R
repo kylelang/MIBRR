@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-07
+### Modified: 2018-MAY-15
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -58,7 +58,7 @@ init <- function(doBl,
     
     ## Setup the PRNG (each target variable gets an independent RNG stream):
     mibrrFit$setupRng()
-       
+    
     ## Store Lambda's prior parameters:
     if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
                                          l2 = as.numeric(lam2PriorPar)
@@ -154,6 +154,13 @@ postProcess <- function(mibrrFit) {
 
     ## Clean the RNG state:
     mibrrFit$cleanRng()
+
+    ## Fix rlecuyer's random seed table when we have only 1 remaining stream:
+    check <- !is.null(.lec.Random.seed.table$name) &&
+        !is.matrix(.lec.Random.seed.table$Cg)
     
+    if(check) .lec.Random.seed.table[1 : 4] <<-
+                  lapply(.lec.Random.seed.table[1 : 4], matrix, nrow = 1)
+                
     mibrrFit
 }# END postProcess()

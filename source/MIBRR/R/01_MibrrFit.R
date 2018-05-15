@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-07
+### Modified: 2018-MAY-15
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -47,7 +47,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             center            = "logical",
                             scale             = "logical",
                             adaptScales       = "logical",
-                            simpleIntercept   = "logical",
                             minPredCor        = "numeric",
                             miceIters         = "integer",
                             miceRidge         = "numeric",
@@ -105,7 +104,6 @@ MibrrFit$methods(
                           center            = TRUE,
                           scale             = TRUE,
                           adaptScales       = TRUE,
-                          simpleIntercept   = FALSE,
                           minPredCor        = 0.3,
                           miceIters         = 10L,
                           miceRidge         = 1e-4,
@@ -136,7 +134,6 @@ MibrrFit$methods(
                      center            <<- center
                      scale             <<- scale
                      adaptScales       <<- adaptScales
-                     simpleIntercept   <<- simpleIntercept 
                      minPredCor        <<- minPredCor
                      miceIters         <<- miceIters
                      miceRidge         <<- miceRidge
@@ -223,7 +220,7 @@ MibrrFit$methods(
                  .lec.CurrentStreamEnd(rng0)
                  .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
              },
-
+             
 ################################# ACCESSORS ####################################
 
              dataNames    = function() { colnames(data)                       },
@@ -239,7 +236,6 @@ MibrrFit$methods(
                       center            = center,
                       scale             = scale,
                       adaptScales       = adaptScales,
-                      simpleIntercept   = simpleIntercept, 
                       minPredCor        = minPredCor,
                       miceIters         = miceIters,
                       miceRidge         = miceRidge,

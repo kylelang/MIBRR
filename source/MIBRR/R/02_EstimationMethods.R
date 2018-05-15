@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-MAY-04
+### Modified: 2018-MAY-15
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -41,27 +41,26 @@ MibrrFit$methods(
                  }
                                   
                  gibbsOut <<-
-                     runGibbs(data            = as.matrix(data),
-                              dataScales      = dataScales,
-                              nTargets        = nTargets,
-                              missList        = missList[c(1 : nTargets)],
-                              respCounts      = respCounts[c(1 : nTargets)],
-                              lambda1         = lambdaMat[ , 1], 
-                              lambda2         = lambdaMat[ , 2], # Ignored for BL
-                              l1Parms         = l1Pars, # Ignored when
-                              l2Parms         = l2Pars, # doMcem = TRUE
-                              sigmaStarts     = sigmaStarts,
-                              tauStarts       = tauStarts,
-                              betaStarts      = betaStarts,
-                              burnSams        = sampleSizes[[phase]][1],
-                              totalSams       = sum(sampleSizes[[phase]]),
-                              verbose         = verbose,
-                              doBl            = doBl,
-                              fullBayes       = !doMcem,
-                              adaptScales     = adaptScales,
-                              simpleIntercept = simpleIntercept,
-                              noMiss          = all(missCounts == 0),
-                              seeds           = seedVec)
+                     runGibbs(data        = as.matrix(data),
+                              dataScales  = dataScales,
+                              nTargets    = nTargets,
+                              missList    = missList[c(1 : nTargets)],
+                              respCounts  = respCounts[c(1 : nTargets)],
+                              lambda1     = lambdaMat[ , 1], 
+                              lambda2     = lambdaMat[ , 2], # Ignored for BL
+                              l1Parms     = l1Pars, # Ignored when
+                              l2Parms     = l2Pars, # doMcem = TRUE
+                              sigmaStarts = sigmaStarts,
+                              tauStarts   = tauStarts,
+                              betaStarts  = betaStarts,
+                              burnSams    = sampleSizes[[phase]][1],
+                              totalSams   = sum(sampleSizes[[phase]]),
+                              verbose     = verbose,
+                              doBl        = doBl,
+                              fullBayes   = !doMcem,
+                              adaptScales = adaptScales,
+                              noMiss      = all(missCounts == 0),
+                              seeds       = seedVec)
                  
                  names(gibbsOut) <<- targetVars
                  

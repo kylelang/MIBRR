@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-15
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -78,11 +78,6 @@ public:
   // @return: current value of the flag denoting if missing data are to be
   //          imputed
 
-  bool getSimpleIntercept() const;
-  // @return: current value of the flag denoting if the unconditional mean of the
-  //          target variable should be used as the mean of the intercept's
-  //          posterior (as opposed to using the conditional mean of the target)
-
   VectorXd getLambdas() const;
   // @return: current values of the penalty parameters (Lambda)
 
@@ -117,10 +112,6 @@ public:
 
   void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
-
-  void useSimpleInt();
-  // @effect: use the unconditional mean of the target as the mean of the
-  //          intercept's posterior
 
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
@@ -225,7 +216,6 @@ private:
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _doImp;
-  bool     _simpleIntercept;
   bool     _fullBayes;
 };
 
