@@ -4,7 +4,7 @@
 // Modified: 2018-MAY-07
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //

@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-15
+// Modified: 2018-MAY-29
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -78,18 +78,18 @@ double MibrrGibbs::getLambdas(int index) const
 //////////////////////////////// MUTATORS //////////////////////////////////////
 
 
-void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas = betas;           }
-void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus = taus;             }
-void MibrrGibbs::setSigma      (double sigma)      { _sigma = sigma;           }
-void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;     }
-void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws = nDraws;         }
-void MibrrGibbs::setDoImp      (bool doImp)        { _doImp = doImp;           }
-void MibrrGibbs::beQuiet       ()                  { _verbose = false;         }
+void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas         = betas;   }
+void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus          = taus;    }
+void MibrrGibbs::setSigma      (double sigma)      { _sigma         = sigma;   }
+void MibrrGibbs::setTargetIndex(int index)         { _targetIndex   = index;   }
+void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws        = nDraws;  }
+void MibrrGibbs::setDoImp      (bool doImp)        { _doImp         = doImp;   }
+void MibrrGibbs::beQuiet       ()                  { _verbose       = false;   }
 void MibrrGibbs::doBl          ()                  { _useElasticNet = false;   }
-void MibrrGibbs::doFullBayes   ()                  { _fullBayes = true;        }
-void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms = l1Parms;       }
-void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms = l2Parms;       }
-void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas = lambdas;       }
+void MibrrGibbs::doFullBayes   ()                  { _fullBayes     = true;    }
+void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms       = l1Parms; }
+void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms       = l2Parms; }
+void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas       = lambdas; }
 
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
@@ -180,13 +180,13 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   else {
     double lam2 = _lambdas[1];
     
-    // sample new value of lambda1:
+    // Sample new value of lambda1:
     double shape = _l1Parms[0] + nPreds / 2.0;
     double rate  = _l1Parms[1] + tauSum / (8.0 * lam2 * _sigma);
     
     _lambdas[0] = sqrt(drawGamma(shape, rate));
     
-    // sample new value of lambda2:
+    // Sample new value of lambda2:
     double chi = _l2Parms[0] + (pow(lam1, 2) * tauSum) / (4 * _sigma);
     double psi =
       _l2Parms[1] + ((tauSum / (_taus - 1.0).sum()) *
@@ -207,7 +207,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   ArrayXd tauMeans;
   
   try {
-    if(_useElasticNet) {// Miben Version
+    if(_useElasticNet) {// MIBEN Version
       ArrayXd tauMeansNumerator = ArrayXd::Constant(nPreds, _lambdas[0]);
       
       tauMeans = tauMeansNumerator.sqrt() /

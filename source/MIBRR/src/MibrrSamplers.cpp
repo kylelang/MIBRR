@@ -364,7 +364,8 @@ double MibrrSamplers::_gigNewApproach()
     // Return the accepted variate
     if(accept) return (_gigLam0 < 0.0) ? (_alpha / X) : (_alpha * X);
   };
-  throw runtime_error("Something has broken while sampling from the GIG; I've returned from a rejection sampling loop without a valid result.");
+  throw runtime_error("Something has broken while sampling from the GIG; \
+I've returned from a rejection sampling loop without a valid result.");
 } // END _gigNewApproach()
 
 
