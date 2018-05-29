@@ -1,28 +1,28 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-FEB-12
+// Modified: 2018-MAY-29
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
-//--------------------- COPYRIGHT & LICENSING INFORMATION ---------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                          //  
-//                                                                             //
-//  This file is part of MIBRR.                                                //
-//                                                                             //
-//  This program is free software: you can redistribute it and/or modify it    //
-//  under the terms of the GNU General Public License as published by the      //
-//  Free Software Foundation, either version 3 of the License, or (at you      //
-//  option) any later version.                                                 //
-//                                                                             //
-//  This program is distributed in the hope that it will be useful, but        //
-//  WITHOUT ANY WARRANTY; without even the implied warranty of                 //
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General   //
-//  Public License for more details.                                           //
-//                                                                             //
-//  You should have received a copy of the GNU General Public License along    //
-//  with this program. If not, see <http://www.gnu.org/licenses/>.             //
-//-----------------------------------------------------------------------------//
+//--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
+//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//                                                                            //
+//  This file is part of MIBRR.                                               //
+//                                                                            //
+//  This program is free software: you can redistribute it and/or modify it   //
+//  under the terms of the GNU General Public License as published by the     //
+//  Free Software Foundation, either version 3 of the License, or (at you     //
+//  option) any later version.                                                //
+//                                                                            //
+//  This program is distributed in the hope that it will be useful, but       //
+//  WITHOUT ANY WARRANTY; without even the implied warranty of                //
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General  //
+//  Public License for more details.                                          //
+//                                                                            //
+//  You should have received a copy of the GNU General Public License along   //
+//  with this program. If not, see <http://www.gnu.org/licenses/>.            //
+//----------------------------------------------------------------------------//
 
 #ifndef MIBRRGIBBS_H
 #define MIBRRGIBBS_H
@@ -33,13 +33,13 @@
 class MibrrGibbs: public MibrrSamplers {
 
 public:
-  //////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
+  //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
   
   MibrrGibbs();
   
   ~MibrrGibbs();
   
-  /////////////////////////////// ACCESSORS /////////////////////////////////////
+  /////////////////////////////// ACCESSORS ////////////////////////////////////
 
   VectorXd getBetas() const;
   // @return: regression coefficients (and intercept) for the elastic net model
@@ -78,11 +78,6 @@ public:
   // @return: current value of the flag denoting if missing data are to be
   //          imputed
 
-  bool getSimpleIntercept() const;
-  // @return: current value of the flag denoting if the unconditional mean of the
-  //          target variable should be used as the mean of the intercept's
-  //          posterior (as opposed to using the conditional mean of the target)
-
   VectorXd getLambdas() const;
   // @return: current values of the penalty parameters (Lambda)
 
@@ -91,7 +86,7 @@ public:
   // @return: current value of either lambda1 and lambda2
 
   
-  //////////////////////////////// MUTATORS /////////////////////////////////////
+  //////////////////////////////// MUTATORS ////////////////////////////////////
 
 
   void setBetas(VectorXd&);
@@ -118,20 +113,16 @@ public:
   void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
 
-  void useSimpleInt();
-  // @effect: use the unconditional mean of the target as the mean of the
-  //          intercept's posterior
-
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
 
-  void setLam1Parms  (VectorXd&);
+  void setLam1Parms(VectorXd&);
   // @param: new value of lambda1 prior parameters
   
-  void setLam2Parms  (VectorXd&);
+  void setLam2Parms(VectorXd&);
   // @param: new value of lambda2^2 prior parameters
   
-  void setLambdaParms  (VectorXd&);
+  void setLambdaParms(VectorXd&);
   // @param: concatenated values for lambda1 & lambda2^2 prior parameters
   
   void setLambdas(VectorXd&);
@@ -163,7 +154,7 @@ public:
   // @effect: start storing the parameters' Gibbs sampled values
 
 
-  ///////////////////////// PARAMETER UPDATE FUNCTIONS //////////////////////////
+  ///////////////////////// PARAMETER UPDATE FUNCTIONS /////////////////////////
 
   void updateLambdas(const MibrrData&);
   // @effect: update _lambdas based on current values of other member variables
@@ -189,13 +180,13 @@ public:
   // @effect: run a single iteration of the Gibbs sampler
 
 
-  //////////////////////// MCEM OPTIMIZATION FUNCTIONS //////////////////////////
+  //////////////////////// MCEM OPTIMIZATION FUNCTIONS /////////////////////////
 
   //// Beginning with Version 0.0.0.9001, the MCEM steps have been moved back to
   //// the R layer because installing NLopt has proven to be too much of a
   //// portability issue.
     
-  //////////////////////// EXCEPTION HANDLING FUNCTIONS /////////////////////////
+  //////////////////////// EXCEPTION HANDLING FUNCTIONS ////////////////////////
 
   
   void tauError(int) const;
@@ -225,7 +216,6 @@ private:
   bool     _useElasticNet;
   bool     _storeGibbsSamples;
   bool     _doImp;
-  bool     _simpleIntercept;
   bool     _fullBayes;
 };
 

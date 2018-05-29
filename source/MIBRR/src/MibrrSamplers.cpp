@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-15
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -56,23 +56,32 @@ unsigned int MibrrSamplers::getSeed() const { return _seed;                    }
 
 double MibrrSamplers::drawNorm(const double mean, const double sd)
 {
-  normal_distribution<double> norm(mean, sd);
-  return norm(_gen);
-}//END drawNorm()
+  return mean + sd * _norm(_gen);
+}
+
+
+VectorXd MibrrSamplers::drawNorm(const int    n,
+				 const double mean,
+				 const double sd)
+{
+  VectorXd out(n);
+  for(int i = 0; i < n; i++) out[i] = mean + sd * _norm(_gen);
+  return out;
+}
 
 
 double MibrrSamplers::drawGamma(const double shape, const double rate)
 {
-  gamma_distribution<double> gam(shape, 1 / rate);
+  gamma_distribution<double> gam(shape, 1.0 / rate);
   return gam(_gen);
-}//END drawGamma()
+}
 
 
 double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
   gamma_distribution<double> gam(shape, 1.0 / scale);
   return 1.0 / gam(_gen);
-}//END drawInvGamma()
+}
 
 
 double MibrrSamplers::calcIncGamma(const double shape, 
@@ -84,7 +93,7 @@ double MibrrSamplers::calcIncGamma(const double shape,
   int    logTran = 0; // Don't want log transform
   
   return Rf_pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
-}// END calcIncGamma()
+}
 
 
 double MibrrSamplers::drawInvGauss(const double mu, const double lambda)
@@ -355,7 +364,8 @@ double MibrrSamplers::_gigNewApproach()
     // Return the accepted variate
     if(accept) return (_gigLam0 < 0.0) ? (_alpha / X) : (_alpha * X);
   };
-  throw runtime_error("Something has broken while sampling from the GIG; I've returned from a rejection sampling loop without a valid result.");
+  throw runtime_error("Something has broken while sampling from the GIG; \
+I've returned from a rejection sampling loop without a valid result.");
 } // END _gigNewApproach()
 
 

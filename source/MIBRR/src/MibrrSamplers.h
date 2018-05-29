@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-15
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -56,12 +56,18 @@ public:
   // @return: the current PRNG seed
   
   ///////////////////////////// SAMPLING FUNCTIONS /////////////////////////////
-
+  
   double drawNorm(const double, const double);
   // @param1: mean parameter
   // @param2: SD parameter
   // @return: random normal variate
 
+  VectorXd drawNorm(const int, const double, const double);
+  // @param1: number of variates to draw
+  // @param2: mean parameter
+  // @param3: SD parameter
+  // @return: vector of random normal variates
+  
   double drawGamma(const double, const double);
   // @param1: shape parameter
   // @param2: rate parameter

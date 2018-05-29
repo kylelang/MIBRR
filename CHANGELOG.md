@@ -14,7 +14,14 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9005 - XXXX-XX-XX
+## 0.0.0.9006 - 2018-05-29 - ACTIVE
+
+### Changed
+- Improved the way random numbers are generated. Each subprocess now gets its 
+  own R'Lecuyer RNG stream.
+- Removed the `simpleIntercept` option from the control list.
+  
+## 0.0.0.9005 - 2018-05-04
 
 ### Fixed
 - Bug keeping user from changing optimization algorithm used for MCEM

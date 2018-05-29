@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-04
+### Modified: 2018-MAY-29
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -31,7 +31,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             iterations        = "integer",
                             sampleSizes       = "list",
                             missCode          = "integer",
-                            seed              = "integer",
+                            seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
                             doBl              = "logical",
@@ -47,7 +47,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             center            = "logical",
                             scale             = "logical",
                             adaptScales       = "logical",
-                            simpleIntercept   = "logical",
                             minPredCor        = "numeric",
                             miceIters         = "integer",
                             miceRidge         = "numeric",
@@ -78,7 +77,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             nVar              = "integer",
                             nPreds            = "integer",
                             nObs              = "integer",
-                            totalIters        = "integer"
+                            totalIters        = "integer",
+                            rng0              = "character"
                         )
                         )
 
@@ -97,7 +97,6 @@ MibrrFit$methods(
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
                           doBl              = as.logical(NA),
-                          seed              = as.integer(NA),
                           checkConv         = TRUE,
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
@@ -105,7 +104,6 @@ MibrrFit$methods(
                           center            = TRUE,
                           scale             = TRUE,
                           adaptScales       = TRUE,
-                          simpleIntercept   = FALSE,
                           minPredCor        = 0.3,
                           miceIters         = 10L,
                           miceRidge         = 1e-4,
@@ -116,7 +114,8 @@ MibrrFit$methods(
                           optCheckKkt       = TRUE,
                           optMethod         = "L-BFGS-B",
                           optBoundLambda    = TRUE,
-                          nChains           = 1L)
+                          nChains           = 1L,
+                          seed              = NULL)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -128,7 +127,6 @@ MibrrFit$methods(
                      doImp             <<- doImp
                      doMcem            <<- doMcem
                      doBl              <<- doBl
-                     seed              <<- seed
                      checkConv         <<- checkConv
                      verbose           <<- verbose
                      convThresh        <<- convThresh
@@ -136,7 +134,6 @@ MibrrFit$methods(
                      center            <<- center
                      scale             <<- scale
                      adaptScales       <<- adaptScales
-                     simpleIntercept   <<- simpleIntercept 
                      minPredCor        <<- minPredCor
                      miceIters         <<- miceIters
                      miceRidge         <<- miceRidge
@@ -148,16 +145,17 @@ MibrrFit$methods(
                      optMethod         <<- optMethod
                      optBoundLambda    <<- optBoundLambda
                      nChains           <<- nChains
+                     seed              <<- seed
                  },
              
 ################################### MUTATORS ###################################
 
              setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans  },
              setDataScales = function(dataScales) { dataScales <<- dataScales },
-            
+             
 ###--------------------------------------------------------------------------###
              
-             setData = function(data) { data[ , colnames(data)] <<- data      },
+             setData = function(dat1) { data[ , colnames(dat1)] <<- dat1      },
              
 ###--------------------------------------------------------------------------###
              
@@ -177,6 +175,51 @@ MibrrFit$methods(
                  l1Pars <<- l1
                  l2Pars <<- l2
              },
+
+###--------------------------------------------------------------------------###
+
+             saveSeed = function(seed0) {
+                 if(is.character(seed0))
+                     seed <<- list(name = seed0, value = .lec.GetState(seed0))
+                 else
+                     seed <<- list(name = NULL, value = seed0)
+             },
+
+###--------------------------------------------------------------------------###
+
+             setupRng = function() {
+                 "Start up the l'ecuyer RNG streams"
+                 if(is.null(seed))           # No user-supplied seed
+                     saveSeed(round(runif(6) * 1e8))
+                 else if(is.numeric(seed))   # Numeric user-supplied seed
+                     saveSeed(rep(seed, length.out = 6))
+                 else if(is.character(seed)) # 'seed' names an extant RNG stream
+                     saveSeed(seed)
+                 else
+                     stop(paste0("The value provided for 'seed' has the wrong type (i.e., ",
+                                 class(seed),
+                                 ").")
+                          )
+                 
+                 ## Seed the l'ecuyer RNG:
+                 .lec.SetPackageSeed(seed$value)
+                 
+                 ## Generate the l'ecuyer RNG streams:
+                 .lec.CreateStream(
+                     paste0("mibrrStream", c(0 : length(targetVars)))
+                 )
+
+                 ## Set the 'master' RNG stream:
+                 rng0 <<- .lec.CurrentStream("mibrrStream0")
+             },
+
+###--------------------------------------------------------------------------###
+
+             cleanRng = function() {
+                 "Clean up the RNG state"
+                 .lec.CurrentStreamEnd(rng0)
+                 .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
+             },
              
 ################################# ACCESSORS ####################################
 
@@ -193,7 +236,6 @@ MibrrFit$methods(
                       center            = center,
                       scale             = scale,
                       adaptScales       = adaptScales,
-                      simpleIntercept   = simpleIntercept, 
                       minPredCor        = minPredCor,
                       miceIters         = miceIters,
                       miceRidge         = miceRidge,
@@ -440,7 +482,9 @@ MibrrFit$methods(
                                                 
                  names(dataMeans) <<- names(dataScales) <<- colnames(data)
              },
-             
+
+###--------------------------------------------------------------------------###
+
              meanCenter = function(revert = FALSE) {
                  "Mean center the columns of data"
                  meanFrame <- data.frame(
@@ -559,7 +603,7 @@ MibrrFit$methods(
 
              startParams = function(restart = FALSE) {    
                  "Provide starting values for all parameters"
-                 
+
                  if(restart) {
                      for(j in 1 : nTargets) {
                          sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
@@ -591,7 +635,7 @@ MibrrFit$methods(
                  
                  ## Populate starting values for betas, taus, and sigma:
                  sigmaStarts <<- dataScales[targetVars]
-                                
+                 
                  for(j in 1 : nTargets) {
                      if(!doBl) {
                          lam1 <- lambdaMat[j, 1]
@@ -628,7 +672,7 @@ MibrrFit$methods(
                      }
                  }# CLOSE for(j in 1 : nTargets)
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              smoothLambda = function() {
@@ -657,7 +701,7 @@ MibrrFit$methods(
     
                  ## Don't try to impute fully observed targets:
                  if(!any(rFlags)) return()
-    
+                 
                  ## Construct a predictor matrix for mice() to use:
                  predMat <- quickpred(data, mincor = minPredCor)
                  
@@ -677,7 +721,7 @@ MibrrFit$methods(
                  ## Replace missing values with their imputations:
                  setData(mice::complete(miceOut, 1)[ , rFlags])
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              getLambdaStarts = function(nSamples = 25) {
@@ -695,7 +739,7 @@ MibrrFit$methods(
                  for(i in 1 : nTargets) {
                      check <- 0.90 * nObs > nPreds 
                      if(check) {# P << N
-                         lmOut            <- lm(impData[ , i] ~ impData[ , -i])
+                         lmOut            <-  lm(impData[ , i] ~ impData[ , -i])
                          lambda1Starts[i] <<- nPreds * sd(resid(lmOut)) /
                              sum(abs(coef(lmOut)[-1]))
                      } else {

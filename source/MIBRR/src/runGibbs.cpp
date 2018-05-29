@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-MAY-04
+// Modified: 2018-MAY-15
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -49,7 +49,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    bool                      doBl,
 		    bool                      fullBayes,
 		    bool                      adaptScales,
-		    bool                      simpleIntercept,
 		    bool                      noMiss,
 		    std::vector<unsigned int> seeds)
 {
@@ -88,7 +87,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     mibrrGibbs[j].setNDraws(totalSams - burnSams);
     
     if(!verbose)        mibrrGibbs[j].beQuiet(); 
-    if(simpleIntercept) mibrrGibbs[j].useSimpleInt();   
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
