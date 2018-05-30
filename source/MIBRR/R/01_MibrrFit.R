@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-29
+### Modified: 2018-MAY-30
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -686,24 +686,19 @@ MibrrFit$methods(
 
 ###--------------------------------------------------------------------------###
              
-             simpleImpute = function(covsOnly = FALSE) {
+             simpleImpute = function(covsOnly = FALSE, intern = TRUE) {
                  "Initially fill the missing values via single imputation"
                  cn     <- dataNames()
                  rFlags <- (missCounts > 0)[cn]
                  
-                 if(covsOnly) {
-                     impTargets <- setdiff(cn, targetVars)
-                     rFlags     <- rFlags & cn %in% impTargets 
-                 }
-                 else {
-                     impTargets <- cn
-                 }
-    
+                 if(covsOnly) rFlags <- rFlags & cn %in% setdiff(cn, targetVars)
+                 
                  ## Don't try to impute fully observed targets:
                  if(!any(rFlags)) return()
                  
                  ## Construct a predictor matrix for mice() to use:
-                 predMat <- quickpred(data, mincor = minPredCor)
+                 predMat <-
+                     quickpred(data, mincor = minPredCor, include = targetVars)
                  
                  ## Construct a vector of elementary imputation methods:
                  methVec         <- rep("", ncol(data))
@@ -719,7 +714,10 @@ MibrrFit$methods(
                                  ridge           = miceRidge)
                  
                  ## Replace missing values with their imputations:
-                 setData(mice::complete(miceOut, 1)[ , rFlags])
+                 if(intern)
+                     setData(mice::complete(miceOut, 1)[ , rFlags])
+                 else
+                     mice::complete(miceOut, 1) 
              },
              
 ###--------------------------------------------------------------------------###
@@ -728,13 +726,7 @@ MibrrFit$methods(
                  "Use a variant of the method recommended by Park and Casella (2008) to get starting values for the MIBL penalty parameters"
                  
                  ## Fill any missing data with rough guesses:
-                 predMat <- quickpred(data)
-                 miceOut <- mice(data            = data,
-                                 m               = 1,
-                                 method          = miceMethod,
-                                 predictorMatrix = predMat,
-                                 printFlag       = FALSE)
-                 impData <- as.matrix(mice::complete(miceOut, 1))
+                 impData <- simpleImpute(intern = FALSE)
                  
                  for(i in 1 : nTargets) {
                      check <- 0.90 * nObs > nPreds 
