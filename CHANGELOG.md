@@ -14,7 +14,11 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9006 - 2018-05-29 - ACTIVE
+## 0.0.0.9006 - 2018-05-30 - ACTIVE
+
+### Fixed
+- Bug causing crashes when initially imputing incomplete auxiliary variables 
+  with mice.
 
 ### Changed
 - Improved the way random numbers are generated. Each subprocess now gets its 
