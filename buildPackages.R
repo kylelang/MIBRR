@@ -6,9 +6,12 @@
 
 rm(list = ls(all = TRUE))
 
+install.packages("codetools",
+                 repos = "http://cloud.r-project.org")
+
 library(RcppEigen)
 
-ver <- "0.0.0.9006"
+ver <- "0.0.0.9006-9999"
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \

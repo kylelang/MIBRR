@@ -36,6 +36,7 @@ init <- function(doBl,
                  missCode,
                  verbose,
                  seed,
+                 userRng,
                  control)
 {
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
@@ -51,7 +52,8 @@ init <- function(doBl,
                          doImp       = doImp,
                          doMcem      = doMcem,
                          doBl        = doBl,
-                         seed        = seed)
+                         seed        = seed,
+                         userRng     = userRng)
 
     ## Process and check the user inputs:
     mibrrFit$processInputs()

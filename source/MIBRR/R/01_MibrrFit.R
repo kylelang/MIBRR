@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-30
+### Modified: 2018-MAY-31
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -78,7 +78,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             nPreds            = "integer",
                             nObs              = "integer",
                             totalIters        = "integer",
-                            rng0              = "character"
+                            rng0              = "character",
+                            userRng           = "character"
                         )
                         )
 
@@ -115,7 +116,8 @@ MibrrFit$methods(
                           optMethod         = "L-BFGS-B",
                           optBoundLambda    = TRUE,
                           nChains           = 1L,
-                          seed              = NULL)
+                          seed              = NULL,
+                          userRng           = "")
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -146,6 +148,7 @@ MibrrFit$methods(
                      optBoundLambda    <<- optBoundLambda
                      nChains           <<- nChains
                      seed              <<- seed
+                     userRng           <<- userRng
                  },
              
 ################################### MUTATORS ###################################
@@ -200,6 +203,9 @@ MibrrFit$methods(
                                  class(seed),
                                  ").")
                           )
+
+                 ## Stop generating random numbers from the user's stream:
+                 if(length(userRng) > 0) .lec.CurrentStreamEnd()
                  
                  ## Seed the l'ecuyer RNG:
                  .lec.SetPackageSeed(seed$value)
@@ -219,6 +225,9 @@ MibrrFit$methods(
                  "Clean up the RNG state"
                  .lec.CurrentStreamEnd(rng0)
                  .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
+                 
+                 ## Re-set the user's stream as the active RNG:
+                 if(length(userRng) > 0) .lec.CurrentStream(userRng)
              },
              
 ################################# ACCESSORS ####################################

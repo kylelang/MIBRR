@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2018-MAY-04
+### Modified: 2018-MAY-31
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -43,6 +43,7 @@ miben <- function(data,
                   missCode       = NA,
                   verbose        = TRUE,
                   seed           = NULL,
+                  userRng        = "",
                   control        = list()
                   )
 {
@@ -60,6 +61,7 @@ miben <- function(data,
                      missCode     = missCode,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
@@ -83,6 +85,7 @@ mibl <- function(data,
                  missCode     = NA,
                  verbose      = TRUE,
                  seed         = NULL,
+                 userRng      = "",
                  control      = list()
                  )
 {
@@ -100,6 +103,7 @@ mibl <- function(data,
                      missCode     = missCode,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
     
     ## Estimate the model with MCEM:
@@ -123,6 +127,7 @@ ben <- function(data,
                 missCode     = NA,
                 verbose      = TRUE,
                 seed         = NULL,
+                userRng      = "",
                 control      = list()
                 )
 {
@@ -142,6 +147,7 @@ ben <- function(data,
                      missCode     = missCode,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
@@ -163,7 +169,8 @@ bl <- function(data,
                doMcem       = TRUE,
                missCode     = NA,
                verbose      = TRUE,
-               seed         = NULL,
+               seed         = "",
+               userRng      = userRng,
                control      = list()
                )
 {
@@ -183,6 +190,7 @@ bl <- function(data,
                      missCode     = missCode,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
