@@ -205,7 +205,8 @@ MibrrFit$methods(
                           )
 
                  ## Stop generating random numbers from the user's stream:
-                 if(length(userRng) > 0) .lec.CurrentStreamEnd()
+                 check <- length(userRng) > 0 & userRng != ""
+                 if(check) .lec.CurrentStreamEnd()
                  
                  ## Seed the l'ecuyer RNG:
                  .lec.SetPackageSeed(seed$value)
@@ -227,7 +228,8 @@ MibrrFit$methods(
                  .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
                  
                  ## Re-set the user's stream as the active RNG:
-                 if(length(userRng) > 0) .lec.CurrentStream(userRng)
+                 check <- length(userRng) > 0 & userRng != ""
+                 if(check) .lec.CurrentStream(userRng)
              },
              
 ################################# ACCESSORS ####################################

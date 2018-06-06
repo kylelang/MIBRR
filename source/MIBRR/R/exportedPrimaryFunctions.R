@@ -169,8 +169,8 @@ bl <- function(data,
                doMcem       = TRUE,
                missCode     = NA,
                verbose      = TRUE,
-               seed         = "",
-               userRng      = userRng,
+               seed         = NULL,
+               userRng      = "",
                control      = list()
                )
 {

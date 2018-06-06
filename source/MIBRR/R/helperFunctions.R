@@ -96,7 +96,7 @@ getLambdaStarts <- function(object, nSamples = 25)
     
     lambdaStarts
 }# END getLambdaStarts()
-    
+
 
 
 compStatsWithFiml <- function(object, revert = FALSE) {
@@ -139,43 +139,43 @@ compStatsWithFiml <- function(object, revert = FALSE) {
 
 
 ## Initially fill the missing values via single imputation:
-simpleImpute <- function(object, covsOnly = FALSE) {
-    cn      <- object$dataNames()
-    data    <- object$data
-    control <- object$getControl()
-    
-    rFlags <- (object$countMissing() > 0)[cn]
-    
-    if(covsOnly) {
-        impTargets <- setdiff(cn, object$targets())
-        rFlags <- rFlags & cn %in% impTargets 
-    }
-    else {
-        impTargets <- cn
-    }
-    
-    ## Don't try to impute fully observed targets:
-    if(!any(rFlags)) return()
-    
-    ## Construct a predictor matrix for mice() to use:
-    predMat <- quickpred(data, mincor = control$minPredCor)
-    
-    ## Construct a vector of elementary imputation methods:
-    methVec         <- rep("", ncol(data))
-    methVec[rFlags] <- control$miceMethod
-    
-    ## Singly impute the missing values:
-    miceOut <- mice(data            = data,
-                    m               = 1,
-                    maxit           = control$miceIters,
-                    method          = methVec,
-                    predictorMatrix = predMat,
-                    printFlag       = FALSE,
-                    ridge           = control$miceRidge)
-    
-    ## Replace missing values with their imputations:
-    object$setData(complete(miceOut, 1)[ , rFlags])
-}# END simpleImpute()
+                                        #simpleImpute <- function(object, covsOnly = FALSE) {
+                                        #    cn      <- object$dataNames()
+                                        #    data    <- object$data
+                                        #    control <- object$getControl()
+                                        #    
+                                        #    rFlags <- (object$countMissing() > 0)[cn]
+                                        #    
+                                        #    if(covsOnly) {
+                                        #        impTargets <- setdiff(cn, object$targets())
+                                        #        rFlags <- rFlags & cn %in% impTargets 
+                                        #    }
+                                        #    else {
+                                        #        impTargets <- cn
+                                        #    }
+                                        #    
+                                        #    ## Don't try to impute fully observed targets:
+                                        #    if(!any(rFlags)) return()
+                                        #    
+                                        #    ## Construct a predictor matrix for mice() to use:
+                                        #    predMat <- quickpred(data, mincor = control$minPredCor)
+                                        #    
+                                        #    ## Construct a vector of elementary imputation methods:
+                                        #    methVec         <- rep("", ncol(data))
+                                        #    methVec[rFlags] <- control$miceMethod
+                                        #    
+                                        #    ## Singly impute the missing values:
+                                        #    miceOut <- mice(data            = data,
+                                        #                    m               = 1,
+                                        #                    maxit           = control$miceIters,
+                                        #                    method          = methVec,
+                                        #                    predictorMatrix = predMat,
+                                        #                    printFlag       = FALSE,
+                                        #                    ridge           = control$miceRidge)
+                                        #    
+                                        #    ## Replace missing values with their imputations:
+                                        #    object$setData(complete(miceOut, 1)[ , rFlags])
+                                        #}# END simpleImpute()
 
 
 ## Print 'x' only if 'verbose = TRUE':
