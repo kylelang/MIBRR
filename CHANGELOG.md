@@ -14,14 +14,15 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9006 - 2018-06-06 - ACTIVE
+## 0.0.0.9006 - 2018-06-07 - ACTIVE
 
 ### Fixed
 - Bug causing crashes when initially imputing incomplete auxiliary variables 
   with mice.
 - Removed redundant definition of `simpleImpute` function from 
   'helperFunctions.R'
-  
+- Removed unused/redundant definition of `smoothLambda` member function.
+
 ### Changed
 - Improved the way random numbers are generated. Each subprocess now gets its 
   own R'Lecuyer RNG stream.

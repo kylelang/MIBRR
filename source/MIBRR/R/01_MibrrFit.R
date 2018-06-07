@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-31
+### Modified: 2018-JUN-07
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -686,14 +686,14 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             smoothLambda = function() {
-                 "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
-                 i     <- iterations[1]
-                 range <- (i - smoothingWindow + 1) : i
-
-                 for(j in targetVars)
-                     lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
-             },
+                                        #smoothLambda = function() {
+                                        #    "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
+                                        #    i     <- iterations[1]
+                                        #    range <- (i - smoothingWindow + 1) : i
+                                        #
+                                        #    for(j in targetVars)
+                                        #        lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
+                                        #},
 
 ###--------------------------------------------------------------------------###
              
