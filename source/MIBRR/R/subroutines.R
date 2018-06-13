@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-15
+### Modified: 2018-JUN-13
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -23,7 +23,7 @@
 ##----------------------------------------------------------------------------##
 
 
-init <- function(doBl,
+init <- function(penalty,
                  doImp,
                  doMcem,
                  data,
@@ -34,6 +34,7 @@ init <- function(doBl,
                  lam1PriorPar,
                  lam2PriorPar,
                  missCode,
+                 ridge,
                  verbose,
                  seed,
                  userRng,
@@ -51,9 +52,12 @@ init <- function(doBl,
                          verbose     = verbose,
                          doImp       = doImp,
                          doMcem      = doMcem,
-                         doBl        = doBl,
+                                        #doBl        = doBl,
                          seed        = seed,
-                         userRng     = userRng)
+                         userRng     = userRng,
+                         ridge       = ridge,
+                         penalty     = as.integer(penalty)
+                         )
 
     ## Process and check the user inputs:
     mibrrFit$processInputs()
@@ -62,9 +66,10 @@ init <- function(doBl,
     mibrrFit$setupRng()
     
     ## Store Lambda's prior parameters:
-    if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
-                                         l2 = as.numeric(lam2PriorPar)
-                                         )
+    if(!doMcem & penalty != 0)
+        mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
+                                 l2 = as.numeric(lam2PriorPar)
+                                 )
     
     ## Update any user-specified control parameters:
     if(length(control) > 0) mibrrFit$setControl(control)

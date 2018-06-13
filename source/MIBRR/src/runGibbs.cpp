@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-MAY-15
+// Modified: 2018-JUN-15
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -45,8 +45,9 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    Eigen::MatrixXd           betaStarts,
 		    int                       burnSams,
 		    int                       totalSams,
+		    int                       penType,
+		    double                    ridge,
 		    bool                      verbose,
-		    bool                      doBl,
 		    bool                      fullBayes,
 		    bool                      adaptScales,
 		    bool                      noMiss,
@@ -65,13 +66,18 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     Eigen::VectorXd betaStartVec  = betaStarts.col(j);
     Eigen::ArrayXd  tauStartArray = tauStarts.col(j).array();
 
-    if(doBl) mibrrGibbs[j].doBl(); // Using Bayesian LASSO?
-
-    if(fullBayes) { // Fully Bayesian estimation?
+    // Define the type of regularization:
+    mibrrGibbs[j].setPenType(penType);
+    
+    if(penType == 0)// Doing basic ridge?
+      mibrrGibbs[j].setRidge(ridge);
+    
+    if(fullBayes) {// Fully Bayesian estimation?
       mibrrGibbs[j].doFullBayes(); 
       mibrrGibbs[j].setLam1Parms(l1Parms);
-
-      if(!doBl) mibrrGibbs[j].setLam2Parms(l2Parms);
+      
+      if(penType == 1)// Doing MIBEN?
+	mibrrGibbs[j].setLam2Parms(l2Parms); 
     }
     
     mibrrGibbs[j].seedRng(seeds[j]);
@@ -86,7 +92,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     mibrrGibbs[j].setDoImp(!noMiss);
     mibrrGibbs[j].setNDraws(totalSams - burnSams);
     
-    if(!verbose)        mibrrGibbs[j].beQuiet(); 
+    if(!verbose) mibrrGibbs[j].beQuiet(); 
   }// CLOSE for(in j ==0; j < nTargets; j++)
   
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations

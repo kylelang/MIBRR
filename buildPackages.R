@@ -11,7 +11,7 @@ install.packages("codetools",
 
 library(RcppEigen)
 
-ver <- "0.0.0.9006"
+ver <- "0.0.0.9007-9999"
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \

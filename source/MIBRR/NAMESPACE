@@ -34,7 +34,8 @@ export(mibl,
        postPredict,
        getImpData,
        getField,
-       getParams)
+       getParams,
+       vanilla)
 
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their

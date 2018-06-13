@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2018-FEB-13
+### Modified: 2018-JUN-13
 
 rm(list = ls(all = TRUE))
 
@@ -13,11 +13,12 @@ library(parallel)
 library(MCMCpack)
 library(statmod)
 library(HyperbolicDist)
+library(LaplacesDemon)
 
 install_github("kylelang/SURF/source/SURF")
 library(SURF)
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Prepare Data for Testing ###
 
@@ -56,7 +57,7 @@ dat2 <- imposeMissData(data    = dat1,
                        pm      = pm,
                        snr     = snr)$data 
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Check Missing Data Indexing ###
 
@@ -98,7 +99,7 @@ for(v in 1 : ncol(dat3)) {
     if(length(t3) > 0) stop("Miss indices broken")
 }# END for(v in 1 : ncol(dat3))
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Test MIBEN and MIBL ###
 
@@ -202,17 +203,17 @@ apply(miblFrame, 2, sd)
 apply(miceFrame, 2, sd)
 
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Test Random Variate Samplers ###
 
 ## MVN sampler:
-nObs <- 500000
-mvnMu <- rep(10, 3)
-mvnSigma <- matrix(5, 3, 3)
+nObs           <- 500000
+mvnMu          <- rep(10, 3)
+mvnSigma       <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma)
+out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma, seed = 235711)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -225,7 +226,7 @@ for(i in 1 : length(mvnMu)) {
 gamShape <- 10
 gamScale <- 10
 
-out2.1 <- MIBRR:::drawInvGamma(nObs, gamShape, gamScale)
+out2.1 <- MIBRR:::drawInvGamma(nObs, gamShape, gamScale, 235711)
 out2.2 <- rinvgamma(nObs, gamShape, gamScale)
 
 plot(density(out2.1), col = "red")
@@ -235,7 +236,7 @@ lines(density(out2.2), col = "blue")
 igMu  <- 1
 igLam <- 2
 
-out3.1 <- MIBRR:::drawInvGauss(nObs, igMu, igLam)
+out3.1 <- MIBRR:::drawInvGauss(nObs, igMu, igLam, 235711)
 out3.2 <- rinvgauss(nObs, igMu, igLam)
 
 plot(density(out3.1), col = "red")
@@ -246,25 +247,34 @@ gigLam <- 1
 gigChi <- 2
 gigPsi <- 2
 
-out4.1 <- MIBRR:::drawGig(nObs, gigLam, gigChi, gigPsi)
+out4.1 <- MIBRR:::drawGig(nObs, gigLam, gigChi, gigPsi, 235711)
 out4.2 <- rgig(nObs, c(gigLam, gigChi, gigPsi))
 
 plot(density(out4.1), col = "red")
 lines(density(out4.2), col = "blue")
 
+## Scaled inverse chi-squared sampler:
+df    <- 100
+scale <- 10
+
+out5.1 <- MIBRR:::drawScaledInvChiSq(nObs, df, scale, 235711)
+out5.2 <- rinvchisq(nObs, df, scale)
+
+plot(density(out5.1), col = "red")
+lines(density(out5.2), col = "blue")
 
 ## Incomplte gamma calculation:
 incGamShape <- 10
 incGamCut   <- 5
 
-out4.1 <- MIBRR:::calcIncGamma(incGamShape, incGamCut, FALSE)
-out4.2 <- pgamma(q     = incGamCut,
+out5.1 <- MIBRR:::calcIncGamma(incGamShape, incGamCut, FALSE)
+out5.2 <- pgamma(q     = incGamCut,
                  shape = incGamShape,
                  lower = FALSE) * gamma(incGamShape)
 
-out4.1 - out4.2
+out5.1 - out5.2
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Test BEN and BL ###
 
@@ -396,7 +406,7 @@ mseList <- mclapply(X        = c(1 : nReps),
 
 mseList
 
-###---------------------------------------------------------------------------###
+###--------------------------------------------------------------------------###
 
 ### Check Documentation Examples ###
 

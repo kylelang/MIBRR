@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-07
+### Modified: 2018-JUN-13
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -34,7 +34,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
-                            doBl              = "logical",
+                                        #doBl              = "logical",
                             checkConv         = "logical",
                             verbose           = "logical",
                             convThresh        = "numeric",
@@ -79,7 +79,9 @@ MibrrFit <- setRefClass("MibrrFit",
                             nObs              = "integer",
                             totalIters        = "integer",
                             rng0              = "character",
-                            userRng           = "character"
+                            userRng           = "character",
+                            ridge             = "numeric",
+                            penalty           = "integer"
                         )
                         )
 
@@ -97,7 +99,7 @@ MibrrFit$methods(
                           missCode          = as.integer(NA),
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
-                          doBl              = as.logical(NA),
+                                        #doBl              = as.logical(NA),
                           checkConv         = TRUE,
                           verbose           = as.logical(NA),
                           convThresh        = 1.1,
@@ -117,7 +119,9 @@ MibrrFit$methods(
                           optBoundLambda    = TRUE,
                           nChains           = 1L,
                           seed              = NULL,
-                          userRng           = "")
+                          userRng           = "",
+                          ridge             = 0.0,
+                          penalty           = 1L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -128,7 +132,7 @@ MibrrFit$methods(
                      missCode          <<- missCode
                      doImp             <<- doImp
                      doMcem            <<- doMcem
-                     doBl              <<- doBl
+                                        #doBl              <<- doBl
                      checkConv         <<- checkConv
                      verbose           <<- verbose
                      convThresh        <<- convThresh
@@ -149,6 +153,8 @@ MibrrFit$methods(
                      nChains           <<- nChains
                      seed              <<- seed
                      userRng           <<- userRng
+                     ridge             <<- ridge
+                     penalty           <<- penalty
                  },
              
 ################################### MUTATORS ###################################
@@ -340,7 +346,8 @@ MibrrFit$methods(
                  
                  rHats <<- list()
                  for(j in targetVars)
-                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
+                     rHats[[j]] <<- list()
+                                        #list(beta = NA, tau = NA, sigma = NA, lambda = NA)
                  
                  ## Replace missCode entries in data with NAs
                  if(!is.na(missCode)) {
@@ -446,9 +453,9 @@ MibrrFit$methods(
                      names(lambdaHistory) <<- targetVars
                  }
                  
-                 rHats <<- list()
-                 for(j in targetVars)
-                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
+                                        #rHats <<- list()
+                                        #for(j in targetVars)
+                                        #    rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
              },
 
 ###--------------------------------------------------------------------------###
@@ -553,11 +560,24 @@ MibrrFit$methods(
                  "Compute the potential scale reduction factors"
                  for(j in targetVars) {
                      rHats[[j]]$beta  <<- apply(gibbsOut[[j]]$beta, 2, calcRHat)
-                     rHats[[j]]$tau   <<- apply(gibbsOut[[j]]$tau,  2, calcRHat)
                      rHats[[j]]$sigma <<- calcRHat(gibbsOut[[j]]$sigma)
-                 }
+                     
+                     if(penalty != 0) {# Using a shrinkage prior?
+                         rHats[[j]]$tau <<-
+                             apply(gibbsOut[[j]]$tau, 2, calcRHat)
+                         
+                         if(!doMcem) {# Fully Bayesian estimation of lambdas?
+                             if(penalty == 1)
+                                 rHats[[j]]$lambda <<-
+                                     apply(gibbsOut[[j]]$lambda, 2, calcRHat)
+                             else
+                                 rHats[[j]]$lambda <<-
+                                     calcRHat(gibbsOut[[j]]$lambda[ , 1])
+                         }# CLOSE if(!doMcem)
+                     }# CLOSE if(penalty != 0)
+                 }# END for(j in targetVars)
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              checkGibbsConv = function() {
@@ -566,9 +586,23 @@ MibrrFit$methods(
                      ## Find nonconvergent Gibbs samples:
                      badBetaCount <- sum(rHats[[j]]$beta > convThresh)
                      maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badTauCount  <- sum(rHats[[j]]$tau > convThresh)
-                     maxTauRHat   <- max(rHats[[j]]$tau)
                      badSigmaFlag <- rHats[[j]]$sigma > convThresh
+                     
+                     if(penalty != 0) {
+                         badTauCount  <- sum(rHats[[j]]$tau > convThresh)
+                         maxTauRHat   <- max(rHats[[j]]$tau)
+
+                         if(!doMcem) {
+                             badLamCount <- sum(rHats[[j]]$lambda > convThresh)
+                             maxLamRHat  <- max(rHats[[j]]$lambda)
+                         }
+                         else
+                             badLamCount <- 0
+                     }
+                     else {
+                         badTauCount <- 0
+                         badLamCount <- 0
+                     }
                      
                      ## Return warnings about possible failures of convergence:
                      if(badBetaCount > 0) {
@@ -607,6 +641,19 @@ MibrrFit$methods(
                                  call.      = FALSE,
                                  immediate. = TRUE)
                      }
+                     if(badLamCount > 0) {
+                         warning(paste0("While imputing ",
+                                        j,
+                                        ", Lambda's final Gibbs sample may not have converged.\n",
+                                        badLamCount,
+                                        " R-Hats > ",
+                                        convThresh,
+                                        " with maximum R-Hat = ",
+                                        round(maxLamRHat, 4),
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
+                     }
                  }# CLOSE for(j in targetVars)
              },
              
@@ -630,16 +677,19 @@ MibrrFit$methods(
                  ##       Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
-                 if(!doBl) {
+                 if(penalty == 1) {
                      lambdaMat <<- cbind(
                          matrix(lambda1Starts, nTargets, 1),
                          matrix(lambda2Starts, nTargets, 1)
                      )
                  }
-                 else {
+                 else if(penalty == 2) {
                      if(usePcStarts) getLambdaStarts()
-                     lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
+                     lambdaMat <<-
+                         cbind(matrix(lambda1Starts, nTargets, 1), 0)
                  }
+                 else
+                     lambdaMat <<- matrix(NA, nTargets, 2)
                  
                  rownames(lambdaMat) <<- targetVars
                  colnames(lambdaMat) <<- c("lambda1", "lambda2")
@@ -648,7 +698,7 @@ MibrrFit$methods(
                  sigmaStarts <<- dataScales[targetVars]
                  
                  for(j in 1 : nTargets) {
-                     if(!doBl) {
+                     if(penalty == 1) {
                          lam1 <- lambdaMat[j, 1]
                          lam2 <- lambdaMat[j, 2]
                          
@@ -672,7 +722,7 @@ MibrrFit$methods(
                          betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
-                     else {# We're doing BL
+                     else if(penalty == 2) {# We're doing BL
                          lam <- lambdaMat[j, 1]
                          
                          tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
@@ -681,20 +731,14 @@ MibrrFit$methods(
                          betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
+                     else {
+                         betaPriorCov <- diag(rep(sigmaStarts[j], nPreds)) 
+                         betaStarts[ , j] <<-
+                             rmvnorm(1, rep(0, nPreds), betaPriorCov)
+                     }
                  }# CLOSE for(j in 1 : nTargets)
              },
-             
-###--------------------------------------------------------------------------###
-             
-                                        #smoothLambda = function() {
-                                        #    "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
-                                        #    i     <- iterations[1]
-                                        #    range <- (i - smoothingWindow + 1) : i
-                                        #
-                                        #    for(j in targetVars)
-                                        #        lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
-                                        #},
-
+         
 ###--------------------------------------------------------------------------###
              
              simpleImpute = function(covsOnly = FALSE, intern = TRUE) {

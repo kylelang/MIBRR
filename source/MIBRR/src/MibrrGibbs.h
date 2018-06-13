@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-29
+// Modified: 2018-JUN-13
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -68,10 +68,19 @@ public:
   int getNDraws() const;
   // @return: current number of retained Gibbs sampling draws
 
+  int getPenType() const;
+  // @return: an integer code indictating the type of regularization being used
+  //          0 := No shrinkage priors (i.e., basic ridge if _ridge > 0.0)
+  //          1 := Bayesian elastic net
+  //          2 := Bayesian LASSO
+
+  double getRidge() const;
+  // @return: the current value of the ridge penalty
+  
   bool getVerbosity() const;
   // @return: flag indicating if printed output is currently verbose
 
-  bool getElasticNetFlag() const;
+  //bool getElasticNetFlag() const;
   // @return: current value of the _useElasticNet switch
 
   bool getDoImp() const;
@@ -110,12 +119,18 @@ public:
   void beQuiet();
   // @effect: turn off verbose output
 
-  void doBl();
+  //void doBl();
   // @effect: set the imputation model to the Bayesian LASSO 
 
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
 
+  void setPenType(int);
+  // @param: a new value for the integer code of regularization type
+
+  void setRidge(double);
+  // @param: a new value for the ridge penalty
+  
   void setLam1Parms(VectorXd&);
   // @param: new value of lambda1 prior parameters
   
@@ -201,6 +216,7 @@ private:
   VectorXd _betas;
   ArrayXd  _taus;
   double   _sigma;
+  double   _ridge;
   VectorXd _lambdas;
   VectorXd _l1Parms;
   VectorXd _l2Parms;
@@ -212,8 +228,10 @@ private:
   int      _targetIndex;
   int      _nDraws;
   int      _drawNum;
+  int      _penType;
   bool     _verbose;
-  bool     _useElasticNet;
+  //bool     _useElasticNet;
+  //bool     _useLasso;
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _fullBayes;
