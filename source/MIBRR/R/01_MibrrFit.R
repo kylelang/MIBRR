@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-13
+### Modified: 2018-JUN-14
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -81,7 +81,9 @@ MibrrFit <- setRefClass("MibrrFit",
                             rng0              = "character",
                             userRng           = "character",
                             ridge             = "numeric",
-                            penalty           = "integer"
+                            penalty           = "integer",
+                            knownMeans        = "logical",
+                            knownScales       = "logical"
                         )
                         )
 
@@ -100,24 +102,24 @@ MibrrFit$methods(
                           doImp             = as.logical(NA),
                           doMcem            = as.logical(NA),
                                         #doBl              = as.logical(NA),
-                          checkConv         = TRUE,
+                                        #checkConv         = TRUE,
                           verbose           = as.logical(NA),
-                          convThresh        = 1.1,
-                          usePcStarts       = FALSE,
-                          center            = TRUE,
-                          scale             = TRUE,
-                          adaptScales       = TRUE,
-                          minPredCor        = 0.3,
-                          miceIters         = 10L,
-                          miceRidge         = 1e-4,
-                          miceMethod        = "pmm",
-                          fimlStarts        = FALSE,
-                          preserveStructure = TRUE,
-                          optTraceLevel     = 0L,
-                          optCheckKkt       = TRUE,
-                          optMethod         = "L-BFGS-B",
-                          optBoundLambda    = TRUE,
-                          nChains           = 1L,
+                                        #convThresh        = 1.1,
+                                        #usePcStarts       = FALSE,
+                                        #center            = TRUE,
+                                        #scale             = TRUE,
+                                        #adaptScales       = TRUE,
+                                        #minPredCor        = 0.3,
+                                        #miceIters         = 10L,
+                                        #miceRidge         = 1e-4,
+                                        #miceMethod        = "pmm",
+                                        #fimlStarts        = FALSE,
+                                        #preserveStructure = TRUE,
+                                        #optTraceLevel     = 0L,
+                                        #optCheckKkt       = TRUE,
+                                        #optMethod         = "L-BFGS-B",
+                                        #optBoundLambda    = TRUE,
+                                        #nChains           = 1L,
                           seed              = NULL,
                           userRng           = "",
                           ridge             = 0.0,
@@ -133,28 +135,30 @@ MibrrFit$methods(
                      doImp             <<- doImp
                      doMcem            <<- doMcem
                                         #doBl              <<- doBl
-                     checkConv         <<- checkConv
+                     checkConv         <<- TRUE
                      verbose           <<- verbose
-                     convThresh        <<- convThresh
-                     usePcStarts       <<- usePcStarts
-                     center            <<- center
-                     scale             <<- scale
-                     adaptScales       <<- adaptScales
-                     minPredCor        <<- minPredCor
-                     miceIters         <<- miceIters
-                     miceRidge         <<- miceRidge
-                     miceMethod        <<- miceMethod
-                     fimlStarts        <<- fimlStarts
-                     preserveStructure <<- preserveStructure
-                     optTraceLevel     <<- optTraceLevel
-                     optCheckKkt       <<- optCheckKkt
-                     optMethod         <<- optMethod
-                     optBoundLambda    <<- optBoundLambda
-                     nChains           <<- nChains
+                     convThresh        <<- 1.1
+                     usePcStarts       <<- FALSE
+                     center            <<- TRUE
+                     scale             <<- TRUE
+                     adaptScales       <<- TRUE
+                     minPredCor        <<- 0.3
+                     miceIters         <<- 10L
+                     miceRidge         <<- 1e-4
+                     miceMethod        <<- "pmm"
+                     fimlStarts        <<- FALSE
+                     preserveStructure <<- TRUE
+                     optTraceLevel     <<- 0L
+                     optCheckKkt       <<- TRUE
+                     optMethod         <<- "L-BFGS-B"
+                     optBoundLambda    <<- TRUE
+                     nChains           <<- 1L
                      seed              <<- seed
                      userRng           <<- userRng
                      ridge             <<- ridge
                      penalty           <<- penalty
+                     knownMeans        <<- FALSE
+                     knownScales       <<- FALSE
                  },
              
 ################################### MUTATORS ###################################
@@ -464,6 +468,7 @@ MibrrFit$methods(
                  "Compute the data means and standard deviations for scaling purposes"
                  if(useFiml) {
                      dn <- dataNames()
+
                      ## Specify a lavaan model to estimate sufficient stats:
                      mod1 <- paste(
                          paste0("F", dn, " =~ 1*", dn, "\n"),
@@ -480,19 +485,21 @@ MibrrFit$methods(
                                     missing         = "fiml")
                      
                      ## Store the estimated item means:
-                     if(center)
+                     if(center & !knownMeans)
                          dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
                      
                      ## Store the estimated item scales:
-                     if(scale)
+                     if(scale & !knownScales)
                          dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
                  }
                  else {
                      ## Store the raw item means:
-                     if(center) dataMeans <<- colMeans(data)
+                     if(center & !knownMeans)
+                         dataMeans <<- colMeans(data)
                      
                      ## Store the raw item scales:
-                     if(scale) dataScales <<- unlist(lapply(data, sd))
+                     if(scale & !knownScales)
+                         dataScales <<- unlist(lapply(data, sd))
                  }
 
                  if(!center) dataMeans  <<- rep(0.0, ncol(data))
@@ -584,8 +591,9 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
-                     maxBetaRHat  <- max(rHats[[j]]$beta)
+                                        #badBetaCount <- sum(rHats[[j]]$beta > convThresh)
+                                        #maxBetaRHat  <- max(rHats[[j]]$beta)
+                     badBetaCount <- 0################################################################
                      badSigmaFlag <- rHats[[j]]$sigma > convThresh
                      
                      if(penalty != 0) {

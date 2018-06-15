@@ -293,15 +293,18 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   // Draw new values of the regression slope coefficients:
   VectorXd newBetas(nPreds + 1); 
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
-  
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
   double intMean = mibrrData.getDV(_targetIndex).mean() -
     mibrrData.getIVs(_targetIndex, true).colwise().mean() *
     newBetas.tail(nPreds);
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   
   // Draw a new value of the intercept term:  
   newBetas[0] = drawNorm(intMean, intSd);
+  //newBetas[0] = 0.0; ///////////////////////////////////////////////////////////////////////////////
   
   _betas = newBetas; // Store the updated Betas
   
