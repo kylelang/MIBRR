@@ -19,7 +19,9 @@ NOTE:
 ### Added
 - A new exported function, `vanilla`, that implements a basic MI without 
   using any shrinkage priors.
-
+- The option to specify known means and standard deviations for the data. This 
+  option is mostly for debugging purposes.
+  
 ## 0.0.0.9006 - 2018-06-07
 
 ### Fixed
