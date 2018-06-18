@@ -6,9 +6,6 @@
 
 rm(list = ls(all = TRUE))
 
-install.packages("codetools",
-                 repos = "http://cloud.r-project.org")
-
 library(RcppEigen)
 
 ver <- "0.0.0.9007-9999"
@@ -24,7 +21,7 @@ Rcpp::compileAttributes("source/MIBRR")
 system("R CMD build source/MIBRR")
 
 ## Run CRAN checks:
-system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
+                                        #system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
 
 ## Install the MIBRR package:
 install.packages(paste0("MIBRR_", ver, ".tar.gz"),
@@ -32,5 +29,5 @@ install.packages(paste0("MIBRR_", ver, ".tar.gz"),
                  type  = "source")
 
 ## Move the tar-ball to the builds directory:
-system(paste0("mv MIBRR_", ver, ".tar.gz builds/"))
+                                        #system(paste0("mv MIBRR_", ver, ".tar.gz builds/"))
 

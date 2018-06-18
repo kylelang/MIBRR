@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-JUN-13
+// Modified: 2018-JUN-18
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -119,9 +119,6 @@ public:
   void beQuiet();
   // @effect: turn off verbose output
 
-  //void doBl();
-  // @effect: set the imputation model to the Bayesian LASSO 
-
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
 
@@ -230,8 +227,6 @@ private:
   int      _drawNum;
   int      _penType;
   bool     _verbose;
-  //bool     _useElasticNet;
-  //bool     _useLasso;
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _fullBayes;

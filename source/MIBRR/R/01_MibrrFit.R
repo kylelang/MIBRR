@@ -34,7 +34,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
-                                        #doBl              = "logical",
                             checkConv         = "logical",
                             verbose           = "logical",
                             convThresh        = "numeric",
@@ -89,41 +88,23 @@ MibrrFit <- setRefClass("MibrrFit",
 
 
 MibrrFit$methods(
-
+             
 ################################ CONSTRUCTOR ###################################
              
              initialize =
-                 function(data              = data.frame(NULL),
-                          targetVars        = "",
-                          ignoreVars        = "",
-                          iterations        = as.integer(NA),
-                          sampleSizes       = list(),
-                          missCode          = as.integer(NA),
-                          doImp             = as.logical(NA),
-                          doMcem            = as.logical(NA),
-                                        #doBl              = as.logical(NA),
-                                        #checkConv         = TRUE,
-                          verbose           = as.logical(NA),
-                                        #convThresh        = 1.1,
-                                        #usePcStarts       = FALSE,
-                                        #center            = TRUE,
-                                        #scale             = TRUE,
-                                        #adaptScales       = TRUE,
-                                        #minPredCor        = 0.3,
-                                        #miceIters         = 10L,
-                                        #miceRidge         = 1e-4,
-                                        #miceMethod        = "pmm",
-                                        #fimlStarts        = FALSE,
-                                        #preserveStructure = TRUE,
-                                        #optTraceLevel     = 0L,
-                                        #optCheckKkt       = TRUE,
-                                        #optMethod         = "L-BFGS-B",
-                                        #optBoundLambda    = TRUE,
-                                        #nChains           = 1L,
-                          seed              = NULL,
-                          userRng           = "",
-                          ridge             = 0.0,
-                          penalty           = 1L)
+                 function(data        = data.frame(NULL),
+                          targetVars  = "",
+                          ignoreVars  = "",
+                          iterations  = as.integer(NA),
+                          sampleSizes = list(),
+                          missCode    = as.integer(NA),
+                          doImp       = as.logical(NA),
+                          doMcem      = as.logical(NA),
+                          verbose     = as.logical(NA),
+                          seed        = NULL,
+                          userRng     = "",
+                          ridge       = 0.0,
+                          penalty     = 1L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -134,7 +115,6 @@ MibrrFit$methods(
                      missCode          <<- missCode
                      doImp             <<- doImp
                      doMcem            <<- doMcem
-                                        #doBl              <<- doBl
                      checkConv         <<- TRUE
                      verbose           <<- verbose
                      convThresh        <<- 1.1
@@ -183,12 +163,12 @@ MibrrFit$methods(
              },
 
 ###--------------------------------------------------------------------------###
-
+             
              setLambdaParams = function(l1, l2) {
                  l1Pars <<- l1
                  l2Pars <<- l2
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              saveSeed = function(seed0) {
@@ -213,7 +193,7 @@ MibrrFit$methods(
                                  class(seed),
                                  ").")
                           )
-
+                 
                  ## Stop generating random numbers from the user's stream:
                  check <- length(userRng) > 0 & userRng != ""
                  if(check) .lec.CurrentStreamEnd()
@@ -243,7 +223,7 @@ MibrrFit$methods(
              },
              
 ################################# ACCESSORS ####################################
-
+             
              dataNames    = function() { colnames(data)                       },
              targets      = function() { targetVars                           },
              countMissing = function() { missCounts                           },
@@ -313,7 +293,7 @@ MibrrFit$methods(
                      data[is.na(data)] <<- missCode
                  }
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              processInputs = function() {
@@ -349,10 +329,8 @@ MibrrFit$methods(
                  }
                  
                  rHats <<- list()
-                 for(j in targetVars)
-                     rHats[[j]] <<- list()
-                                        #list(beta = NA, tau = NA, sigma = NA, lambda = NA)
-                 
+                 for(j in targetVars) rHats[[j]] <<- list()
+                                                         
                  ## Replace missCode entries in data with NAs
                  if(!is.na(missCode)) {
                      userMissCode           <<- TRUE
@@ -456,12 +434,8 @@ MibrrFit$methods(
                                 })
                      names(lambdaHistory) <<- targetVars
                  }
-                 
-                                        #rHats <<- list()
-                                        #for(j in targetVars)
-                                        #    rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              computeStats = function(useFiml = FALSE) {
@@ -591,9 +565,8 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                                        #badBetaCount <- sum(rHats[[j]]$beta > convThresh)
-                                        #maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badBetaCount <- 0################################################################
+                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
+                     maxBetaRHat  <- max(rHats[[j]]$beta)
                      badSigmaFlag <- rHats[[j]]$sigma > convThresh
                      
                      if(penalty != 0) {

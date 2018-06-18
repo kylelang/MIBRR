@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-14
+### Modified: 2018-JUN-18
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -52,7 +52,6 @@ init <- function(penalty,
                          verbose     = verbose,
                          doImp       = doImp,
                          doMcem      = doMcem,
-                                        #doBl        = doBl,
                          seed        = seed,
                          userRng     = userRng,
                          ridge       = ridge,

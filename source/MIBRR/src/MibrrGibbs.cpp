@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-JUN-13
+// Modified: 2018-JUN-18
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -87,7 +87,6 @@ void MibrrGibbs::setTargetIndex(int index)         { _targetIndex   = index;   }
 void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws        = nDraws;  }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp         = doImp;   }
 void MibrrGibbs::beQuiet       ()                  { _verbose       = false;   }
-//void MibrrGibbs::doBl          ()                  { _useElasticNet = false;   }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes     = true;    }
 void MibrrGibbs::setPenType    (int penType)       { _penType       = penType; }
 void MibrrGibbs::setRidge      (double ridge)      { _ridge         = ridge;   }
@@ -209,6 +208,8 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   int     nPreds   = mibrrData.nPreds();
   double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
+
+  Rcpp::Rcout << "I'm updating my Taus" << endl;////////////////////////////////////////////////
   
   try {
     if(_penType == 1) {// MIBEN Version
@@ -258,7 +259,7 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   // Compute the IV's crossproducts matrix:
   MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
     mibrrData.getIVs(_targetIndex, true);
-  
+     
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
   MatrixXd penalty;
@@ -294,20 +295,17 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   VectorXd newBetas(nPreds + 1); 
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
   double intMean = mibrrData.getDV(_targetIndex).mean() -
     mibrrData.getIVs(_targetIndex, true).colwise().mean() *
     newBetas.tail(nPreds);
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  
+   
   // Draw a new value of the intercept term:  
   newBetas[0] = drawNorm(intMean, intSd);
-  //newBetas[0] = 0.0; ///////////////////////////////////////////////////////////////////////////////
-  
+   
   _betas = newBetas; // Store the updated Betas
-  
+ 
   // Add the updated Betas to their Gibbs sample:
   if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
 }// END updateBetas()
@@ -405,7 +403,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
   if(_fullBayes & (_penType != 0)) updateLambdas(mibrrData);
   
-  if(_penType != 0) updateTaus (mibrrData);
+  if(_penType != 0) updateTaus(mibrrData);
 
   updateBetas(mibrrData);
   updateSigma(mibrrData);
