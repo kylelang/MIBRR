@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-14
+### Modified: 2018-NOV-08
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -104,7 +104,7 @@ MibrrFit$methods(
                           seed        = NULL,
                           userRng     = "",
                           ridge       = 0.0,
-                          penalty     = 1L)
+                          penalty     = 2L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -548,7 +548,7 @@ MibrrFit$methods(
                              apply(gibbsOut[[j]]$tau, 2, calcRHat)
                          
                          if(!doMcem) {# Fully Bayesian estimation of lambdas?
-                             if(penalty == 1)
+                             if(penalty == 2)
                                  rHats[[j]]$lambda <<-
                                      apply(gibbsOut[[j]]$lambda, 2, calcRHat)
                              else
@@ -658,13 +658,13 @@ MibrrFit$methods(
                  ##       Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
-                 if(penalty == 1) {
+                 if(penalty == 2) {
                      lambdaMat <<- cbind(
                          matrix(lambda1Starts, nTargets, 1),
                          matrix(lambda2Starts, nTargets, 1)
                      )
                  }
-                 else if(penalty == 2) {
+                 else if(penalty == 1) {
                      if(usePcStarts) getLambdaStarts()
                      lambdaMat <<-
                          cbind(matrix(lambda1Starts, nTargets, 1), 0)
@@ -679,7 +679,7 @@ MibrrFit$methods(
                  sigmaStarts <<- dataScales[targetVars]
                  
                  for(j in 1 : nTargets) {
-                     if(penalty == 1) {
+                     if(penalty == 2) {
                          lam1 <- lambdaMat[j, 1]
                          lam2 <- lambdaMat[j, 2]
                          
@@ -703,7 +703,7 @@ MibrrFit$methods(
                          betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
-                     else if(penalty == 2) {# We're doing BL
+                     else if(penalty == 1) {# We're doing BL
                          lam <- lambdaMat[j, 1]
                          
                          tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))

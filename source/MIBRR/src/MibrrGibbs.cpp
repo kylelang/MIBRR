@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-JUN-18
+// Modified: 2018-NOV-08
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -38,7 +38,7 @@ MibrrGibbs::MibrrGibbs()
   _drawNum           = 0;
   _storeGibbsSamples = false;
   _verbose           = true;
-  _penType           = 1;
+  _penType           = 2;
   _fullBayes         = false;
 }
 
@@ -65,7 +65,7 @@ bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
 VectorXd MibrrGibbs::getLambdas() const
 { 
   VectorXd outLam;
-  if(_penType == 1) outLam = _lambdas;
+  if(_penType == 2) outLam = _lambdas;
   else              outLam = VectorXd::Constant(1, _lambdas[0]);
   return outLam; 
 }
@@ -174,7 +174,7 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   double lam1   = _lambdas[0];
   double tauSum = _taus.sum();
   
-  if(_penType == 2) {// MIBL Version
+  if(_penType == 1) {// MIBL Version
     double shape = _l1Parms[0] + nPreds;
     double rate  = _l1Parms[1] + tauSum / 2.0;
     
@@ -208,11 +208,9 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   int     nPreds   = mibrrData.nPreds();
   double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
-
-  Rcpp::Rcout << "I'm updating my Taus" << endl;////////////////////////////////////////////////
   
   try {
-    if(_penType == 1) {// MIBEN Version
+    if(_penType == 2) {// MIBEN Version
       ArrayXd tauMeansNumerator = ArrayXd::Constant(nPreds, _lambdas[0]);
       
       tauMeans = tauMeansNumerator.sqrt() /
@@ -220,7 +218,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
       
       tauScale = _lambdas[0] / (4.0 * _lambdas[1] * _sigma);
     }
-    else {// MIBL Version
+    else {             // MIBL Version
       double tauMeansNumerator = pow(_lambdas[0], 2) * _sigma;
       
       tauMeans =
@@ -239,7 +237,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
     tmpDraws[i] = drawInvGauss(tauMeans[i], tauScale);
   
   ArrayXd newTaus;
-  if(_penType == 1) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
+  if(_penType == 2) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
   else              newTaus = 1.0 / tmpDraws;              // MIBL Version
   
   _taus = newTaus; // Store the updated Taus
@@ -263,11 +261,11 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
   MatrixXd penalty;
-  if(_penType == 1) {// MIBEN Version
+  if(_penType == 2) {// MIBEN Version
     transTaus = _taus / (_taus - 1.0);
     penalty   = _lambdas[1] * transTaus.asDiagonal();    
   }
-  else if(_penType == 2) {// MIBL Version
+  else if(_penType == 1) {// MIBL Version
     transTaus = 1.0 / _taus;
     penalty   = transTaus.asDiagonal();
   }
@@ -326,7 +324,7 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
     (mibrrData.getDV(_targetIndex) - eta);
   
-  if(_penType == 1) {// MIBEN Version
+  if(_penType == 2) {// MIBEN Version
     double scaleSum =
       (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
     
@@ -351,7 +349,7 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
     };
     newSigma = testDraw;
   }
-  else if(_penType == 2) {// MIBL Version
+  else if(_penType == 1) {// MIBL Version
     VectorXd transTaus = 1.0 / _taus;
     MatrixXd tmpMat    = transTaus.asDiagonal();
     double   penalty   =

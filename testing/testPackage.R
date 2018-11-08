@@ -124,14 +124,14 @@ testFun <- function(rp, data, env) {
                       ignoreVars = NULL,
                       iterations = c(50, 10),
                       verbose    = FALSE)
-    mibenImps <- getImpData(mibenOut, 100)
+    mibenImps <- getImpData(mibenOut, nImps)
     
     miblOut <- mibl(data       = dat2,
                     targetVars = targets$mar,
                     ignoreVars = NULL,
                     iterations = c(50, 10),
                     verbose    = FALSE)
-    miblImps <- getImpData(miblOut, 100)
+    miblImps <- getImpData(miblOut, nImps)
     
     miceOut <-
         mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
@@ -202,6 +202,91 @@ apply(mibenFrame, 2, sd)
 apply(miblFrame, 2, sd)
 apply(miceFrame, 2, sd)
 
+###--------------------------------------------------------------------------###
+
+### Test Vanilla MI ###
+
+testFun <- function(rp, data, env) {
+    cn       <- env$cn
+    targets  <- env$targets
+    marPreds <- env$marPreds
+    pm       <- env$pm
+    snr      <- env$snr
+    nImps    <- env$nImps
+    keys     <- env$keys
+    
+    dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
+    dat2 <- imposeMissData(data    = dat1,
+                           targets = targets,
+                           preds   = marPreds,
+                           pm      = pm,
+                           snr     = snr)$data
+    
+    vanOut <- vanilla(data       = dat2,
+                      targetVars = targets$mar,
+                      ignoreVars = NULL,
+                      verbose    = FALSE)
+    
+    vanImps <- getImpData(vanOut, nImps)
+    
+    miceOut <-
+        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
+
+    vanList <- miceList <- list()
+    for(m in 1 : nImps) {
+        ## Vanilla estimates:
+        scores         <- scoreItems(keys  = keys,
+                                     items = vanImps[[m]])$scores
+        vanList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                          mA = mean(scores[ , "agree"]),
+                          mE = mean(scores[ , "extra"])
+                          )
+
+        ## MICE estimates:
+        scores        <- scoreItems(keys  = keys,
+                                    items = mice::complete(miceOut, m))$scores
+        miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
+                           mA = mean(scores[ , "agree"]),
+                           mE = mean(scores[ , "extra"])
+                           )
+    }
+
+    list(van  = colMeans(do.call(rbind, vanList)),
+         mice = colMeans(do.call(rbind, miceList))
+         )
+} # END testFun()
+
+nReps <- 20
+nImps <- 10
+keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
+              extra = c("-E1", "-E2", "E3", "E4", "E5")
+              )
+
+simOut <- mclapply(X        = c(1 : nReps),
+                   FUN      = testFun,
+                   data     = bfi2,
+                   env      = parent.frame(),
+                   mc.cores = 4)
+
+tmp <- do.call(rbind, lapply(simOut, unlist))
+
+vanFrame  <- tmp[ , grep("van", colnames(tmp))]
+miceFrame <- tmp[ , grep("mice", colnames(tmp))]
+
+## Complete data result: 
+scores  <- scoreItems(keys = keys, items = bfi2)$scores
+compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
+             mA = mean(scores[ , "agree"]),
+             mE = mean(scores[ , "extra"])
+             )
+
+## Percent Relative Bias:
+100 * (colMeans(vanFrame) - compRes) / compRes
+100 * (colMeans(miceFrame) - compRes) / compRes
+
+# Monte Carlo SD:
+apply(vanFrame, 2, sd)
+apply(miceFrame, 2, sd)
 
 ###--------------------------------------------------------------------------###
 

@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-JUN-15
+// Modified: 2018-NOV-08
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -76,7 +76,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
       mibrrGibbs[j].doFullBayes(); 
       mibrrGibbs[j].setLam1Parms(l1Parms);
       
-      if(penType == 1)// Doing MIBEN?
+      if(penType == 2)// Doing MIBEN?
 	mibrrGibbs[j].setLam2Parms(l2Parms); 
     }
     
@@ -138,10 +138,10 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++)
     outList[j] = 
-      RList::create(Rcpp::Named("imps" )  = mibrrGibbs[j].getImpSam(), 
-		    Rcpp::Named("beta" )  = mibrrGibbs[j].getBetaSam(),
-		    Rcpp::Named("tau"  )  = mibrrGibbs[j].getTauSam(),
-		    Rcpp::Named("sigma")  = mibrrGibbs[j].getSigmaSam(),
+      RList::create(Rcpp::Named("imps"  ) = mibrrGibbs[j].getImpSam(), 
+		    Rcpp::Named("beta"  ) = mibrrGibbs[j].getBetaSam(),
+		    Rcpp::Named("tau"   ) = mibrrGibbs[j].getTauSam(),
+		    Rcpp::Named("sigma" ) = mibrrGibbs[j].getSigmaSam(),
 		    Rcpp::Named("lambda") = mibrrGibbs[j].getLambdaSam()
 		    );    
 

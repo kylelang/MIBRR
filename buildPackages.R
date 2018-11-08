@@ -1,7 +1,7 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2018-JUN-06
+### Modified: 2018-NOV-08
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
@@ -29,5 +29,5 @@ install.packages(paste0("MIBRR_", ver, ".tar.gz"),
                  type  = "source")
 
 ## Move the tar-ball to the builds directory:
-                                        #system(paste0("mv MIBRR_", ver, ".tar.gz builds/"))
+system(paste0("mv MIBRR_", ver, ".tar.gz builds/"))
 

@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-JUN-13
+### Modified: 2018-NOV-08
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -172,7 +172,7 @@ MibrrFit$methods(
                  "Optimize the BEN or BL penalty parameters"
                  
                  ## Use simple update rule and return early when doing BL:
-                 if(penalty == 2) {
+                 if(penalty == 1) {
                      lapply(1 : nTargets, .self$updateBlLambda)
                  }
                  else {
@@ -195,7 +195,7 @@ MibrrFit$methods(
                      
                      if(optTraceLevel == 0) sink()
                      options(warn = 0)
-                 }# CLOSE if(penalty == 2); else
+                 }# CLOSE if(penalty == 1); else
                  
                  for(j in 1 : nTargets) {
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]

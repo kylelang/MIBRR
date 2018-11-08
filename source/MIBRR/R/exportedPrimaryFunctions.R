@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2018-JUN-13
+### Modified: 2018-NOV-08
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -48,7 +48,7 @@ miben <- function(data,
                   )
 {
     ## Initialize the output object:
-    mibrrFit <- init(penalty      = 1,
+    mibrrFit <- init(penalty      = 2,
                      doImp        = TRUE,
                      doMcem       = doMcem,
                      data         = data,
@@ -91,7 +91,7 @@ mibl <- function(data,
                  )
 {
     ## Initialize the output object:
-    mibrrFit <- init(penalty      = 2,
+    mibrrFit <- init(penalty      = 1,
                      doImp        = TRUE,
                      doMcem       = doMcem,
                      data         = data,
@@ -136,7 +136,7 @@ ben <- function(data,
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
 
     ## Initialize the output object:
-    mibrrFit <- init(penalty      = 1,
+    mibrrFit <- init(penalty      = 2,
                      doImp        = FALSE,
                      doMcem       = doMcem,
                      data         = data,
@@ -180,7 +180,7 @@ bl <- function(data,
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
     
     ## Initialize the output object:
-    mibrrFit <- init(penalty      = 2,
+    mibrrFit <- init(penalty      = 1,
                      doImp        = FALSE,
                      doMcem       = doMcem,
                      data         = data,
