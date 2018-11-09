@@ -1,14 +1,14 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2018-NOV-08
+### Modified: 2018-NOV-09
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-ver <- "0.0.0.9007-9999"
+ver <- "0.0.0.9007"
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \
@@ -21,7 +21,7 @@ Rcpp::compileAttributes("source/MIBRR")
 system("R CMD build source/MIBRR")
 
 ## Run CRAN checks:
-                                        #system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
+system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
 
 ## Install the MIBRR package:
 install.packages(paste0("MIBRR_", ver, ".tar.gz"),

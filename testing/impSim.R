@@ -11,6 +11,9 @@ library(MIBRR)
 library(parallel)
 library(SURF)
 
+outDir   <- "~/Desktop/mibenSim/"
+saveDate <- format(Sys.time(), "%Y%m%d")
+
 ###--------------------------------------------------------------------------###
 
 ### Prepare Data for Testing ###
@@ -143,6 +146,8 @@ simOut <- mclapply(X        = c(1 : nReps),
                    data     = bfi2,
                    env      = parent.frame(),
                    mc.cores = 4)
+
+saveRDS(simOut, paste0(outDir, "simRes-", saveDate, ".rds"))
 
 ###--------------------------------------------------------------------------###
 
