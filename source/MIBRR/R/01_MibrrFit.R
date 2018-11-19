@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-NOV-08
+### Modified: 2018-NOV-19
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -148,7 +148,12 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             setData = function(dat1) { data[ , colnames(dat1)] <<- dat1      },
+             setData = function(dat1, vars = NULL) {
+                 if(is.null(vars))
+                     data[ , colnames(dat1)] <<- dat1
+                 else
+                     data[ , vars] <<- dat1[ , vars]
+             },
              
 ###--------------------------------------------------------------------------###
              
@@ -684,7 +689,7 @@ MibrrFit$methods(
                          lam2 <- lambdaMat[j, 2]
                          
                          tauPriorScale <- (8 * lam2 * sigmaStarts[j]) / lam1^2
-                         
+                      
                          for(k in 1 : nPreds) {
                              tauDraw <- 0.0
                              while(tauDraw < 1.0)
@@ -726,7 +731,7 @@ MibrrFit$methods(
                  "Initially fill the missing values via single imputation"
                  cn     <- dataNames()
                  rFlags <- (missCounts > 0)[cn]
-                 
+         
                  if(covsOnly) rFlags <- rFlags & cn %in% setdiff(cn, targetVars)
                  
                  ## Don't try to impute fully observed targets:
@@ -739,7 +744,7 @@ MibrrFit$methods(
                  ## Construct a vector of elementary imputation methods:
                  methVec         <- rep("", ncol(data))
                  methVec[rFlags] <- miceMethod
-                 
+          
                  ## Singly impute the missing values:
                  miceOut <- mice(data            = data,
                                  m               = 1,
@@ -751,7 +756,8 @@ MibrrFit$methods(
                  
                  ## Replace missing values with their imputations:
                  if(intern)
-                     setData(mice::complete(miceOut, 1)[ , rFlags])
+                     setData(dat1 = mice::complete(miceOut, 1),
+                             vars = cn[rFlags])
                  else
                      mice::complete(miceOut, 1) 
              },
