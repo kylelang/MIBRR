@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-NOV-08
+### Modified: 2018-NOV-21
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -31,7 +31,7 @@ MibrrFit$methods(
                  "Run the Gibbs sampler to update the imputation model parameters"
 
                  respCounts <- nObs - missCounts
-                 
+
                  ## Get a new vector of seeds for the C++ samplers:
                  seedVec <- rep(NA, nTargets)
                  for(v in 1 : nTargets) {
@@ -39,13 +39,13 @@ MibrrFit$methods(
                      .lec.ResetNextSubstream(sName)
                      seedVec[v] <- .lec.GetState(sName)[1]
                  }
-                                  
+                
                  gibbsOut <<-
                      runGibbs(data        = as.matrix(data),
                               dataScales  = dataScales,
                               nTargets    = nTargets,
-                              missList    = missList[c(1 : nTargets)],
-                              respCounts  = respCounts[c(1 : nTargets)],
+                              missList    = missList[targetVars],
+                              respCounts  = respCounts[targetVars],
                               lambda1     = lambdaMat[ , 1], 
                               lambda2     = lambdaMat[ , 2], # Ignored for BL
                               l1Parms     = l1Pars, # Ignored when

@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-NOV-08
+// Modified: 2018-NOV-21
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -253,11 +253,11 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   int             nPreds = mibrrData.nPreds();
   int             nObs   = mibrrData.nResp(_targetIndex);
   LDLT <MatrixXd> aMatChol;
-
+    
   // Compute the IV's crossproducts matrix:
   MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
     mibrrData.getIVs(_targetIndex, true);
-     
+  
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
   MatrixXd penalty;
@@ -271,7 +271,7 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   }
   else                // Basic ridge penalty
     penalty = (aMat.diagonal() * _ridge).asDiagonal();
-
+  
   // Penalize the IV's crossproducts matrix:
   aMat += penalty;
   
@@ -400,7 +400,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
   if(_fullBayes & (_penType != 0)) updateLambdas(mibrrData);
-  
+    
   if(_penType != 0) updateTaus(mibrrData);
 
   updateBetas(mibrrData);

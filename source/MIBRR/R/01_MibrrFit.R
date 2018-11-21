@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-NOV-19
+### Modified: 2018-NOV-21
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -345,14 +345,7 @@ MibrrFit$methods(
                      userMissCode <<- FALSE
                      missCode     <<- -999L
                  }
-
-                 missCounts <<- sapply(colSums(is.na(data)), as.integer)
-                 
-                 ## Create a list of missing elements in each target variable
-                 ## NOTE: Subtract 1 from each index vector to base indices
-                 ##       at 0 for C++
-                 missList <<- lapply(data, function(x) which(is.na(x)) - 1)
-
+              
                  ## Generate a pool of potential imputation indices:
                  if(doImp)
                      impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
@@ -415,9 +408,16 @@ MibrrFit$methods(
                  )
                  
                  ## Hack to deal with 1D matrix conversion to vector:
-                 if(length(targetVars) == 1)
-                     colnames(data)[1] <<- targetVars
+                 if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
 
+                 ## Store nonresponse counts:
+                 missCounts <<- sapply(colSums(is.na(data)), as.integer)
+
+                 ## Create a list of missing elements in each target variable
+                 ## NOTE: Subtract 1 from each index vector to base indices
+                 ##       at 0 for C++
+                 missList <<- lapply(data, function(x) which(is.na(x)) - 1)
+                 
                  ## How many targets?
                  nTargets <<- as.integer(length(targetVars))
 
@@ -731,7 +731,7 @@ MibrrFit$methods(
                  "Initially fill the missing values via single imputation"
                  cn     <- dataNames()
                  rFlags <- (missCounts > 0)[cn]
-         
+                              
                  if(covsOnly) rFlags <- rFlags & cn %in% setdiff(cn, targetVars)
                  
                  ## Don't try to impute fully observed targets:
