@@ -14,7 +14,19 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9007 - 2018-11-21 - ACTIVE
+## 0.1.0.9000 - 2019-01-15 - ACTIVE
+
+### Changed
+- Updated version number
+
+### NOTE
+- This version shall be considered a "stable" reference version of the original 
+  implementation of `MIBRR` that was used in Lang (2015). 
+- This version is STILL BROKEN
+- This version shall act as a known starting point from which I can fix the 
+  broken implementation.
+  
+## 0.0.0.9007 - 2018-11-21
 
 ### Fixed
 - Two bugs causing crashes when trying to impute univariate missing data
