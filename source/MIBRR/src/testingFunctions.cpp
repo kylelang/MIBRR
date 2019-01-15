@@ -1,10 +1,10 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-JUN-13
+// Modified: 2019-JAN-15
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -143,25 +143,23 @@ Eigen::VectorXd drawGig(int          n,
 // [[Rcpp::export]]
 std::vector<int>
 printObsIndices(Eigen::MatrixXd                 data,
-		Eigen::VectorXd                 scales,
 		std::vector< std::vector<int> > missIndices,
 		Eigen::VectorXi                 respCounts,
 		bool                            noMiss,
 		int                             targetIndex)
 {
-  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return(mibrrData.getObsRows(targetIndex));
 }
 
 // [[Rcpp::export]]
 std::vector<int>
 printMissIndices(Eigen::MatrixXd                 data,
-		 Eigen::VectorXd                 scales,
 		 std::vector< std::vector<int> > missIndices,
 		 Eigen::VectorXi                 respCounts,
 		 bool                            noMiss,
 		 int                             targetIndex)
 {
-  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return(mibrrData.getMissIndices(targetIndex));
 }

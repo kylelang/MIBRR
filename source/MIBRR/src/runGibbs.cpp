@@ -1,12 +1,12 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-NOV-21
+// Modified: 2019-JAN-15
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -32,7 +32,6 @@
 
 // [[Rcpp::export]]
 Rcpp::List runGibbs(Eigen::MatrixXd           data,
-		    Eigen::VectorXd           dataScales,
 		    int                       nTargets,  
 		    Rcpp::List                missList,
 		    Eigen::VectorXi           respCounts,
@@ -49,16 +48,16 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    double                    ridge,
 		    bool                      verbose,
 		    bool                      fullBayes,
-		    bool                      adaptScales,
 		    bool                      noMiss,
 		    std::vector<unsigned int> seeds)
 {
   // Unpack the list of missing row indices:
   std::vector< std::vector<int> > missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
-  
+   
   // Initialize the various classes needed below:
-  MibrrData  mibrrData(data, dataScales, missIndices, respCounts, noMiss);
+  //MibrrData  mibrrData(data, dataScales, missIndices, respCounts, noMiss);
+  MibrrData  mibrrData(data, missIndices, respCounts, noMiss);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Initialize all parameters and setup the Gibbs sampler:
@@ -94,7 +93,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
      
     if(!verbose) mibrrGibbs[j].beQuiet(); 
   }// CLOSE for(in j ==0; j < nTargets; j++)
-  
+ 
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
     // Print a nice progress message:
     if(verbose) {
@@ -124,7 +123,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     // Improve the output's aesthetics:
     bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
     if(check1) Rcpp::Rcout << "\n";
-
+    
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
@@ -133,7 +132,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
       if((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
     }
     
-    if(adaptScales) mibrrData.computeDataScales();
+    //if(adaptScales) mibrrData.computeDataScales();
     
   }// CLOSE for (int i = 0; i < nGibbsIters; i++)
   

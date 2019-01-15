@@ -1,12 +1,12 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-04
+// Modified: 2019-JAN-15
 // Purpose:  This class contains data- and sampling-related functions used by
 //           the MIBRR Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -36,7 +36,7 @@ public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
     
   MibrrData(const MatrixXd&,
-	    const VectorXd&,
+	    //const VectorXd&,
 	    vector< vector<int> >,
 	    const VectorXi&,
 	    const bool);
@@ -65,7 +65,7 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
-  double getDataScales(int) const;
+  //double getDataScales(int) const;
   // @param:  a column index
   // @return: the  scale of the data in the specified column
 
@@ -76,7 +76,7 @@ public:
   MatrixXd getData() const;
   // @return: the data matrix
   
-  VectorXd getDataScales() const;
+  //VectorXd getDataScales() const;
   // @return: the column-wise scales of the data
 
   
@@ -95,8 +95,21 @@ public:
   // @param2: the row index of the element to replace
   // @param3: the column index of the element to replace
 
-  void computeDataScales();
-  // @effect: update the value of _dataScales based on imputed data
+  //void computeDataMeans();
+  // @effect: update the value of _dataMeans based on current data values
+
+  //void computeMean(const int);
+  // @param:  column index of the variable for which to compute the mean
+  // @effect: update the appropriate entry of _dataMeans based on current data
+  //          values
+  
+  //void computeDataScales();
+  // @effect: update the value of _dataScales based on current data values
+
+  //void computeScale(const int);
+  // @param:  column index of the variable for which to compute the scale
+  // @effect: update the appropriate entry of _dataScales based on current data
+  //          values
   
   void fillMissing(const MatrixXd&);
   // @param:  a matrix of new values to fill in missing target data
@@ -131,7 +144,7 @@ private:
   bool                  _noMiss;
   MatrixXd              _data;
   VectorXi              _respCounts;
-  VectorXd              _dataScales;
+  //VectorXd              _dataScales;
   vector< vector<int> > _missIndices;
 };
 

@@ -1,10 +1,10 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-18
+### Modified: 2019-JAN-15
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -77,24 +77,24 @@ init <- function(penalty,
     haveMiss <- any(mibrrFit$countMissing() > 0)
 
     ## Temporarily fill missing with single imputations:
-    if(haveMiss) mibrrFit$simpleImpute(covsOnly = mibrrFit$fimlStarts)
+    if(haveMiss) mibrrFit$simpleImpute() #covsOnly = mibrrFit$fimlStarts)
 
     ## Note known means and scales, if any:
-    if(!is.null(control$dataMeans))  mibrrFit$knownMeans <- TRUE
-    if(!is.null(control$dataScales)) mibrrFit$knownScales <- TRUE
+                                        #if(!is.null(control$dataMeans))  mibrrFit$knownMeans  <- TRUE
+                                        #if(!is.null(control$dataScales)) mibrrFit$knownScales <- TRUE
     
     ## Compute summary statistics:
-    if(!mibrrFit$knownMeans & !mibrrFit$knownScales)
-        mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
+                                        #if(!mibrrFit$knownMeans & !mibrrFit$knownScales)
+                                        #    mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
     
-    if(mibrrFit$center) mibrrFit$meanCenter()
+                                        #if(mibrrFit$center) mibrrFit$meanCenter()
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()
   
     ## Fill remaining missing data with an integer code:
-    if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
+                                        #if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
 
     mibrrFit
 }# END init()
@@ -148,10 +148,10 @@ mcem <- function(mibrrFit) {
 
 postProcess <- function(mibrrFit) {
     ## Uncenter the data:
-    if(mibrrFit$center) mibrrFit$meanCenter(revert = TRUE)
+                                        #if(mibrrFit$center) mibrrFit$meanCenter(revert = TRUE)
     
     ## Replace missing values:
-    if(mibrrFit$doImp) mibrrFit$applyMissCode(revert = TRUE)
+                                        #if(mibrrFit$doImp) mibrrFit$applyMissCode(revert = TRUE)
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:
