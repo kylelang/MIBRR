@@ -293,14 +293,14 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
 
   // Compute parameters of the intercept's distribution:
-  double intSd   = sqrt(_sigma / double(nObs));
-  double intMean = mibrrData.getDV(_targetIndex).mean(); //-
+  //double intSd   = sqrt(_sigma / double(nObs));
+  //double intMean = mibrrData.getMean(_targetIndex); //-
   //mibrrData.getIVs(_targetIndex, true).colwise().mean() *
   //newBetas.tail(nPreds);
    
   // Draw a new value of the intercept term:  
-  newBetas[0] = drawNorm(intMean, intSd);
-   
+  newBetas[0] = 0.0; //drawNorm(intMean, intSd);
+  
   _betas = newBetas; // Store the updated Betas
  
   // Add the updated Betas to their Gibbs sample:

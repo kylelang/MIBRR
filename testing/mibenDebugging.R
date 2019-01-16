@@ -9,20 +9,91 @@ library(MIBRR)
 
 data(mibrrExampleData)
 
-undebug(miben)
+debug(miben)
 
 ## MCEM estimation:
 mibenOut <- miben(data       = mibrrExampleData,
                   iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum",
-                  control = list(optTraceLevel = 1,
-                                 optMethod = c("Nelder-Mead", "BFGS"),
-                                 optBoundLambda = FALSE
+                  control = list(optTraceLevel = 0,
+                                 optMethod = "L-BFGS-B", #c("Nelder-Mead", "BFGS"),
+                                 optBoundLambda = TRUE
                                  )
                   )
 
-?miben
+missList   <- readRDS("missList.rds")
+missCounts <- readRDS("missCounts.rds")
+dat1       <- readRDS("data.rds")
+
+respCounts <- nrow(dat1) - missCounts
+means      <- colMeans(mibrrExampleData[ , -1], na.rm = TRUE)
+
+X1 <- MIBRR:::getX(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   obsMeans    = means,
+                   noMiss      = FALSE,
+                   xOnly       = TRUE,
+                   obsY        = TRUE,
+                   targetIndex = 0)
+
+X2 <- MIBRR:::getX(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   obsMeans    = means,
+                   noMiss      = FALSE,
+                   xOnly       = TRUE,
+                   obsY        = FALSE,
+                   targetIndex = 0)
+
+y <- MIBRR:::getY(data        = as.matrix(dat1),
+                  missIndices = missList,
+                  respCounts  = respCounts,
+                  obsMeans    = means,
+                  noMiss      = FALSE,
+                  targetIndex = 0)
+
+y
+mean(y)
+var(y)
+sd(y)
+crossprod(y)
+
+X1
+colMeans(X1)
+apply(X1, 2, sd)
+apply(X1, 2, var)
+apply(X1, 2, crossprod)
+
+X2
+colMeans(X2)
+apply(X2, 2, sd)
+apply(X2, 2, var)
+apply(X2, 2, crossprod)
+
+
+x  <- runif(1000)
+s2 <- var(x)
+cp <- as.numeric(crossprod(x - mean(x))
+
+var(x)
+var(x2)
+
+x2 <- x - mean(x)
+x3 <- x / sqrt(s2)
+x4 <- x2 / cp^2
+
+var(x3)
+sd(x3)
+crossprod(x3)
+
+var(x4)
+sd(x4)
+crossprod(x4)
+
+crossprod(x2) / 999
+var(x)
 
 ## Fully Bayesian estimation:
 mibenOut <- miben(data         = mibrrExampleData,

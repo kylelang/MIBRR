@@ -56,7 +56,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             optCheckKkt       = "logical",
                             optMethod         = "character",
                             optBoundLambda    = "logical",
-                                        #dataMeans         = "numeric",
+                            obsMeans          = "numeric",
                                         #dataScales        = "numeric",
                             gibbsOut          = "list",
                             ignoredColumns    = "data.frame",
@@ -410,6 +410,9 @@ MibrrFit$methods(
                  ## Hack to deal with 1D matrix conversion to vector:
                  if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
 
+                 ## Store the variables' observed means:
+                 obsMeans <<- colMeans(data, na.rm = TRUE)
+                 
                  ## Store nonresponse counts:
                  missCounts <<- sapply(colSums(is.na(data)), as.integer)
 
@@ -570,9 +573,9 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
-                     maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badSigmaFlag <- rHats[[j]]$sigma > convThresh
+                     badBetaCount <- 0 #sum(rHats[[j]]$beta > convThresh)
+                     maxBetaRHat  <- 0 #max(rHats[[j]]$beta)
+                     badSigmaFlag <- 0 #rHats[[j]]$sigma > convThresh
                      
                      if(penalty != 0) {
                          badTauCount  <- sum(rHats[[j]]$tau > convThresh)

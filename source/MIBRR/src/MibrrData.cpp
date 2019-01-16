@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-15
+// Modified: 2019-JAN-16
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -29,16 +29,19 @@
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrData::MibrrData(const MatrixXd        &data,
-		     //const VectorXd        &dataScales,
+		     const VectorXd        &means,
 		     vector< vector<int> > missIndices,
 		     const VectorXi        &respCounts,
 		     const bool            noMiss) 
 {
   _data        = data;
-  //_dataScales  = dataScales;
+  _means       = means;
   _missIndices = missIndices;
   _respCounts  = respCounts;
   _noMiss      = noMiss;
+
+  //_norms = _data.colwise().squaredNorm();
+  //_means = _data.colwise().mean();
 }
 
 MibrrData::~MibrrData() {}
@@ -114,15 +117,18 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
     }
   }
    
-  // Mean center and normalize the predictor matrix:
+  // Standardize the predictor matrix:
   outMat.rowwise() -= outMat.colwise().mean();
-  outMat.colwise().normalize();
+  //outMat.colwise().normalize();
   
-  return outMat;
+  VectorXd scales =
+    (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
+  
+  return outMat * scales.asDiagonal().inverse();
 }
 
 
-
+/*
 VectorXd MibrrData::getDV(int targetIndex) const
 { 
   if(_noMiss) {
@@ -140,7 +146,33 @@ VectorXd MibrrData::getDV(int targetIndex) const
     return outVec;
   }
 }
+*/
 
+VectorXd MibrrData::getDV(int targetIndex) const
+{
+  VectorXd out;
+  
+  if(_noMiss) {
+    out = _data.col(targetIndex);
+  }
+  else {
+    int         rowIndex = 0;
+    vector<int> obsRows  = getObsRows(targetIndex);
+    
+    out = VectorXd::Zero(_respCounts[targetIndex]);
+    
+    for(int i : obsRows) {
+      out[rowIndex] = _data(i, targetIndex);
+      rowIndex++;
+    }
+  }
+
+  // Mean center the output vector:
+  out.array() -= _means[targetIndex];
+  //double scale = sqrt(out.squaredNorm() * double(1 / (out.size() - 1.0)));
+ 
+  return out;
+}
 
 
 //double MibrrData::getDataScales(int targetIndex) const
@@ -153,7 +185,9 @@ vector<int> MibrrData::getMissIndices(int targetIndex) const
   return _missIndices[targetIndex];
 }
 
-MatrixXd MibrrData::getData()       const { return _data;                      }
+MatrixXd MibrrData::getData()              const { return _data;               }
+double MibrrData::getMean(int targetIndex) const { return _means[targetIndex]; }
+
 //VectorXd MibrrData::getDataScales() const { return _dataScales;                }
 
 ///////////////////////////////// MUTATORS /////////////////////////////////////

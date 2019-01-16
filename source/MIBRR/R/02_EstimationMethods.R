@@ -46,6 +46,7 @@ MibrrFit$methods(
                               nTargets    = nTargets,
                               missList    = missList[targetVars],
                               respCounts  = respCounts[targetVars],
+                              obsMeans    = obsMeans[targetVars],
                               lambda1     = lambdaMat[ , 1], 
                               lambda2     = lambdaMat[ , 2], # Ignored for BL
                               l1Parms     = l1Pars, # Ignored when

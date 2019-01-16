@@ -230,6 +230,7 @@ private:
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _fullBayes;
+  double   _yBar;
 };
 
 #endif

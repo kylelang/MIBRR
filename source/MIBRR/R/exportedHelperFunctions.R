@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-16
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -52,9 +52,16 @@ getParams <- function(mibrrFit, target) {
 
 
 ## Generate posterior predictions from a fitted BEN or BL model:
-postPredict <- function(mibrrFit, newData, targetVars = NULL, nDraws = 0) {
+postPredict <- function(mibrrFit,
+                        newData,
+                        targetVars = NULL,
+                        nDraws     = 0,
+                        scale      = TRUE)
+{
     if(!is.data.frame(newData)) stop("'newData' must be a data.frame")
     if(is.null(targetVars))     targetVars <- mibrrFit$targetVars
+
+    if(scale) newData <- scale(newData)
     
     outList <- list()
     for(nm in targetVars) {

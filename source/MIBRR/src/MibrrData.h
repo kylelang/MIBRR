@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-15
+// Modified: 2019-JAN-16
 // Purpose:  This class contains data- and sampling-related functions used by
 //           the MIBRR Gibbs sampler.
 
@@ -36,12 +36,12 @@ public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
     
   MibrrData(const MatrixXd&,
-	    //const VectorXd&,
+	    const VectorXd&,
 	    vector< vector<int> >,
 	    const VectorXi&,
 	    const bool);
   // @param1: data matrix
-  // @param2: data scales
+  // @param2: means of observed parts of target variables
   // @param3: list of indices for missing rows
   // @param4: vector or response counts
   // @param5: logical flag denoting completely observed data
@@ -75,6 +75,10 @@ public:
 
   MatrixXd getData() const;
   // @return: the data matrix
+
+  double getMean(int) const;
+  // @param:  column index of the mean to return
+  // @return: the mean of the observed part of the column in question
   
   //VectorXd getDataScales() const;
   // @return: the column-wise scales of the data
@@ -144,7 +148,7 @@ private:
   bool                  _noMiss;
   MatrixXd              _data;
   VectorXi              _respCounts;
-  //VectorXd              _dataScales;
+  VectorXd              _means;
   vector< vector<int> > _missIndices;
 };
 
