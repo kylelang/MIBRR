@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-16
+// Modified: 2019-JAN-17
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -125,19 +125,19 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
     (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
   
   return outMat * scales.asDiagonal().inverse();
+  //return outMat;
 }
 
 
-/*
 VectorXd MibrrData::getDV(int targetIndex) const
 { 
   if(_noMiss) {
     return _data.col(targetIndex);
   }
   else {
-    int          rowIndex = 0;
-    VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
-    vector<int>  obsRows  = getObsRows(targetIndex);
+    int         rowIndex = 0;
+    VectorXd    outVec   = VectorXd::Zero(_respCounts[targetIndex]);
+    vector<int> obsRows  = getObsRows(targetIndex);
     
     for(int i : obsRows) {
       outVec[rowIndex] = _data(i, targetIndex);
@@ -146,8 +146,9 @@ VectorXd MibrrData::getDV(int targetIndex) const
     return outVec;
   }
 }
-*/
 
+
+ /*
 VectorXd MibrrData::getDV(int targetIndex) const
 {
   VectorXd out;
@@ -168,12 +169,12 @@ VectorXd MibrrData::getDV(int targetIndex) const
   }
 
   // Mean center the output vector:
-  out.array() -= _means[targetIndex];
+  //out.array() -= _means[targetIndex];
   //double scale = sqrt(out.squaredNorm() * double(1 / (out.size() - 1.0)));
  
   return out;
 }
-
+ */
 
 //double MibrrData::getDataScales(int targetIndex) const
 //{

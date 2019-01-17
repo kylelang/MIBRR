@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-15
+// Modified: 2019-JAN-17
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -293,13 +293,13 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
 
   // Compute parameters of the intercept's distribution:
-  //double intSd   = sqrt(_sigma / double(nObs));
-  //double intMean = mibrrData.getMean(_targetIndex); //-
+  double intSd   = sqrt(_sigma / double(nObs));
+  double intMean = mibrrData.getMean(_targetIndex); //-
   //mibrrData.getIVs(_targetIndex, true).colwise().mean() *
   //newBetas.tail(nPreds);
    
   // Draw a new value of the intercept term:  
-  newBetas[0] = 0.0; //drawNorm(intMean, intSd);
+  newBetas[0] = drawNorm(intMean, intSd);
   
   _betas = newBetas; // Store the updated Betas
  

@@ -1,0 +1,22 @@
+- We should include an intercept.
+-- If we center Y and don't estimate an intercept, we assume no uncertainty in
+   the center point.
+-- Y's center will be estimated from the observed data, so we should assume some
+   uncertainty.
+
+- To incorportate a non-trivial intercept we need to:	
+1) Leave Y in its raw form	
+2) Sample an intercept as alpha ~ N(Y_bar, sqrt(simga^2 / N))
+3) Incorporate the intercept offset when computing the SSE for sigma^2's update
+4) Don't incorporate the intercept when updating Tau (we don't want to penalize
+   the intercept).
+
+- Most software back-transforms the parameter samples to undo the scaling of X.
+-- We don't do that, so we should be happy if our predictions match theirs; our
+   parameter samples won't.
+
+- When generating our predictions, we must standardize the test set predictors.
+-- For BEN and BL, we should also back-transform the parameter samples (then we
+   won't need to standardize the test-set predictors).
+-- As long as predictors and test-set match, standardization-wise, we don't need
+   to worry about back-transforming parameters for imputation purposes.
