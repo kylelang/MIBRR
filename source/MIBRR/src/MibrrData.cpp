@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-17
+// Modified: 2019-JAN-18
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -29,17 +29,21 @@
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrData::MibrrData(const MatrixXd        &data,
-		     const VectorXd        &means,
+		     //const VectorXd        &means,
 		     vector< vector<int> > missIndices,
 		     const VectorXi        &respCounts,
 		     const bool            noMiss) 
 {
   _data        = data;
-  _means       = means;
+  //_means       = means;
   _missIndices = missIndices;
   _respCounts  = respCounts;
   _noMiss      = noMiss;
 
+  MatrixXd tmp = MatrixXd::Zero(respCounts.size(), nPreds());
+  _means  = tmp;
+  _scales = tmp;
+  
   //_norms = _data.colwise().squaredNorm();
   //_means = _data.colwise().mean();
 }
@@ -79,7 +83,7 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 
 
-MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
+MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows)
 {
   int         nVars    = _data.cols();
   int         rowIndex = 0;
@@ -116,15 +120,26 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
       rowIndex++;
     }
   }
-   
+  
+  // Get fresh estimates of the "training data" means and scales:
+  if(_updateMoments) {
+    _means.row(targetIndex)  = outMat.colwise().mean();
+    _scales.row(targetIndex) =
+      (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
+    
+    _updateMoments = false;
+  }
+  
   // Standardize the predictor matrix:
-  outMat.rowwise() -= outMat.colwise().mean();
+  outMat.rowwise() -= _means.row(targetIndex);
+  //outMat.rowwise() -= outMat.colwise().mean();
   //outMat.colwise().normalize();
   
-  VectorXd scales =
-    (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
+  //VectorXd scales =
+  //  (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
   
-  return outMat * scales.asDiagonal().inverse();
+  return outMat * _scales.row(targetIndex).asDiagonal().inverse();
+  //return outMat * scales.asDiagonal().inverse();
   //return outMat;
 }
 
@@ -186,10 +201,17 @@ vector<int> MibrrData::getMissIndices(int targetIndex) const
   return _missIndices[targetIndex];
 }
 
-MatrixXd MibrrData::getData()              const { return _data;               }
-double MibrrData::getMean(int targetIndex) const { return _means[targetIndex]; }
+RowVectorXd MibrrData::getMeans(int targetIndex) const
+{
+  return _means.row(targetIndex);
+}
 
-//VectorXd MibrrData::getDataScales() const { return _dataScales;                }
+RowVectorXd MibrrData::getScales(int targetIndex) const
+{
+  return _scales.row(targetIndex);
+}
+
+MatrixXd MibrrData::getData() const { return _data;                            }
 
 ///////////////////////////////// MUTATORS /////////////////////////////////////
 
@@ -270,6 +292,8 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
   }
 }// END fillMissing()
 
+
+void MibrrData::updateMoments() { _updateMoments = true;                       }
 
 //////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
 

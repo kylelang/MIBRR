@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2019-JAN-16
+// Modified: 2019-JAN-18
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -35,7 +35,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    int                       nTargets,  
 		    Rcpp::List                missList,
 		    Eigen::VectorXi           respCounts,
-		    Eigen::VectorXd           obsMeans,
 		    Eigen::VectorXd           lambda1,
 		    Eigen::VectorXd           lambda2,
 		    Eigen::VectorXd           l1Parms,
@@ -58,7 +57,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
    
   // Initialize the various classes needed below:
   //MibrrData  mibrrData(data, dataScales, missIndices, respCounts, noMiss);
-  MibrrData  mibrrData(data, obsMeans, missIndices, respCounts, noMiss);
+  MibrrData  mibrrData(data, missIndices, respCounts, noMiss);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
   // Initialize all parameters and setup the Gibbs sampler:
@@ -124,6 +123,12 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     // Improve the output's aesthetics:
     bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
     if(check1) Rcpp::Rcout << "\n";
+
+    // Tell MibrrData to compute new centers and scales
+    // Since the next time we call mibrrData.getIVs() we're extracting the
+    // "training set" predictors, the moments used for scaling will be based on
+    // the training data.
+    mibrrData.updateMoments();
     
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
       // Update the Gibbs samples:
@@ -135,7 +140,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     
     //if(adaptScales) mibrrData.computeDataScales();
     
-  }// CLOSE for (int i = 0; i < nGibbsIters; i++)
+  }// CLOSE for (int i = 0; i < totalSams; i++)
   
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++)

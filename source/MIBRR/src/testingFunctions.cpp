@@ -1,7 +1,7 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2019-JAN-16
+// Modified: 2019-JAN-18
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
@@ -145,11 +145,10 @@ std::vector<int>
 printObsIndices(Eigen::MatrixXd                 data,
 		std::vector< std::vector<int> > missIndices,
 		Eigen::VectorXi                 respCounts,
-		Eigen::VectorXd                 obsMeans,
 		bool                            noMiss,
 		int                             targetIndex)
 {
-  MibrrData mibrrData(data, obsMeans, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return(mibrrData.getObsRows(targetIndex));
 }
 
@@ -158,11 +157,10 @@ std::vector<int>
 printMissIndices(Eigen::MatrixXd                 data,
 		 std::vector< std::vector<int> > missIndices,
 		 Eigen::VectorXi                 respCounts,
-		 Eigen::VectorXd                 obsMeans,
 		 bool                            noMiss,
 		 int                             targetIndex)
 {
-  MibrrData mibrrData(data, obsMeans, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return(mibrrData.getMissIndices(targetIndex));
 }
 
@@ -171,13 +169,12 @@ Eigen::MatrixXd
 getX(Eigen::MatrixXd                 data,
      std::vector< std::vector<int> > missIndices,
      Eigen::VectorXi                 respCounts,
-     Eigen::VectorXd                 obsMeans,
      bool                            noMiss,
      bool                            xOnly,
      bool                            obsY,
      int                             targetIndex)
 {
-  MibrrData mibrrData(data, obsMeans, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   
   Eigen::MatrixXd out;
   
@@ -192,10 +189,9 @@ Eigen::VectorXd
 getY(Eigen::MatrixXd                 data,
      std::vector< std::vector<int> > missIndices,
      Eigen::VectorXi                 respCounts,
-     Eigen::VectorXd                 obsMeans,
      bool                            noMiss,
      int                             targetIndex)
 {
-  MibrrData mibrrData(data, obsMeans, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return mibrrData.getDV(targetIndex);
 }

@@ -1,8 +1,16 @@
+- We need to standardize X; we can't avoid it
+-- The shrinkage penalizes the coefficients according to their magnitude
+-- If the coefficients are on very different scales, the relative penalization
+   will be meaningless
+-- The way we treat the missing on auxiliary variables may cause problems
+--- The auxiliaries will not be imputed as part of the Gibbs sampling
+--- Their initial imputation will affect the means used for on-the-fly centering
+--- If these mean estimates are very bad, they will probably bias the intercept
+    samples and, consequently, the centers of the imputations' distributions
+
 - We should include an intercept.
--- If we center Y and don't estimate an intercept, we assume no uncertainty in
-   the center point.
--- Y's center will be estimated from the observed data, so we should assume some
-   uncertainty.
+-- Without an intercept, imputations for observations at X's mean will be
+   constant zeros (since X is mean centered).
 
 - To incorportate a non-trivial intercept we need to:	
 1) Leave Y in its raw form	
@@ -20,3 +28,12 @@
    won't need to standardize the test-set predictors).
 -- As long as predictors and test-set match, standardization-wise, we don't need
    to worry about back-transforming parameters for imputation purposes.
+-- To back transform our slopes, we divide them by SD_X
+-- To back transform the intercept, we subtract X_bar %*% Beta_raw from the
+   standardized intercept
+
+- We should back-transform the parameters before generating the predictions.
+-- If we standardize the predictors on-the-fly, the centering/scaling won't
+   exactly match those used when estimating the coefficients
+-- Alternatively, we can scale the "test set" predictors using the moments of
+   the "training set" used to estimate the imputation model

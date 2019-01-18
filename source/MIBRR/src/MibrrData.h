@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-16
+// Modified: 2019-JAN-18
 // Purpose:  This class contains data- and sampling-related functions used by
 //           the MIBRR Gibbs sampler.
 
@@ -36,7 +36,7 @@ public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
     
   MibrrData(const MatrixXd&,
-	    const VectorXd&,
+	    //const VectorXd&,
 	    vector< vector<int> >,
 	    const VectorXi&,
 	    const bool);
@@ -56,7 +56,7 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the row indices for the observed rows of the target variable
   
-  MatrixXd getIVs(int, bool) const;
+  MatrixXd getIVs(int, bool);
   // @param:  the column-index of the current target variable
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
@@ -72,16 +72,17 @@ public:
   vector<int> getMissIndices(int targetIndex) const;
   // @param:  a column index
   // @return: the row indices of missing values in the specified column
+  
+  RowVectorXd getMeans(int) const;
+  // @param:  column index of the target variable
+  // @return: column-wise means of the training data for the target variable
+  
+  RowVectorXd getScales(int) const;
+  // @param:  column index of the target variable
+  // @return: column-wise scales of the training data for the target variable
 
   MatrixXd getData() const;
   // @return: the data matrix
-
-  double getMean(int) const;
-  // @param:  column index of the mean to return
-  // @return: the mean of the observed part of the column in question
-  
-  //VectorXd getDataScales() const;
-  // @return: the column-wise scales of the data
 
   
   //////////////////////////////// MUTATORS ////////////////////////////////////
@@ -125,6 +126,9 @@ public:
   // @effect: fill the missing values in the specified column with the values
   //          in the provided vector
 
+  void updateMoments();
+  // @effect set the _updateMoments flag to true
+
   
   ////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
 
@@ -146,9 +150,12 @@ public:
   
 private:
   bool                  _noMiss;
+  bool                  _updateMoments;
   MatrixXd              _data;
+  MatrixXd              _means;
+  MatrixXd              _scales;
   VectorXi              _respCounts;
-  VectorXd              _means;
+  //VectorXd              _means;
   vector< vector<int> > _missIndices;
 };
 

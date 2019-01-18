@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-18
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -46,7 +46,7 @@ MibrrFit$methods(
                               nTargets    = nTargets,
                               missList    = missList[targetVars],
                               respCounts  = respCounts[targetVars],
-                              obsMeans    = obsMeans[targetVars],
+                                        #obsMeans    = obsMeans[targetVars],
                               lambda1     = lambdaMat[ , 1], 
                               lambda2     = lambdaMat[ , 2], # Ignored for BL
                               l1Parms     = l1Pars, # Ignored when

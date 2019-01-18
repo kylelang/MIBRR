@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-15
+// Modified: 2019-JAN-18
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -175,11 +175,11 @@ public:
   // @param:  an initialized MibrrData object
   // @effect: update _taus based on current values of other member variables
 
-  void updateBetas(const MibrrData&);
+  void updateBetas(MibrrData&);
   // @param:  an initialized MibrrData object
   // @effect: update _betas based on current values of other member variables
 
-  void updateSigma(const MibrrData&);
+  void updateSigma(MibrrData&);
   // @param:  an initialized MibrrData object
   // @effect: update _sigma based on current values of other member variables
   

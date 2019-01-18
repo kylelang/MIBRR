@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-17
+// Modified: 2019-JAN-18
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -248,7 +248,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 
 
 
-void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
+void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 {
   int             nPreds = mibrrData.nPreds();
   int             nObs   = mibrrData.nResp(_targetIndex);
@@ -287,29 +287,53 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
     betaCov = aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
   }
   catch(exception &e) { betaError(e); }
-  
+
+  Rcpp::Rcout << "1" << "\n" << endl;//////////////////////////////////////
+  Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
+    
   // Draw new values of the regression slope coefficients:
   VectorXd newBetas(nPreds + 1); 
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
 
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
-  double intMean = mibrrData.getMean(_targetIndex); //-
+  double intMean = mibrrData.getDV(_targetIndex).mean();
+  //getMean(_targetIndex); //-
   //mibrrData.getIVs(_targetIndex, true).colwise().mean() *
   //newBetas.tail(nPreds);
    
   // Draw a new value of the intercept term:  
   newBetas[0] = drawNorm(intMean, intSd);
-  
+
+  Rcpp::Rcout << "2" << "\n" << endl;//////////////////////////////////////
+  Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
+    
   _betas = newBetas; // Store the updated Betas
  
   // Add the updated Betas to their Gibbs sample:
-  if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
+  if(_storeGibbsSamples) {
+    VectorXd rawBetas = _betas;
+
+    Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
+    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
+    
+    
+    // Back-transform the standardized betas to their raw metric:
+    rawBetas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
+
+    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
+    
+    rawBetas[0] -= mibrrData.getMeans(_targetIndex) * rawBetas.tail(nPreds);
+
+    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
+    
+    _betaSam.row(_drawNum) = rawBetas.transpose();
+  }
 }// END updateBetas()
 
 
 
-void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
+void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
   double newSigma, sigmaShape, sigmaScale;
   int    nPreds = mibrrData.nPreds();
