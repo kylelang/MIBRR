@@ -6,6 +6,8 @@
 
 rm(list = ls(all = TRUE))
 
+install.packages("optimx", repos = "http://cloud.r-project.org")
+
 library(RcppEigen)
 
 ver <- "0.1.1.9000"

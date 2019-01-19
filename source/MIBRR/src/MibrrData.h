@@ -56,8 +56,11 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the row indices for the observed rows of the target variable
   
-  MatrixXd getIVs(int, bool);
-  // @param:  the column-index of the current target variable
+  MatrixXd getIVs(int, bool, bool);
+  // @param1: the column-index of the current target variable
+  // @param2: return the rows corresponding to observed entries in Y or return
+  //          the rows corresponding to the missing entries in Y?
+  // @param3: standardize the predictor matrix before returning or not?
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
 
@@ -126,8 +129,10 @@ public:
   // @effect: fill the missing values in the specified column with the values
   //          in the provided vector
 
-  void updateMoments();
-  // @effect set the _updateMoments flag to true
+  void updateMoments(const int);
+  // @param:  column index of the target variable
+  // @effect: updated the centers and scales for the target variables training
+  //          set predictors
 
   
   ////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
@@ -150,7 +155,7 @@ public:
   
 private:
   bool                  _noMiss;
-  bool                  _updateMoments;
+  //bool                  _updateMoments;
   MatrixXd              _data;
   MatrixXd              _means;
   MatrixXd              _scales;

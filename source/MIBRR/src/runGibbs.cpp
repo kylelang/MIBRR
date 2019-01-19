@@ -56,7 +56,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
    
   // Initialize the various classes needed below:
-  //MibrrData  mibrrData(data, dataScales, missIndices, respCounts, noMiss);
   MibrrData  mibrrData(data, missIndices, respCounts, noMiss);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
   
@@ -124,22 +123,16 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
     if(check1) Rcpp::Rcout << "\n";
 
-    // Tell MibrrData to compute new centers and scales
-    // Since the next time we call mibrrData.getIVs() we're extracting the
-    // "training set" predictors, the moments used for scaling will be based on
-    // the training data.
-    mibrrData.updateMoments();
-    
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
+      // Compute new centers and scales for the jth target's predictors:
+      mibrrData.updateMoments(j);
+      
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       
       // Start saving iterations after burn-in:
       if((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
-    }
-    
-    //if(adaptScales) mibrrData.computeDataScales();
-    
+    }   
   }// CLOSE for (int i = 0; i < totalSams; i++)
   
   RList outList(nTargets);

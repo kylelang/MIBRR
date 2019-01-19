@@ -178,8 +178,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // getX
-Eigen::MatrixXd getX(Eigen::MatrixXd data, std::vector< std::vector<int> > missIndices, Eigen::VectorXi respCounts, bool noMiss, bool xOnly, bool obsY, int targetIndex);
-RcppExport SEXP _MIBRR_getX(SEXP dataSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP xOnlySEXP, SEXP obsYSEXP, SEXP targetIndexSEXP) {
+Eigen::MatrixXd getX(Eigen::MatrixXd data, std::vector< std::vector<int> > missIndices, Eigen::VectorXi respCounts, bool noMiss, bool xOnly, bool obsY, bool scale, int targetIndex);
+RcppExport SEXP _MIBRR_getX(SEXP dataSEXP, SEXP missIndicesSEXP, SEXP respCountsSEXP, SEXP noMissSEXP, SEXP xOnlySEXP, SEXP obsYSEXP, SEXP scaleSEXP, SEXP targetIndexSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -189,8 +189,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type noMiss(noMissSEXP);
     Rcpp::traits::input_parameter< bool >::type xOnly(xOnlySEXP);
     Rcpp::traits::input_parameter< bool >::type obsY(obsYSEXP);
+    Rcpp::traits::input_parameter< bool >::type scale(scaleSEXP);
     Rcpp::traits::input_parameter< int >::type targetIndex(targetIndexSEXP);
-    rcpp_result_gen = Rcpp::wrap(getX(data, missIndices, respCounts, noMiss, xOnly, obsY, targetIndex));
+    rcpp_result_gen = Rcpp::wrap(getX(data, missIndices, respCounts, noMiss, xOnly, obsY, scale, targetIndex));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -222,7 +223,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MIBRR_drawGig", (DL_FUNC) &_MIBRR_drawGig, 5},
     {"_MIBRR_printObsIndices", (DL_FUNC) &_MIBRR_printObsIndices, 5},
     {"_MIBRR_printMissIndices", (DL_FUNC) &_MIBRR_printMissIndices, 5},
-    {"_MIBRR_getX", (DL_FUNC) &_MIBRR_getX, 7},
+    {"_MIBRR_getX", (DL_FUNC) &_MIBRR_getX, 8},
     {"_MIBRR_getY", (DL_FUNC) &_MIBRR_getY, 5},
     {NULL, NULL, 0}
 };

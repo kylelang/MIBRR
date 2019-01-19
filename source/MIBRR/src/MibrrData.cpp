@@ -29,13 +29,11 @@
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrData::MibrrData(const MatrixXd        &data,
-		     //const VectorXd        &means,
 		     vector< vector<int> > missIndices,
 		     const VectorXi        &respCounts,
 		     const bool            noMiss) 
 {
   _data        = data;
-  //_means       = means;
   _missIndices = missIndices;
   _respCounts  = respCounts;
   _noMiss      = noMiss;
@@ -43,9 +41,6 @@ MibrrData::MibrrData(const MatrixXd        &data,
   MatrixXd tmp = MatrixXd::Zero(respCounts.size(), nPreds());
   _means  = tmp;
   _scales = tmp;
-  
-  //_norms = _data.colwise().squaredNorm();
-  //_means = _data.colwise().mean();
 }
 
 MibrrData::~MibrrData() {}
@@ -83,12 +78,11 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 
 
-MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows)
+MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows, bool standardize)
 {
   int         nVars    = _data.cols();
   int         rowIndex = 0;
   int         nObs     = _data.rows();
-  //MatrixXd    tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
   MatrixXd    outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
   
@@ -121,26 +115,12 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows)
     }
   }
   
-  // Get fresh estimates of the "training data" means and scales:
-  if(_updateMoments) {
-    _means.row(targetIndex)  = outMat.colwise().mean();
-    _scales.row(targetIndex) =
-      (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
-    
-    _updateMoments = false;
+  if(standardize) {
+    // Standardize the predictor matrix:
+    outMat.rowwise() -= _means.row(targetIndex);
+    outMat           *= _scales.row(targetIndex).asDiagonal().inverse();
   }
-  
-  // Standardize the predictor matrix:
-  outMat.rowwise() -= _means.row(targetIndex);
-  //outMat.rowwise() -= outMat.colwise().mean();
-  //outMat.colwise().normalize();
-  
-  //VectorXd scales =
-  //  (outMat.colwise().squaredNorm() * double(1.0 / (nObs - 1.0))).cwiseSqrt();
-  
-  return outMat * _scales.row(targetIndex).asDiagonal().inverse();
-  //return outMat * scales.asDiagonal().inverse();
-  //return outMat;
+  return outMat;
 }
 
 
@@ -293,7 +273,17 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 }// END fillMissing()
 
 
-void MibrrData::updateMoments() { _updateMoments = true;                       }
+void MibrrData::updateMoments(const int targetIndex)
+{
+  _means.row(targetIndex)  = getIVs(targetIndex, true, false).colwise().mean();
+  _scales.row(targetIndex) =
+    (
+     (
+      getIVs(targetIndex, true, false).rowwise() - _means.row(targetIndex)
+      ).colwise().squaredNorm() * double(1.0 / (nResp(targetIndex) - 1.0))
+     ).cwiseSqrt();
+}
+
 
 //////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
 

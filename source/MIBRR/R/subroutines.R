@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-19
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -147,11 +147,8 @@ mcem <- function(mibrrFit) {
 
 
 postProcess <- function(mibrrFit) {
-    ## Uncenter the data:
-                                        #if(mibrrFit$center) mibrrFit$meanCenter(revert = TRUE)
-    
     ## Replace missing values:
-                                        #if(mibrrFit$doImp) mibrrFit$applyMissCode(revert = TRUE)
+    if(mibrrFit$doImp) mibrrFit$resetMissing()
     
     ## Compute the potential scale reduction factors (R-Hats) for the posterior
     ## imputation model parameters:

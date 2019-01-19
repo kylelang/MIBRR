@@ -22,35 +22,44 @@ mibenOut <- miben(data       = mibrrExampleData,
                                  )
                   )
 
+getParams(mibenOut, "y")
+
 missList   <- readRDS("missList.rds")
 missCounts <- readRDS("missCounts.rds")
-dat1       <- readRDS("data.rds")
+dat1       <- readRDS("dat1.rds")
 
 respCounts <- nrow(dat1) - missCounts
-means      <- colMeans(mibrrExampleData[ , -1], na.rm = TRUE)
 
 X1 <- MIBRR:::getX(data        = as.matrix(dat1),
                    missIndices = missList,
                    respCounts  = respCounts,
-                   obsMeans    = means,
                    noMiss      = FALSE,
                    xOnly       = TRUE,
                    obsY        = TRUE,
+                   scale       = TRUE,
                    targetIndex = 0)
 
 X2 <- MIBRR:::getX(data        = as.matrix(dat1),
                    missIndices = missList,
                    respCounts  = respCounts,
-                   obsMeans    = means,
                    noMiss      = FALSE,
                    xOnly       = TRUE,
                    obsY        = FALSE,
+                   scale       = TRUE,
+                   targetIndex = 0)
+
+X3 <- MIBRR:::getX(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   noMiss      = FALSE,
+                   xOnly       = TRUE,
+                   obsY        = TRUE,
+                   scale       = FALSE,
                    targetIndex = 0)
 
 y <- MIBRR:::getY(data        = as.matrix(dat1),
                   missIndices = missList,
                   respCounts  = respCounts,
-                  obsMeans    = means,
                   noMiss      = FALSE,
                   targetIndex = 0)
 

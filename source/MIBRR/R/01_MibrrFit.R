@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-19
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -284,20 +284,14 @@ MibrrFit$methods(
           
 ######################### COMPLEX METHODS/SUBROUTINES ##########################
              
-                                        #applyMissCode = function(revert = FALSE) {
-                                        #    "Replace 'NA' with an integer-valued missing data code"
-                                        #    if(revert) {
-                                        #        missFill <- ifelse(userMissCode, missCode, NA)
-                                        #        for(v in colnames(data)) {
-                                        #            ## Rebase indices as per R's preference :
-                                        #            missList[[v]]          <<- missList[[v]] + 1
-                                        #            data[missList[[v]], v] <<- missFill
-                                        #        }
-                                        #    }
-                                        #    else {
-                                        #        data[is.na(data)] <<- missCode
-                                        #    }
-                                        #},
+             resetMissing = function() {
+                 "Replace imputed values with the original missing data code"
+                 for(v in colnames(data)) {
+                     ## Rebase indices as per R's preference :
+                     missList[[v]]          <<- missList[[v]] + 1
+                     data[missList[[v]], v] <<- missCode
+                 }
+             },
              
 ###--------------------------------------------------------------------------###
 
@@ -341,10 +335,9 @@ MibrrFit$methods(
                      userMissCode           <<- TRUE
                      data[data == missCode] <<- NA
                  }
-                 else {
+                 else 
                      userMissCode <<- FALSE
-                     missCode     <<- -999L
-                 }
+                 
               
                  ## Generate a pool of potential imputation indices:
                  if(doImp)
@@ -425,7 +418,8 @@ MibrrFit$methods(
                  nTargets <<- as.integer(length(targetVars))
 
                  ## Make some starting value containers:
-                 tauStarts <<- betaStarts <<- matrix(NA,  nPreds, nTargets)
+                 betaStarts <<- matrix(NA, nPreds + 1, nTargets)
+                 tauStarts  <<- matrix(NA,  nPreds, nTargets)
                  
                  ## Initialize penalty parameter-related stuff:
                  lambda1Starts <<- rep(0.5, nTargets)
@@ -573,9 +567,9 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- 0 #sum(rHats[[j]]$beta > convThresh)
-                     maxBetaRHat  <- 0 #max(rHats[[j]]$beta)
-                     badSigmaFlag <- 0 #rHats[[j]]$sigma > convThresh
+                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
+                     maxBetaRHat  <- max(rHats[[j]]$beta)
+                     badSigmaFlag <- rHats[[j]]$sigma > convThresh
                      
                      if(penalty != 0) {
                          badTauCount  <- sum(rHats[[j]]$tau > convThresh)
@@ -657,14 +651,14 @@ MibrrFit$methods(
                          tauStarts[ , j]  <<-
                              apply(gibbsOut[[j]]$tau, 2, numMode)
                          betaStarts[ , j] <<-
-                             apply(gibbsOut[[j]]$beta[ , -1], 2, numMode)
+                             apply(gibbsOut[[j]]$beta, 2, numMode)
                      }
                      return()
                  }
                  
-                 ## NOTE: We don't need to start the intercept. It's initial
-                 ##       value will be sampled in the first iteration of the
-                 ##       Gibbs sampler.
+                 ## NOTE: We don't need real starting values for the intercepts.
+                 ##       Their initial values will be sampled in the first
+                 ##       iteration of the Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
                  if(penalty == 2) {
@@ -685,10 +679,10 @@ MibrrFit$methods(
                  colnames(lambdaMat) <<- c("lambda1", "lambda2")
                  
                  ## Populate starting values for betas, taus, and sigma:
-                 sigmaStarts <<- apply(data, 2, sd) #dataScales[targetVars]
+                 sigmaStarts <<- apply(data, 2, sd)[targetVars]
                  
                  for(j in 1 : nTargets) {
-                     if(penalty == 2) {
+                     if(penalty == 2) {     # We're doing BEN
                          lam1 <- lambdaMat[j, 1]
                          lam2 <- lambdaMat[j, 2]
                          
@@ -708,9 +702,6 @@ MibrrFit$methods(
                                   (tauStarts[ , j] / (tauStarts[ , j] - 1.0))
                              )
                          )
-
-                         betaStarts[ , j] <<-
-                             rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
                      else if(penalty == 1) {# We're doing BL
                          lam <- lambdaMat[j, 1]
@@ -718,17 +709,15 @@ MibrrFit$methods(
                          tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
                          
                          betaPriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
-                         betaStarts[ , j] <<-
-                             rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
-                     else {
+                     else                   # We're doing basic ridge 
                          betaPriorCov <- diag(rep(sigmaStarts[j], nPreds)) 
-                         betaStarts[ , j] <<-
-                             rmvnorm(1, rep(0, nPreds), betaPriorCov)
-                     }
+                     
+                     betaStarts[ , j] <<-
+                         c(0, rmvnorm(1, rep(0, nPreds), betaPriorCov))
                  }# CLOSE for(j in 1 : nTargets)
              },
-         
+             
 ###--------------------------------------------------------------------------###
              
              simpleImpute = function(intern = TRUE) { #covsOnly = FALSE, intern = TRUE) {

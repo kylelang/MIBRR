@@ -45,8 +45,8 @@ printMissIndices <- function(data, missIndices, respCounts, noMiss, targetIndex)
     .Call('_MIBRR_printMissIndices', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, targetIndex)
 }
 
-getX <- function(data, missIndices, respCounts, noMiss, xOnly, obsY, targetIndex) {
-    .Call('_MIBRR_getX', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, xOnly, obsY, targetIndex)
+getX <- function(data, missIndices, respCounts, noMiss, xOnly, obsY, scale, targetIndex) {
+    .Call('_MIBRR_getX', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, xOnly, obsY, scale, targetIndex)
 }
 
 getY <- function(data, missIndices, respCounts, noMiss, targetIndex) {

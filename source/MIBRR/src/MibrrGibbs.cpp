@@ -30,7 +30,7 @@
   
 MibrrGibbs::MibrrGibbs() 
 {
-  // _beta, _tau, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
+  // _betas, _taus, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
   // values
   _sigma             = 0.0;
   _ridge             = 0.0;
@@ -255,8 +255,8 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   LDLT <MatrixXd> aMatChol;
     
   // Compute the IV's crossproducts matrix:
-  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
-    mibrrData.getIVs(_targetIndex, true);
+  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true, true).transpose() *
+    mibrrData.getIVs(_targetIndex, true, true);
   
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
@@ -282,50 +282,28 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     // to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
     betaMeans =
-      aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
+      aMatChol.solve(mibrrData.getIVs(_targetIndex, true, true).transpose() *
 		     mibrrData.getDV(_targetIndex)); 
     betaCov = aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
   }
   catch(exception &e) { betaError(e); }
-
-  Rcpp::Rcout << "1" << "\n" << endl;//////////////////////////////////////
-  Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
-    
+  
   // Draw new values of the regression slope coefficients:
-  VectorXd newBetas(nPreds + 1); 
-  newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
-
+  _betas.tail(nPreds) = drawMvn(betaMeans, betaCov);
+  
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
   double intMean = mibrrData.getDV(_targetIndex).mean();
-  //getMean(_targetIndex); //-
-  //mibrrData.getIVs(_targetIndex, true).colwise().mean() *
-  //newBetas.tail(nPreds);
-   
+     
   // Draw a new value of the intercept term:  
-  newBetas[0] = drawNorm(intMean, intSd);
-
-  Rcpp::Rcout << "2" << "\n" << endl;//////////////////////////////////////
-  Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
-    
-  _betas = newBetas; // Store the updated Betas
- 
-  // Add the updated Betas to their Gibbs sample:
+  _betas[0] = drawNorm(intMean, intSd);
+  
   if(_storeGibbsSamples) {
     VectorXd rawBetas = _betas;
-
-    Rcpp::Rcout << _betas << "\n" << endl;//////////////////////////////////////
-    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
-    
     
     // Back-transform the standardized betas to their raw metric:
     rawBetas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
-
-    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
-    
     rawBetas[0] -= mibrrData.getMeans(_targetIndex) * rawBetas.tail(nPreds);
-
-    //Rcpp::Rcout << rawBetas << "\n" << endl;//////////////////////////////////////
     
     _betaSam.row(_drawNum) = rawBetas.transpose();
   }
@@ -341,7 +319,7 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 
   // Compute the linear predictor:
   VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
-    mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
+    mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
  
   // Compute the residual sum of squares:
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
@@ -408,7 +386,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
   VectorXd imps = _betas[0] * VectorXd::Ones(nMiss) +
-    mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) +
+    mibrrData.getIVs(_targetIndex, false, true) * _betas.tail(nPreds) +
     drawNorm(nMiss, 0.0, sqrt(_sigma));
   
   // Replace the missing data in the target variable with the imputations:

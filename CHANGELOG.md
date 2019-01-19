@@ -14,7 +14,17 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.1.0.9000 - 2019-01-15 - ACTIVE
+## 0.2.0.9000 - 2019-01-19 - ACTIVE
+
+### Changed
+- Beta samples are now returned in their raw metric
+- Predictors are standardized on-the-fly with respect to the "training set" 
+  used to estimate each elementary imputation model
+- Outcomes are left in their raw metric (uncentered) during model estimation
+- The "test sets" used to generate the imputations are standardized with 
+  respect to the "training set" moments
+
+## 0.1.0.9000 - 2019-01-15 
 
 ### Changed
 - Updated version number

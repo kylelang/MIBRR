@@ -172,13 +172,17 @@ getX(Eigen::MatrixXd                 data,
      bool                            noMiss,
      bool                            xOnly,
      bool                            obsY,
+     bool                            scale,
      int                             targetIndex)
 {
   MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   
   Eigen::MatrixXd out;
+
+  // Compute centers and scales:
+  mibrrData.updateMoments(targetIndex);
   
-  if(xOnly) out = mibrrData.getIVs(targetIndex, obsY);
+  if(xOnly) out = mibrrData.getIVs(targetIndex, obsY, scale);
   else      out = mibrrData.getData();
   
   return out;
