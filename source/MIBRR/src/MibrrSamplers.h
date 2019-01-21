@@ -146,7 +146,6 @@ private:
   double       _alpha;
   double       _mode;
   unsigned int _seed;
-  
 };
 
 #endif

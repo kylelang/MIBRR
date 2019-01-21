@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-18
+// Modified: 2019-JAN-21
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -143,55 +143,26 @@ VectorXd MibrrData::getDV(int targetIndex) const
 }
 
 
- /*
-VectorXd MibrrData::getDV(int targetIndex) const
-{
-  VectorXd out;
-  
-  if(_noMiss) {
-    out = _data.col(targetIndex);
-  }
-  else {
-    int         rowIndex = 0;
-    vector<int> obsRows  = getObsRows(targetIndex);
-    
-    out = VectorXd::Zero(_respCounts[targetIndex]);
-    
-    for(int i : obsRows) {
-      out[rowIndex] = _data(i, targetIndex);
-      rowIndex++;
-    }
-  }
-
-  // Mean center the output vector:
-  //out.array() -= _means[targetIndex];
-  //double scale = sqrt(out.squaredNorm() * double(1 / (out.size() - 1.0)));
- 
-  return out;
-}
- */
-
-//double MibrrData::getDataScales(int targetIndex) const
-//{
-//  return _dataScales[targetIndex];
-//}
-
 vector<int> MibrrData::getMissIndices(int targetIndex) const
 {
   return _missIndices[targetIndex];
 }
+
 
 RowVectorXd MibrrData::getMeans(int targetIndex) const
 {
   return _means.row(targetIndex);
 }
 
+
 RowVectorXd MibrrData::getScales(int targetIndex) const
 {
   return _scales.row(targetIndex);
 }
 
+
 MatrixXd MibrrData::getData() const { return _data;                            }
+
 
 ///////////////////////////////// MUTATORS /////////////////////////////////////
 
@@ -209,42 +180,6 @@ void MibrrData::setElement(const double element, const int row, const int col)
 {
   _data(row, col) = element;
 }
-
-
-//void MibrrData::computeDataMeans()
-//{
-//  _dataMeans = _data.colwise().mean();
-//}
-
-
-//void MibrrData::computeMean(const int v)
-//{
-//  _dataMeans[v] = _data.col(v).mean();
-//}
-
-
-//void MibrrData::computeDataScales()
-//{
-//  int nObs  = _data.rows();
-//  int nVars = _data.cols();
-//  
-//  for(int v = 0; v < nVars; v++) {
-//    double tmpMean = _data.col(v).mean();
-//    double tmpVar  =
-//      (_data.col(v).array() - tmpMean).square().sum() / double(nObs - 1);
-//    _dataScales[v] = sqrt(tmpVar);
-//  }
-//}
-
-
-//void MibrrData::computeScale(const int v)
-//{
-//  int    nObs   = _data.rows();
-//  double tmpVar =
-//    (_data.col(v).array() - _dataMeans[v]).square().sum() / double(nObs - 1);
-//  
-//  _dataScales[v] = sqrt(tmpVar);
-//}
 
 
 void MibrrData::fillMissing(const MatrixXd &newTargets)

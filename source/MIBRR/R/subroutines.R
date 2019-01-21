@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-19
+### Modified: 2019-JAN-21
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -77,25 +77,12 @@ init <- function(penalty,
     haveMiss <- any(mibrrFit$countMissing() > 0)
 
     ## Temporarily fill missing with single imputations:
-    if(haveMiss) mibrrFit$simpleImpute() #covsOnly = mibrrFit$fimlStarts)
-
-    ## Note known means and scales, if any:
-                                        #if(!is.null(control$dataMeans))  mibrrFit$knownMeans  <- TRUE
-                                        #if(!is.null(control$dataScales)) mibrrFit$knownScales <- TRUE
-    
-    ## Compute summary statistics:
-                                        #if(!mibrrFit$knownMeans & !mibrrFit$knownScales)
-                                        #    mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
-    
-                                        #if(mibrrFit$center) mibrrFit$meanCenter()
+    if(haveMiss) mibrrFit$simpleImpute()
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()
-  
-    ## Fill remaining missing data with an integer code:
-                                        #if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
-
+    
     mibrrFit
 }# END init()
 

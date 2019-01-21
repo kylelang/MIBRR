@@ -1,7 +1,7 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-18
+// Modified: 2019-JAN-21
 // Purpose:  This class contains data- and sampling-related functions used by
 //           the MIBRR Gibbs sampler.
 
@@ -36,15 +36,13 @@ public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
     
   MibrrData(const MatrixXd&,
-	    //const VectorXd&,
 	    vector< vector<int> >,
 	    const VectorXi&,
 	    const bool);
   // @param1: data matrix
-  // @param2: means of observed parts of target variables
-  // @param3: list of indices for missing rows
-  // @param4: vector or response counts
-  // @param5: logical flag denoting completely observed data
+  // @param2: list of indices for missing rows
+  // @param3: vector or response counts
+  // @param4: logical flag denoting completely observed data
     
   ~MibrrData();
 
@@ -68,10 +66,6 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
-  //double getDataScales(int) const;
-  // @param:  a column index
-  // @return: the  scale of the data in the specified column
-
   vector<int> getMissIndices(int targetIndex) const;
   // @param:  a column index
   // @return: the row indices of missing values in the specified column
@@ -102,22 +96,6 @@ public:
   // @param1: a new data element
   // @param2: the row index of the element to replace
   // @param3: the column index of the element to replace
-
-  //void computeDataMeans();
-  // @effect: update the value of _dataMeans based on current data values
-
-  //void computeMean(const int);
-  // @param:  column index of the variable for which to compute the mean
-  // @effect: update the appropriate entry of _dataMeans based on current data
-  //          values
-  
-  //void computeDataScales();
-  // @effect: update the value of _dataScales based on current data values
-
-  //void computeScale(const int);
-  // @param:  column index of the variable for which to compute the scale
-  // @effect: update the appropriate entry of _dataScales based on current data
-  //          values
   
   void fillMissing(const MatrixXd&);
   // @param:  a matrix of new values to fill in missing target data
@@ -155,12 +133,10 @@ public:
   
 private:
   bool                  _noMiss;
-  //bool                  _updateMoments;
   MatrixXd              _data;
   MatrixXd              _means;
   MatrixXd              _scales;
   VectorXi              _respCounts;
-  //VectorXd              _means;
   vector< vector<int> > _missIndices;
 };
 

@@ -1,15 +1,13 @@
 ### Title:    Debug MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-21
 
 rm(list = ls(all = TRUE))
 
 library(MIBRR)
 
 data(mibrrExampleData)
-
-debug(miben)
 
 ## MCEM estimation:
 mibenOut <- miben(data       = mibrrExampleData,
@@ -24,9 +22,35 @@ mibenOut <- miben(data       = mibrrExampleData,
 
 getParams(mibenOut, "y")
 
+## Fully Bayesian estimation:
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+
+## MCEM estimation:
+miblOut <- mibl(data       = mibrrExampleData,
+                iterations = c(50, 10),
+                targetVars = c("y", paste0("x", c(1 : 3))),
+                ignoreVars = "idNum")
+     
+## Fully Bayesian estimation:
+miblOut <- mibl(data         = mibrrExampleData,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                ignoreVars   = "idNum",
+                sampleSizes  = c(500, 500),
+                doMcem       = FALSE,
+                lam1PriorPar = c(1.0, 0.1)
+                )
+
+
 missList   <- readRDS("missList.rds")
 missCounts <- readRDS("missCounts.rds")
-dat1       <- readRDS("dat1.rds")
+dat1       <- readRDS("data.rds")
 
 respCounts <- nrow(dat1) - missCounts
 
@@ -80,54 +104,3 @@ colMeans(X2)
 apply(X2, 2, sd)
 apply(X2, 2, var)
 apply(X2, 2, crossprod)
-
-
-x  <- runif(1000)
-s2 <- var(x)
-cp <- as.numeric(crossprod(x - mean(x))
-
-var(x)
-var(x2)
-
-x2 <- x - mean(x)
-x3 <- x / sqrt(s2)
-x4 <- x2 / cp^2
-
-var(x3)
-sd(x3)
-crossprod(x3)
-
-var(x4)
-sd(x4)
-crossprod(x4)
-
-crossprod(x2) / 999
-var(x)
-
-## Fully Bayesian estimation:
-mibenOut <- miben(data         = mibrrExampleData,
-                  targetVars   = c("y", paste0("x", c(1 : 3))),
-                  ignoreVars   = "idNum",
-                  sampleSizes  = c(500, 500),
-                  doMcem       = FALSE,
-                  lam1PriorPar = c(1.0, 0.1),
-                  lam2PriorPar = c(1.0, 0.1)
-                  )
-
-?optimx
-?mibl
-
-## MCEM estimation:
-miblOut <- mibl(data       = mibrrExampleData,
-                iterations = c(50, 10),
-                targetVars = c("y", paste0("x", c(1 : 3))),
-                ignoreVars = "idNum")
-     
-## Fully Bayesian estimation:
-miblOut <- mibl(data         = mibrrExampleData,
-                targetVars   = c("y", paste0("x", c(1 : 3))),
-                ignoreVars   = "idNum",
-                sampleSizes  = c(500, 500),
-                doMcem       = FALSE,
-                lam1PriorPar = c(1.0, 0.1)
-                )

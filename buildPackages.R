@@ -6,11 +6,11 @@
 
 rm(list = ls(all = TRUE))
 
-install.packages("optimx", repos = "http://cloud.r-project.org")
+                                        #install.packages("optimx", repos = "http://cloud.r-project.org")
 
 library(RcppEigen)
 
-ver <- "0.1.1.9000"
+ver <- "0.2.0.9000"
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \
@@ -23,7 +23,7 @@ Rcpp::compileAttributes("source/MIBRR")
 system("R CMD build source/MIBRR")
 
 ## Run CRAN checks:
-system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
+                                        #system(paste0("R CMD check MIBRR_", ver, ".tar.gz"))
 
 ## Install the MIBRR package:
 install.packages(paste0("MIBRR_", ver, ".tar.gz"),

@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-18
+// Modified: 2019-JAN-21
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -79,10 +79,7 @@ public:
   
   bool getVerbosity() const;
   // @return: flag indicating if printed output is currently verbose
-
-  //bool getElasticNetFlag() const;
-  // @return: current value of the _useElasticNet switch
-
+  
   bool getDoImp() const;
   // @return: current value of the flag denoting if missing data are to be
   //          imputed
@@ -230,7 +227,6 @@ private:
   bool     _storeGibbsSamples;
   bool     _doImp;
   bool     _fullBayes;
-  double   _yBar;
 };
 
 #endif

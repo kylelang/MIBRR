@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-21
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -53,88 +53,88 @@
 
 ## Use a variant of the method recommended by Park and Casella (2008) to get
 ## starting values for the MIBL penalty parameters
-getLambdaStarts <- function(object, nSamples = 25)
-{
-    data     <- object$getData()
-    nTargets <- object$nTargets
-    
-    ## Fill any missing data with rough guesses:
-    micePreds <- quickpred(data)
-    miceOut   <- mice(data            = data,
-                      m               = 1,
-                      method          = "norm",
-                      predictorMatrix = micePreds,
-                      printFlag       = FALSE)
-    
-    impData      <- as.matrix(complete(miceOut, 1))
-    lambdaStarts <- vector("numeric", nTargets)
-    
-    for(i in 1 : nTargets) {
-        if(0.90 * nrow(impData) > (ncol(impData) - 1)) {# P << N
-            tmpPredCount    <- ncol(impData)
-            tmpOut          <- lm(impData[ , i] ~ impData[ , -i])
-            lambdaStarts[i] <-
-                tmpPredCount * sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
-                sum(abs(tmpOut$coefficients[-1]))
-        } else {
-            ## If P ~ N or  P > N, subsample data's columns
-            ## and repeatedly apply the Park & Casella (2008) method.
-            tmpLambda    <- vector("numeric", nSamples)
-            tmpPredCount <- round(0.90 * nrow(impData))
-            for(j in 1 : nSamples) {
-                predSelector <-
-                    sample(c(1 : ncol(impData))[-i], size = tmpPredCount)
-                tmpDat       <- impData[ , predSelector]
-                tmpOut       <- lm(impData[ , i] ~ tmpDat)
-                tmpLambda[j] <- tmpPredCount *
-                    sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
-                    sum(abs(tmpOut$coefficients[-1]))
-            }# END for(j in 1 : nSamples)
-            lambdaStarts[i] <- mean(tmpLambda)
-        }# END if( nrow(data) > ncol(data) )     
-    }# END for(i in 1 : nTargets)
-    
-    lambdaStarts
-}# END getLambdaStarts()
+                                        #getLambdaStarts <- function(object, nSamples = 25)
+                                        #{
+                                        #    data     <- object$getData()
+                                        #    nTargets <- object$nTargets
+                                        #    
+                                        #    ## Fill any missing data with rough guesses:
+                                        #    micePreds <- quickpred(data)
+                                        #    miceOut   <- mice(data            = data,
+                                        #                      m               = 1,
+                                        #                      method          = "norm",
+                                        #                      predictorMatrix = micePreds,
+                                        #                      printFlag       = FALSE)
+                                        #    
+                                        #    impData      <- as.matrix(complete(miceOut, 1))
+                                        #    lambdaStarts <- vector("numeric", nTargets)
+                                        #    
+                                        #    for(i in 1 : nTargets) {
+                                        #        if(0.90 * nrow(impData) > (ncol(impData) - 1)) {# P << N
+                                        #            tmpPredCount    <- ncol(impData)
+                                        #            tmpOut          <- lm(impData[ , i] ~ impData[ , -i])
+                                        #            lambdaStarts[i] <-
+                                        #                tmpPredCount * sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
+                                        #                sum(abs(tmpOut$coefficients[-1]))
+                                        #        } else {
+                                        #            ## If P ~ N or  P > N, subsample data's columns
+                                        #            ## and repeatedly apply the Park & Casella (2008) method.
+                                        #            tmpLambda    <- vector("numeric", nSamples)
+                                        #            tmpPredCount <- round(0.90 * nrow(impData))
+                                        #            for(j in 1 : nSamples) {
+                                        #                predSelector <-
+                                        #                    sample(c(1 : ncol(impData))[-i], size = tmpPredCount)
+                                        #                tmpDat       <- impData[ , predSelector]
+                                        #                tmpOut       <- lm(impData[ , i] ~ tmpDat)
+                                        #                tmpLambda[j] <- tmpPredCount *
+                                        #                    sqrt(anova(tmpOut)["Residuals", "Mean Sq"]) /
+                                        #                    sum(abs(tmpOut$coefficients[-1]))
+                                        #            }# END for(j in 1 : nSamples)
+                                        #            lambdaStarts[i] <- mean(tmpLambda)
+                                        #        }# END if( nrow(data) > ncol(data) )     
+                                        #    }# END for(i in 1 : nTargets)
+                                        #    
+                                        #    lambdaStarts
+                                        #}# END getLambdaStarts()
 
 
 
-compStatsWithFiml <- function(object, revert = FALSE) {
-    nObs    <- object$nObs()
-    nVar    <- object$nVar()
-    dNames  <- object$dataNames()
-    data    <- object$getData()
-    control <- object$getControl()
-    
-    ## Specify a lavaan model to estimate data's sufficient statistics:
-    mod1 <- paste(paste0("F", dNames, " =~ 1*", dNames, "\n"), collapse = "")
-    
-    ## Estimate the sufficient statistics with FIML:
-    out1 <- lavaan(model           = mod1,
-                   data            = data,
-                   int.ov.free     = FALSE,
-                   int.lv.free     = TRUE,
-                   auto.var        = TRUE,
-                   auto.fix.single = TRUE,
-                   missing         = "fiml")
-    
-    ## Store the item means:
-    tmp        <- as.vector(inspect(out1, "coef")$alpha)
-    names(tmp) <- dNames
-    object$setDataMeans(tmp)
-    
-    ## Store the item scales:
-    if(control$scale) {
-        tmp        <- sqrt(diag(inspect(out1, "coef")$psi))
-        names(tmp) <- dNames
-        object$setDataScales(tmp)
-    }
-    else {
-        tmp        <- rep(1.0, nVar)
-        names(tmp) <- dNames
-        object$setDataScales(tmp)
-    }
-}# END scaleDataWithFiml()
+                                        #compStatsWithFiml <- function(object, revert = FALSE) {
+                                        #    nObs    <- object$nObs()
+                                        #    nVar    <- object$nVar()
+                                        #    dNames  <- object$dataNames()
+                                        #    data    <- object$getData()
+                                        #    control <- object$getControl()
+                                        #    
+                                        #    ## Specify a lavaan model to estimate data's sufficient statistics:
+                                        #    mod1 <- paste(paste0("F", dNames, " =~ 1*", dNames, "\n"), collapse = "")
+                                        #    
+                                        #    ## Estimate the sufficient statistics with FIML:
+                                        #    out1 <- lavaan(model           = mod1,
+                                        #                   data            = data,
+                                        #                   int.ov.free     = FALSE,
+                                        #                   int.lv.free     = TRUE,
+                                        #                   auto.var        = TRUE,
+                                        #                   auto.fix.single = TRUE,
+                                        #                   missing         = "fiml")
+                                        #    
+                                        #    ## Store the item means:
+                                        #    tmp        <- as.vector(inspect(out1, "coef")$alpha)
+                                        #    names(tmp) <- dNames
+                                        #    object$setDataMeans(tmp)
+                                        #    
+                                        #    ## Store the item scales:
+                                        #    if(control$scale) {
+                                        #        tmp        <- sqrt(diag(inspect(out1, "coef")$psi))
+                                        #        names(tmp) <- dNames
+                                        #        object$setDataScales(tmp)
+                                        #    }
+                                        #    else {
+                                        #        tmp        <- rep(1.0, nVar)
+                                        #        names(tmp) <- dNames
+                                        #        object$setDataScales(tmp)
+                                        #    }
+                                        #}# END scaleDataWithFiml()
 
 
 

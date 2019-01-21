@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-19
+### Modified: 2019-JAN-21
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -43,21 +43,16 @@ MibrrFit <- setRefClass("MibrrFit",
                             l2Pars            = "numeric",
                             usePcStarts       = "logical",
                             smoothingWindow   = "integer",
-                                        #center            = "logical",
                                         #scale             = "logical",
-                                        #adaptScales       = "logical",
                             minPredCor        = "numeric",
                             miceIters         = "integer",
                             miceRidge         = "numeric",
                             miceMethod        = "character",
-                                        #fimlStarts        = "logical",
                             preserveStructure = "logical",
                             optTraceLevel     = "integer",
                             optCheckKkt       = "logical",
                             optMethod         = "character",
                             optBoundLambda    = "logical",
-                            obsMeans          = "numeric",
-                                        #dataScales        = "numeric",
                             gibbsOut          = "list",
                             ignoredColumns    = "data.frame",
                             rawNames          = "character",
@@ -80,9 +75,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             rng0              = "character",
                             userRng           = "character",
                             ridge             = "numeric",
-                            penalty           = "integer"#,
-                                        #knownMeans        = "logical",
-                                        #knownScales       = "logical"
+                            penalty           = "integer"
                         )
                         )
 
@@ -119,14 +112,11 @@ MibrrFit$methods(
                      verbose           <<- verbose
                      convThresh        <<- 1.1
                      usePcStarts       <<- FALSE
-                                        #center            <<- TRUE
                                         #scale             <<- TRUE
-                                        #adaptScales       <<- TRUE
                      minPredCor        <<- 0.3
                      miceIters         <<- 10L
                      miceRidge         <<- 1e-4
                      miceMethod        <<- "pmm"
-                                        #fimlStarts        <<- FALSE
                      preserveStructure <<- TRUE
                      optTraceLevel     <<- 0L
                      optCheckKkt       <<- TRUE
@@ -137,16 +127,9 @@ MibrrFit$methods(
                      userRng           <<- userRng
                      ridge             <<- ridge
                      penalty           <<- penalty
-                                        #knownMeans        <<- FALSE
-                                        #knownScales       <<- FALSE
                  },
              
 ################################### MUTATORS ###################################
-
-                                        #setDataMeans  = function(dataMeans)  { dataMeans  <<- dataMeans  },
-                                        #setDataScales = function(dataScales) { dataScales <<- dataScales },
-             
-###--------------------------------------------------------------------------###
              
              setData = function(dat1, vars = NULL) {
                  if(is.null(vars))
@@ -239,14 +222,11 @@ MibrrFit$methods(
                  "Return the 'control' list"
                  list(convThresh        = convThresh,
                       usePcStarts       = usePcStarts,
-                                        #center            = center,
                                         #scale             = scale,
-                                        #adaptScales       = adaptScales,
                       minPredCor        = minPredCor,
                       miceIters         = miceIters,
                       miceRidge         = miceRidge,
                       miceMethod        = miceMethod,
-                                        #fimlStarts        = fimlStarts,
                       preserveStructure = preserveStructure,
                       checkConv         = checkConv,
                       optTraceLevel     = optTraceLevel,
@@ -270,7 +250,7 @@ MibrrFit$methods(
                  
                  for(j in targetVars) {
                      impSam <- gibbsOut[[j]]$imps[impRow, ]
-                     tmp[missList[[j]], j] <- impSam #+ dataMeans[j]
+                     tmp[missList[[j]], j] <- impSam
                  }
                  
                  ## Restructure imputed data to match the raw data layout:
@@ -299,9 +279,6 @@ MibrrFit$methods(
                  "Process and check the user inputs and isolate a set of target variables"
                  
                  ## Process the Raw Inputs ##
-                 
-                 ## Don't use FIML for summary stats when they're not used:
-                                        #if(!center & !scale) fimlStarts <<- FALSE
                  
                  ## Save the original variable names:
                  rawNames <<- colnames(data)
@@ -338,7 +315,6 @@ MibrrFit$methods(
                  else 
                      userMissCode <<- FALSE
                  
-              
                  ## Generate a pool of potential imputation indices:
                  if(doImp)
                      impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
@@ -402,10 +378,7 @@ MibrrFit$methods(
                  
                  ## Hack to deal with 1D matrix conversion to vector:
                  if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
-
-                 ## Store the variables' observed means:
-                 obsMeans <<- colMeans(data, na.rm = TRUE)
-                 
+                                
                  ## Store nonresponse counts:
                  missCounts <<- sapply(colSums(is.na(data)), as.integer)
 
@@ -439,64 +412,7 @@ MibrrFit$methods(
              },
              
 ###--------------------------------------------------------------------------###
-
-                                        #computeStats = function(useFiml = FALSE) {
-                                        #    "Compute the data means and standard deviations for scaling purposes"
-                                        #    if(useFiml) {
-                                        #        dn <- dataNames()
-                                        #
-                                        #        ## Specify a lavaan model to estimate sufficient stats:
-                                        #        mod1 <- paste(
-                                        #            paste0("F", dn, " =~ 1*", dn, "\n"),
-                                        #            collapse = ""
-                                        #        )
-                                        #        
-                                        #        ## Estimate the sufficient statistics with FIML:
-                                        #        out1 <- lavaan(model           = mod1,
-                                        #                       data            = data,
-                                        #                       int.ov.free     = FALSE,
-                                        #                       int.lv.free     = TRUE,
-                                        #                       auto.var        = TRUE,
-                                        #                       auto.fix.single = TRUE,
-                                        #                       missing         = "fiml")
-                                        #        
-                                        #        ## Store the estimated item means:
-                                        #        if(center & !knownMeans)
-                                        #            dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
-                                        #        
-                                        #        ## Store the estimated item scales:
-                                        #        if(scale & !knownScales)
-                                        #            dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
-                                        #    }
-                                        #    else {
-                                        #        ## Store the raw item means:
-                                        #        if(center & !knownMeans)
-                                        #            dataMeans <<- colMeans(data)
-                                        #        
-                                        #        ## Store the raw item scales:
-                                        #        if(scale & !knownScales)
-                                        #            dataScales <<- unlist(lapply(data, sd))
-                                        #    }
-                                        #
-                                        #    if(!center) dataMeans  <<- rep(0.0, ncol(data))
-                                        #    if(!scale)  dataScales <<- rep(1.0, ncol(data))
-                                        #                                   
-                                        #    names(dataMeans) <<- names(dataScales) <<- colnames(data)
-                                        #},
-
-###--------------------------------------------------------------------------###
-
-                                        #meanCenter = function(revert = FALSE) {
-                                        #    "Mean center the columns of data"
-                                        #    meanFrame <- data.frame(
-                                        #        matrix(dataMeans, nObs, nVar, byrow = TRUE)
-                                        #    ) 
-                                        #    if(!revert) data <<- data - meanFrame
-                                        #    else        data <<- data + meanFrame
-                                        #},
              
-###--------------------------------------------------------------------------###
-
              nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
                  if(checkConv) names(rHats) <<- targetVars
@@ -720,12 +636,10 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             simpleImpute = function(intern = TRUE) { #covsOnly = FALSE, intern = TRUE) {
+             simpleImpute = function(intern = TRUE) { 
                  "Initially fill the missing values via single imputation"
                  cn     <- dataNames()
                  rFlags <- (missCounts > 0)[cn]
-                              
-                                        #if(covsOnly) rFlags <- rFlags & cn %in% setdiff(cn, targetVars)
                  
                  ## Don't try to impute fully observed targets:
                  if(!any(rFlags)) return()

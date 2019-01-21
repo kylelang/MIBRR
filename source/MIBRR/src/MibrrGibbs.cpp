@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-18
+// Modified: 2019-JAN-21
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -202,7 +202,8 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   if(_storeGibbsSamples) _lambdaSam.row(_drawNum) = _lambdas.transpose();
 }// END updateLambdas()
 
-  
+
+
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {  
   int     nPreds   = mibrrData.nPreds();

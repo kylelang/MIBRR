@@ -41,6 +41,7 @@ Eigen::VectorXd drawNorm(int          n,
   return out;
 }
 
+
 // [[Rcpp::export]]
 Eigen::VectorXd drawGamma(int          n,
 			  double       shape,
@@ -55,6 +56,7 @@ Eigen::VectorXd drawGamma(int          n,
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawGamma(shape, rate);
   return out;
 }
+
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGamma(int          n,
@@ -71,6 +73,7 @@ Eigen::VectorXd drawInvGamma(int          n,
   return out;
 }
 
+
 // [[Rcpp::export]]
 Eigen::VectorXd drawScaledInvChiSq(int          n,
 				   double       df,
@@ -86,6 +89,7 @@ Eigen::VectorXd drawScaledInvChiSq(int          n,
     out[i] = mibrrSamplers.drawScaledInvChiSq(df, scale);
   return out;
 }
+
 
 // [[Rcpp::export]]
 Eigen::MatrixXd drawMvn(int             n,
@@ -104,12 +108,14 @@ Eigen::MatrixXd drawMvn(int             n,
   return out;
 }
 
+
 // [[Rcpp::export]]
 double calcIncGamma(double shape, double cutVal, bool lowerTail)
 {
   MibrrSamplers mibrrSamplers;
   return mibrrSamplers.calcIncGamma(shape, cutVal, lowerTail);
 }
+
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
@@ -122,6 +128,7 @@ Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGauss(mu, lambda);
   return out;
 }
+
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawGig(int          n,
@@ -152,6 +159,7 @@ printObsIndices(Eigen::MatrixXd                 data,
   return(mibrrData.getObsRows(targetIndex));
 }
 
+
 // [[Rcpp::export]]
 std::vector<int>
 printMissIndices(Eigen::MatrixXd                 data,
@@ -163,6 +171,7 @@ printMissIndices(Eigen::MatrixXd                 data,
   MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return(mibrrData.getMissIndices(targetIndex));
 }
+
 
 // [[Rcpp::export]]
 Eigen::MatrixXd
@@ -187,6 +196,7 @@ getX(Eigen::MatrixXd                 data,
   
   return out;
 }
+
 
 // [[Rcpp::export]]
 Eigen::VectorXd
