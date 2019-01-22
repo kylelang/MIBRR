@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-30
+### Modified: 2018-NOV-21
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -34,7 +34,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
-                            doBl              = "logical",
                             checkConv         = "logical",
                             verbose           = "logical",
                             convThresh        = "numeric",
@@ -78,44 +77,34 @@ MibrrFit <- setRefClass("MibrrFit",
                             nPreds            = "integer",
                             nObs              = "integer",
                             totalIters        = "integer",
-                            rng0              = "character"
+                            rng0              = "character",
+                            userRng           = "character",
+                            ridge             = "numeric",
+                            penalty           = "integer",
+                            knownMeans        = "logical",
+                            knownScales       = "logical"
                         )
                         )
 
 
 MibrrFit$methods(
-
+             
 ################################ CONSTRUCTOR ###################################
              
              initialize =
-                 function(data              = data.frame(NULL),
-                          targetVars        = "",
-                          ignoreVars        = "",
-                          iterations        = as.integer(NA),
-                          sampleSizes       = list(),
-                          missCode          = as.integer(NA),
-                          doImp             = as.logical(NA),
-                          doMcem            = as.logical(NA),
-                          doBl              = as.logical(NA),
-                          checkConv         = TRUE,
-                          verbose           = as.logical(NA),
-                          convThresh        = 1.1,
-                          usePcStarts       = FALSE,
-                          center            = TRUE,
-                          scale             = TRUE,
-                          adaptScales       = TRUE,
-                          minPredCor        = 0.3,
-                          miceIters         = 10L,
-                          miceRidge         = 1e-4,
-                          miceMethod        = "pmm",
-                          fimlStarts        = FALSE,
-                          preserveStructure = TRUE,
-                          optTraceLevel     = 0L,
-                          optCheckKkt       = TRUE,
-                          optMethod         = "L-BFGS-B",
-                          optBoundLambda    = TRUE,
-                          nChains           = 1L,
-                          seed              = NULL)
+                 function(data        = data.frame(NULL),
+                          targetVars  = "",
+                          ignoreVars  = "",
+                          iterations  = as.integer(NA),
+                          sampleSizes = list(),
+                          missCode    = as.integer(NA),
+                          doImp       = as.logical(NA),
+                          doMcem      = as.logical(NA),
+                          verbose     = as.logical(NA),
+                          seed        = NULL,
+                          userRng     = "",
+                          ridge       = 0.0,
+                          penalty     = 2L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -126,26 +115,30 @@ MibrrFit$methods(
                      missCode          <<- missCode
                      doImp             <<- doImp
                      doMcem            <<- doMcem
-                     doBl              <<- doBl
-                     checkConv         <<- checkConv
+                     checkConv         <<- TRUE
                      verbose           <<- verbose
-                     convThresh        <<- convThresh
-                     usePcStarts       <<- usePcStarts
-                     center            <<- center
-                     scale             <<- scale
-                     adaptScales       <<- adaptScales
-                     minPredCor        <<- minPredCor
-                     miceIters         <<- miceIters
-                     miceRidge         <<- miceRidge
-                     miceMethod        <<- miceMethod
-                     fimlStarts        <<- fimlStarts
-                     preserveStructure <<- preserveStructure
-                     optTraceLevel     <<- optTraceLevel
-                     optCheckKkt       <<- optCheckKkt
-                     optMethod         <<- optMethod
-                     optBoundLambda    <<- optBoundLambda
-                     nChains           <<- nChains
+                     convThresh        <<- 1.1
+                     usePcStarts       <<- FALSE
+                     center            <<- TRUE
+                     scale             <<- TRUE
+                     adaptScales       <<- TRUE
+                     minPredCor        <<- 0.3
+                     miceIters         <<- 10L
+                     miceRidge         <<- 1e-4
+                     miceMethod        <<- "pmm"
+                     fimlStarts        <<- FALSE
+                     preserveStructure <<- TRUE
+                     optTraceLevel     <<- 0L
+                     optCheckKkt       <<- TRUE
+                     optMethod         <<- "L-BFGS-B"
+                     optBoundLambda    <<- TRUE
+                     nChains           <<- 1L
                      seed              <<- seed
+                     userRng           <<- userRng
+                     ridge             <<- ridge
+                     penalty           <<- penalty
+                     knownMeans        <<- FALSE
+                     knownScales       <<- FALSE
                  },
              
 ################################### MUTATORS ###################################
@@ -155,7 +148,12 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             setData = function(dat1) { data[ , colnames(dat1)] <<- dat1      },
+             setData = function(dat1, vars = NULL) {
+                 if(is.null(vars))
+                     data[ , colnames(dat1)] <<- dat1
+                 else
+                     data[ , vars] <<- dat1[ , vars]
+             },
              
 ###--------------------------------------------------------------------------###
              
@@ -170,12 +168,12 @@ MibrrFit$methods(
              },
 
 ###--------------------------------------------------------------------------###
-
+             
              setLambdaParams = function(l1, l2) {
                  l1Pars <<- l1
                  l2Pars <<- l2
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              saveSeed = function(seed0) {
@@ -201,6 +199,10 @@ MibrrFit$methods(
                                  ").")
                           )
                  
+                 ## Stop generating random numbers from the user's stream:
+                 check <- length(userRng) > 0 & userRng != ""
+                 if(check) .lec.CurrentStreamEnd()
+                 
                  ## Seed the l'ecuyer RNG:
                  .lec.SetPackageSeed(seed$value)
                  
@@ -219,10 +221,14 @@ MibrrFit$methods(
                  "Clean up the RNG state"
                  .lec.CurrentStreamEnd(rng0)
                  .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
+                 
+                 ## Re-set the user's stream as the active RNG:
+                 check <- length(userRng) > 0 & userRng != ""
+                 if(check) .lec.CurrentStream(userRng)
              },
              
 ################################# ACCESSORS ####################################
-
+             
              dataNames    = function() { colnames(data)                       },
              targets      = function() { targetVars                           },
              countMissing = function() { missCounts                           },
@@ -292,7 +298,7 @@ MibrrFit$methods(
                      data[is.na(data)] <<- missCode
                  }
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              processInputs = function() {
@@ -328,9 +334,8 @@ MibrrFit$methods(
                  }
                  
                  rHats <<- list()
-                 for(j in targetVars)
-                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
-                 
+                 for(j in targetVars) rHats[[j]] <<- list()
+                                                         
                  ## Replace missCode entries in data with NAs
                  if(!is.na(missCode)) {
                      userMissCode           <<- TRUE
@@ -340,14 +345,7 @@ MibrrFit$methods(
                      userMissCode <<- FALSE
                      missCode     <<- -999L
                  }
-
-                 missCounts <<- sapply(colSums(is.na(data)), as.integer)
-                 
-                 ## Create a list of missing elements in each target variable
-                 ## NOTE: Subtract 1 from each index vector to base indices
-                 ##       at 0 for C++
-                 missList <<- lapply(data, function(x) which(is.na(x)) - 1)
-
+              
                  ## Generate a pool of potential imputation indices:
                  if(doImp)
                      impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
@@ -410,9 +408,16 @@ MibrrFit$methods(
                  )
                  
                  ## Hack to deal with 1D matrix conversion to vector:
-                 if(length(targetVars) == 1)
-                     colnames(data)[1] <<- targetVars
+                 if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
 
+                 ## Store nonresponse counts:
+                 missCounts <<- sapply(colSums(is.na(data)), as.integer)
+
+                 ## Create a list of missing elements in each target variable
+                 ## NOTE: Subtract 1 from each index vector to base indices
+                 ##       at 0 for C++
+                 missList <<- lapply(data, function(x) which(is.na(x)) - 1)
+                 
                  ## How many targets?
                  nTargets <<- as.integer(length(targetVars))
 
@@ -434,18 +439,15 @@ MibrrFit$methods(
                                 })
                      names(lambdaHistory) <<- targetVars
                  }
-                 
-                 rHats <<- list()
-                 for(j in targetVars)
-                     rHats[[j]] <<- list(beta = NA, tau = NA, sigma = NA)
              },
-
+             
 ###--------------------------------------------------------------------------###
 
              computeStats = function(useFiml = FALSE) {
                  "Compute the data means and standard deviations for scaling purposes"
                  if(useFiml) {
                      dn <- dataNames()
+
                      ## Specify a lavaan model to estimate sufficient stats:
                      mod1 <- paste(
                          paste0("F", dn, " =~ 1*", dn, "\n"),
@@ -462,19 +464,21 @@ MibrrFit$methods(
                                     missing         = "fiml")
                      
                      ## Store the estimated item means:
-                     if(center)
+                     if(center & !knownMeans)
                          dataMeans <<- as.vector(inspect(out1, "coef")$alpha)
                      
                      ## Store the estimated item scales:
-                     if(scale)
+                     if(scale & !knownScales)
                          dataScales <<- sqrt(diag(inspect(out1, "coef")$psi))
                  }
                  else {
                      ## Store the raw item means:
-                     if(center) dataMeans <<- colMeans(data)
+                     if(center & !knownMeans)
+                         dataMeans <<- colMeans(data)
                      
                      ## Store the raw item scales:
-                     if(scale) dataScales <<- unlist(lapply(data, sd))
+                     if(scale & !knownScales)
+                         dataScales <<- unlist(lapply(data, sd))
                  }
 
                  if(!center) dataMeans  <<- rep(0.0, ncol(data))
@@ -542,11 +546,24 @@ MibrrFit$methods(
                  "Compute the potential scale reduction factors"
                  for(j in targetVars) {
                      rHats[[j]]$beta  <<- apply(gibbsOut[[j]]$beta, 2, calcRHat)
-                     rHats[[j]]$tau   <<- apply(gibbsOut[[j]]$tau,  2, calcRHat)
                      rHats[[j]]$sigma <<- calcRHat(gibbsOut[[j]]$sigma)
-                 }
+                     
+                     if(penalty != 0) {# Using a shrinkage prior?
+                         rHats[[j]]$tau <<-
+                             apply(gibbsOut[[j]]$tau, 2, calcRHat)
+                         
+                         if(!doMcem) {# Fully Bayesian estimation of lambdas?
+                             if(penalty == 2)
+                                 rHats[[j]]$lambda <<-
+                                     apply(gibbsOut[[j]]$lambda, 2, calcRHat)
+                             else
+                                 rHats[[j]]$lambda <<-
+                                     calcRHat(gibbsOut[[j]]$lambda[ , 1])
+                         }# CLOSE if(!doMcem)
+                     }# CLOSE if(penalty != 0)
+                 }# END for(j in targetVars)
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              checkGibbsConv = function() {
@@ -555,9 +572,23 @@ MibrrFit$methods(
                      ## Find nonconvergent Gibbs samples:
                      badBetaCount <- sum(rHats[[j]]$beta > convThresh)
                      maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badTauCount  <- sum(rHats[[j]]$tau > convThresh)
-                     maxTauRHat   <- max(rHats[[j]]$tau)
                      badSigmaFlag <- rHats[[j]]$sigma > convThresh
+                     
+                     if(penalty != 0) {
+                         badTauCount  <- sum(rHats[[j]]$tau > convThresh)
+                         maxTauRHat   <- max(rHats[[j]]$tau)
+
+                         if(!doMcem) {
+                             badLamCount <- sum(rHats[[j]]$lambda > convThresh)
+                             maxLamRHat  <- max(rHats[[j]]$lambda)
+                         }
+                         else
+                             badLamCount <- 0
+                     }
+                     else {
+                         badTauCount <- 0
+                         badLamCount <- 0
+                     }
                      
                      ## Return warnings about possible failures of convergence:
                      if(badBetaCount > 0) {
@@ -596,6 +627,19 @@ MibrrFit$methods(
                                  call.      = FALSE,
                                  immediate. = TRUE)
                      }
+                     if(badLamCount > 0) {
+                         warning(paste0("While imputing ",
+                                        j,
+                                        ", Lambda's final Gibbs sample may not have converged.\n",
+                                        badLamCount,
+                                        " R-Hats > ",
+                                        convThresh,
+                                        " with maximum R-Hat = ",
+                                        round(maxLamRHat, 4),
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
+                     }
                  }# CLOSE for(j in targetVars)
              },
              
@@ -619,16 +663,19 @@ MibrrFit$methods(
                  ##       Gibbs sampler.
                  
                  ## Populate the starting values for Lambda:
-                 if(!doBl) {
+                 if(penalty == 2) {
                      lambdaMat <<- cbind(
                          matrix(lambda1Starts, nTargets, 1),
                          matrix(lambda2Starts, nTargets, 1)
                      )
                  }
-                 else {
+                 else if(penalty == 1) {
                      if(usePcStarts) getLambdaStarts()
-                     lambdaMat <<- cbind(matrix(lambda1Starts, nTargets, 1), 0)
+                     lambdaMat <<-
+                         cbind(matrix(lambda1Starts, nTargets, 1), 0)
                  }
+                 else
+                     lambdaMat <<- matrix(NA, nTargets, 2)
                  
                  rownames(lambdaMat) <<- targetVars
                  colnames(lambdaMat) <<- c("lambda1", "lambda2")
@@ -637,12 +684,12 @@ MibrrFit$methods(
                  sigmaStarts <<- dataScales[targetVars]
                  
                  for(j in 1 : nTargets) {
-                     if(!doBl) {
+                     if(penalty == 2) {
                          lam1 <- lambdaMat[j, 1]
                          lam2 <- lambdaMat[j, 2]
                          
                          tauPriorScale <- (8 * lam2 * sigmaStarts[j]) / lam1^2
-                         
+                      
                          for(k in 1 : nPreds) {
                              tauDraw <- 0.0
                              while(tauDraw < 1.0)
@@ -661,7 +708,7 @@ MibrrFit$methods(
                          betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
-                     else {# We're doing BL
+                     else if(penalty == 1) {# We're doing BL
                          lam <- lambdaMat[j, 1]
                          
                          tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
@@ -670,27 +717,21 @@ MibrrFit$methods(
                          betaStarts[ , j] <<-
                              rmvnorm(1, rep(0, nPreds), betaPriorCov)
                      }
+                     else {
+                         betaPriorCov <- diag(rep(sigmaStarts[j], nPreds)) 
+                         betaStarts[ , j] <<-
+                             rmvnorm(1, rep(0, nPreds), betaPriorCov)
+                     }
                  }# CLOSE for(j in 1 : nTargets)
              },
-             
-###--------------------------------------------------------------------------###
-             
-             smoothLambda = function() {
-                 "Average over several 'approximation phase' lambdas to get starting values for the 'tuning phase'"
-                 i     <- iterations[1]
-                 range <- (i - smoothingWindow + 1) : i
-
-                 for(j in targetVars)
-                     lambdaMat[j, ] <<- colMeans(lambdaHistory[[j]][range, ])
-             },
-
+         
 ###--------------------------------------------------------------------------###
              
              simpleImpute = function(covsOnly = FALSE, intern = TRUE) {
                  "Initially fill the missing values via single imputation"
                  cn     <- dataNames()
                  rFlags <- (missCounts > 0)[cn]
-                 
+                              
                  if(covsOnly) rFlags <- rFlags & cn %in% setdiff(cn, targetVars)
                  
                  ## Don't try to impute fully observed targets:
@@ -703,7 +744,7 @@ MibrrFit$methods(
                  ## Construct a vector of elementary imputation methods:
                  methVec         <- rep("", ncol(data))
                  methVec[rFlags] <- miceMethod
-                 
+          
                  ## Singly impute the missing values:
                  miceOut <- mice(data            = data,
                                  m               = 1,
@@ -715,7 +756,8 @@ MibrrFit$methods(
                  
                  ## Replace missing values with their imputations:
                  if(intern)
-                     setData(mice::complete(miceOut, 1)[ , rFlags])
+                     setData(dat1 = mice::complete(miceOut, 1),
+                             vars = cn[rFlags])
                  else
                      mice::complete(miceOut, 1) 
              },

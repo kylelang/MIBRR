@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-29
+// Modified: 2018-NOV-21
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -33,11 +33,12 @@ MibrrGibbs::MibrrGibbs()
   // _beta, _tau, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
   // values
   _sigma             = 0.0;
+  _ridge             = 0.0;
   _lambdas           = VectorXd(2);
   _drawNum           = 0;
   _storeGibbsSamples = false;
   _verbose           = true;
-  _useElasticNet     = true;
+  _penType           = 2;
   _fullBayes         = false;
 }
 
@@ -55,16 +56,17 @@ VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;            }
 MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;              }
 MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;           }
 int      MibrrGibbs::getNDraws()          const { return _nDraws;              }
+int      MibrrGibbs::getPenType()         const { return _penType;             }
+double   MibrrGibbs::getRidge()           const { return _ridge;               }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;             }
-bool     MibrrGibbs::getElasticNetFlag()  const { return _useElasticNet;       }
 bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
 
 
 VectorXd MibrrGibbs::getLambdas() const
 { 
   VectorXd outLam;
-  if(_useElasticNet) outLam = _lambdas;
-  else               outLam = VectorXd::Constant(1, _lambdas[0]);
+  if(_penType == 2) outLam = _lambdas;
+  else              outLam = VectorXd::Constant(1, _lambdas[0]);
   return outLam; 
 }
 
@@ -85,8 +87,9 @@ void MibrrGibbs::setTargetIndex(int index)         { _targetIndex   = index;   }
 void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws        = nDraws;  }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp         = doImp;   }
 void MibrrGibbs::beQuiet       ()                  { _verbose       = false;   }
-void MibrrGibbs::doBl          ()                  { _useElasticNet = false;   }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes     = true;    }
+void MibrrGibbs::setPenType    (int penType)       { _penType       = penType; }
+void MibrrGibbs::setRidge      (double ridge)      { _ridge         = ridge;   }
 void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms       = l1Parms; }
 void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms       = l2Parms; }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas       = lambdas; }
@@ -171,13 +174,13 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   double lam1   = _lambdas[0];
   double tauSum = _taus.sum();
   
-  if(!_useElasticNet) {
+  if(_penType == 1) {// MIBL Version
     double shape = _l1Parms[0] + nPreds;
     double rate  = _l1Parms[1] + tauSum / 2.0;
     
     _lambdas[0] = sqrt(drawGamma(shape, rate));
   }
-  else {
+  else {             // MIBEN Version
     double lam2 = _lambdas[1];
     
     // Sample new value of lambda1:
@@ -207,7 +210,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   ArrayXd tauMeans;
   
   try {
-    if(_useElasticNet) {// MIBEN Version
+    if(_penType == 2) {// MIBEN Version
       ArrayXd tauMeansNumerator = ArrayXd::Constant(nPreds, _lambdas[0]);
       
       tauMeans = tauMeansNumerator.sqrt() /
@@ -215,7 +218,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
       
       tauScale = _lambdas[0] / (4.0 * _lambdas[1] * _sigma);
     }
-    else {// MIBL Version
+    else {             // MIBL Version
       double tauMeansNumerator = pow(_lambdas[0], 2) * _sigma;
       
       tauMeans =
@@ -234,8 +237,8 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
     tmpDraws[i] = drawInvGauss(tauMeans[i], tauScale);
   
   ArrayXd newTaus;
-  if(_useElasticNet) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
-  else               newTaus = 1.0 / tmpDraws;              // MIBL Version
+  if(_penType == 2) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
+  else              newTaus = 1.0 / tmpDraws;              // MIBL Version
   
   _taus = newTaus; // Store the updated Taus
   
@@ -247,29 +250,36 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 {
-  int             nPreds    = mibrrData.nPreds();
-  int             nObs      = mibrrData.nResp(_targetIndex);
-  VectorXd        transTaus = VectorXd::Zero(nPreds);
-  MatrixXd        penalty;
+  int             nPreds = mibrrData.nPreds();
+  int             nObs   = mibrrData.nResp(_targetIndex);
   LDLT <MatrixXd> aMatChol;
+    
+  // Compute the IV's crossproducts matrix:
+  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
+    mibrrData.getIVs(_targetIndex, true);
   
-  if(_useElasticNet) {// MIBEN Version
+  // Compute an appropriate penalty term:
+  VectorXd transTaus = VectorXd::Zero(nPreds);
+  MatrixXd penalty;
+  if(_penType == 2) {// MIBEN Version
     transTaus = _taus / (_taus - 1.0);
     penalty   = _lambdas[1] * transTaus.asDiagonal();    
   }
-  else {              // MIBL Version
+  else if(_penType == 1) {// MIBL Version
     transTaus = 1.0 / _taus;
     penalty   = transTaus.asDiagonal();
   }
-    
-  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
-    mibrrData.getIVs(_targetIndex, true) + penalty;
+  else                // Basic ridge penalty
+    penalty = (aMat.diagonal() * _ridge).asDiagonal();
+  
+  // Penalize the IV's crossproducts matrix:
+  aMat += penalty;
   
   VectorXd betaMeans;
   MatrixXd betaCov;
   try {
-    // Compute the Cholesky decomposition of the IV's penalized crossproducts,
-    // and use it to compute the moments of beta's fully conditional posterior:
+    // Compute the Cholesky decomposition of the IV's crossproducts, and use it
+    // to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
     betaMeans =
       aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
@@ -282,18 +292,18 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
   // Draw new values of the regression slope coefficients:
   VectorXd newBetas(nPreds + 1); 
   newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
-  
+
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
   double intMean = mibrrData.getDV(_targetIndex).mean() -
     mibrrData.getIVs(_targetIndex, true).colwise().mean() *
     newBetas.tail(nPreds);
-  
+   
   // Draw a new value of the intercept term:  
   newBetas[0] = drawNorm(intMean, intSd);
-  
+   
   _betas = newBetas; // Store the updated Betas
-  
+ 
   // Add the updated Betas to their Gibbs sample:
   if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
 }// END updateBetas()
@@ -302,7 +312,7 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
 {
-  double newSigma;
+  double newSigma, sigmaShape, sigmaScale;
   int    nPreds = mibrrData.nPreds();
   int    nObs   = mibrrData.nResp(_targetIndex);
   
@@ -310,16 +320,16 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
   VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
     mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
   
-  // Compute the regularized residual sum of squares:
+  // Compute the residual sum of squares:
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
     (mibrrData.getDV(_targetIndex) - eta);
   
-  if(_useElasticNet) {// MIBEN Version
+  if(_penType == 2) {// MIBEN Version
     double scaleSum =
       (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
     
-    double sigmaShape = (double(nObs) / 2.0) + double(nPreds);
-    double sigmaScale =
+    sigmaShape = (double(nObs) / 2.0) + double(nPreds);
+    sigmaScale =
       0.5 * (sse + _lambdas[1] * scaleSum +
 	     (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
     
@@ -339,14 +349,21 @@ void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
     };
     newSigma = testDraw;
   }
-  else {// MIBL Version
+  else if(_penType == 1) {// MIBL Version
     VectorXd transTaus = 1.0 / _taus;
     MatrixXd tmpMat    = transTaus.asDiagonal();
-    
-    double penaltyTerm =
+    double   penalty   =
       _betas.tail(nPreds).transpose() * tmpMat * _betas.tail(nPreds);
-    double sigmaShape  = 0.5 * ((double(nObs) - 1.0) + double(nPreds));
-    double sigmaScale  = 0.5 * (sse + penaltyTerm);
+
+    sigmaShape = 0.5 * ((double(nObs) - 1.0) + double(nPreds));
+    sigmaScale = 0.5 * (sse + penalty);
+    
+    // Draw a new sigma variate:
+    newSigma = drawInvGamma(sigmaShape, sigmaScale);
+  }
+  else {// Basic Ridge Version
+    sigmaShape = 0.5 * (double(nObs) - double(nPreds));
+    sigmaScale = 0.5 * sse;
     
     // Draw a new sigma variate:
     newSigma = drawInvGamma(sigmaShape, sigmaScale);
@@ -382,9 +399,10 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
-  if(_fullBayes) updateLambdas(mibrrData);
-  
-  updateTaus (mibrrData);
+  if(_fullBayes & (_penType != 0)) updateLambdas(mibrrData);
+    
+  if(_penType != 0) updateTaus(mibrrData);
+
   updateBetas(mibrrData);
   updateSigma(mibrrData);
   

@@ -14,16 +14,46 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.0.0.9006 - 2018-05-30 - ACTIVE
+## 0.1.0.9000 - 2019-01-15 - ACTIVE
+
+### Changed
+- Updated version number
+
+### NOTE
+- This version shall be considered a "stable" reference version of the original 
+  implementation of `MIBRR` that was used in Lang (2015). 
+- This version is STILL BROKEN
+- This version shall act as a known starting point from which I can fix the 
+  broken implementation.
+  
+## 0.0.0.9007 - 2018-11-21
+
+### Fixed
+- Two bugs causing crashes when trying to impute univariate missing data
+
+### Added
+- A new exported function, `vanilla`, that implements a basic MI without 
+  using any shrinkage priors.
+- The option to specify known means and standard deviations for the data. This 
+  option is mostly for debugging purposes.
+  
+## 0.0.0.9006 - 2018-06-07
 
 ### Fixed
 - Bug causing crashes when initially imputing incomplete auxiliary variables 
   with mice.
+- Removed redundant definition of `simpleImpute` function from 
+  'helperFunctions.R'
+- Removed unused/redundant definition of `smoothLambda` member function.
 
 ### Changed
 - Improved the way random numbers are generated. Each subprocess now gets its 
   own R'Lecuyer RNG stream.
 - Removed the `simpleIntercept` option from the control list.
+  
+### Added
+- Option to specify an active `rlecuyer` RNG stream for the current session.
+  This stream will be re-set as the active RNG stream when `MIBRR` returns.
   
 ## 0.0.0.9005 - 2018-05-04
 

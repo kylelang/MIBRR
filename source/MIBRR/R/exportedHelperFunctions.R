@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2018-MAY-04
+### Modified: 2018-JUN-13
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -36,12 +36,16 @@ getImpData <- function(mibrrFit, nImps) {
 ## Extract the parameter samples from a fitted MibrrFit object:
 getParams <- function(mibrrFit, target) {
     tmp <- mibrrFit$gibbsOut[[target]]
-    out <- tmp[c("beta", "tau", "sigma")]
+    out <- tmp[c("beta", "sigma")]
     
-    if(mibrrFit$doMcem)
-        out$lambda <- mibrrFit$lambdaMat[target, ]
-    else
-        out$lambda <- tmp$lambda
+    if(mibrrFit$penalty != 0) {# Used shrinkage priors?
+        out$tau <- tmp$tau
+        
+        if(mibrrFit$doMcem)
+            out$lambda <- mibrrFit$lambdaMat[target, ]
+        else
+            out$lambda <- tmp$lambda
+    }
     out
 }
 

@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2018-MAY-04
+### Modified: 2018-NOV-08
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -43,11 +43,12 @@ miben <- function(data,
                   missCode       = NA,
                   verbose        = TRUE,
                   seed           = NULL,
+                  userRng        = "",
                   control        = list()
                   )
 {
     ## Initialize the output object:
-    mibrrFit <- init(doBl         = FALSE,
+    mibrrFit <- init(penalty      = 2,
                      doImp        = TRUE,
                      doMcem       = doMcem,
                      data         = data,
@@ -58,8 +59,10 @@ miben <- function(data,
                      lam1PriorPar = lam1PriorPar,
                      lam2PriorPar = lam2PriorPar,
                      missCode     = missCode,
+                     ridge        = 0.0,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
@@ -83,11 +86,12 @@ mibl <- function(data,
                  missCode     = NA,
                  verbose      = TRUE,
                  seed         = NULL,
+                 userRng      = "",
                  control      = list()
                  )
 {
     ## Initialize the output object:
-    mibrrFit <- init(doBl         = TRUE,
+    mibrrFit <- init(penalty      = 1,
                      doImp        = TRUE,
                      doMcem       = doMcem,
                      data         = data,
@@ -98,8 +102,10 @@ mibl <- function(data,
                      lam1PriorPar = lam1PriorPar,
                      lam2PriorPar = NULL, # Ignored
                      missCode     = missCode,
+                     ridge        = 0.0,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
     
     ## Estimate the model with MCEM:
@@ -123,13 +129,14 @@ ben <- function(data,
                 missCode     = NA,
                 verbose      = TRUE,
                 seed         = NULL,
+                userRng      = "",
                 control      = list()
                 )
 {
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
 
     ## Initialize the output object:
-    mibrrFit <- init(doBl         = FALSE,
+    mibrrFit <- init(penalty      = 2,
                      doImp        = FALSE,
                      doMcem       = doMcem,
                      data         = data,
@@ -140,8 +147,10 @@ ben <- function(data,
                      lam1PriorPar = lam1PriorPar,
                      lam2PriorPar = lam2PriorPar,
                      missCode     = missCode,
+                     ridge        = 0.0,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
@@ -164,13 +173,14 @@ bl <- function(data,
                missCode     = NA,
                verbose      = TRUE,
                seed         = NULL,
+               userRng      = "",
                control      = list()
                )
 {
     if(length(y) > 1) stop("Only one outcome variable is allowed.")
     
     ## Initialize the output object:
-    mibrrFit <- init(doBl         = TRUE,
+    mibrrFit <- init(penalty      = 1,
                      doImp        = FALSE,
                      doMcem       = doMcem,
                      data         = data,
@@ -181,8 +191,10 @@ bl <- function(data,
                      lam1PriorPar = lam1PriorPar,
                      lam2PriorPar = NULL, # Ignored
                      missCode     = missCode,
+                     ridge        = 0.0,
                      verbose      = verbose,
                      seed         = seed,
+                     userRng      = userRng,
                      control      = control)
 
     ## Estimate the model with MCEM:
@@ -192,3 +204,43 @@ bl <- function(data,
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
 }# END bl()
+
+
+### Specify a wrapper function to implement basic Multiple Imputation without
+### shrinkage priors:
+vanilla <- function(data,
+                    targetVars   = NULL,
+                    ignoreVars   = NULL,
+                    sampleSizes  = rep(500, 2),
+                    missCode     = NA,
+                    ridge        = 1e-4,
+                    verbose      = TRUE,
+                    seed         = NULL,
+                    userRng      = "",
+                    control      = list()
+                    )
+{
+    ## Initialize the output object:
+    mibrrFit <- init(penalty      = 0,
+                     doImp        = TRUE,
+                     doMcem       = FALSE,
+                     data         = data,
+                     targetVars   = targetVars,
+                     ignoreVars   = ignoreVars,
+                     iterations   = NULL,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = NULL,
+                     lam2PriorPar = NULL, # Ignored
+                     missCode     = missCode,
+                     ridge        = ridge,
+                     verbose      = verbose,
+                     seed         = seed,
+                     userRng      = userRng,
+                     control      = control)
+    
+    ## Estimate the model:
+    mibrrFit$doGibbs()
+    
+    ## Clean up and return the fitted model object:
+    postProcess(mibrrFit)
+}# END mibl()

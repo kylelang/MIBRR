@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-MAY-15
+### Modified: 2018-NOV-21
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -31,7 +31,7 @@ MibrrFit$methods(
                  "Run the Gibbs sampler to update the imputation model parameters"
 
                  respCounts <- nObs - missCounts
-                 
+
                  ## Get a new vector of seeds for the C++ samplers:
                  seedVec <- rep(NA, nTargets)
                  for(v in 1 : nTargets) {
@@ -39,13 +39,13 @@ MibrrFit$methods(
                      .lec.ResetNextSubstream(sName)
                      seedVec[v] <- .lec.GetState(sName)[1]
                  }
-                                  
+                
                  gibbsOut <<-
                      runGibbs(data        = as.matrix(data),
                               dataScales  = dataScales,
                               nTargets    = nTargets,
-                              missList    = missList[c(1 : nTargets)],
-                              respCounts  = respCounts[c(1 : nTargets)],
+                              missList    = missList[targetVars],
+                              respCounts  = respCounts[targetVars],
                               lambda1     = lambdaMat[ , 1], 
                               lambda2     = lambdaMat[ , 2], # Ignored for BL
                               l1Parms     = l1Pars, # Ignored when
@@ -55,8 +55,9 @@ MibrrFit$methods(
                               betaStarts  = betaStarts,
                               burnSams    = sampleSizes[[phase]][1],
                               totalSams   = sum(sampleSizes[[phase]]),
+                              penType     = penalty,
+                              ridge       = ridge,
                               verbose     = verbose,
-                              doBl        = doBl,
                               fullBayes   = !doMcem,
                               adaptScales = adaptScales,
                               noMiss      = all(missCounts == 0),
@@ -171,7 +172,7 @@ MibrrFit$methods(
                  "Optimize the BEN or BL penalty parameters"
                  
                  ## Use simple update rule and return early when doing BL:
-                 if(doBl) {
+                 if(penalty == 1) {
                      lapply(1 : nTargets, .self$updateBlLambda)
                  }
                  else {
@@ -194,16 +195,16 @@ MibrrFit$methods(
                      
                      if(optTraceLevel == 0) sink()
                      options(warn = 0)
-                 }# CLOSE if(doBl); else
+                 }# CLOSE if(penalty == 1); else
                  
                  for(j in 1 : nTargets) {
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
                      
                      ## Smooth Lambda estimates if beginning 'tuning' phase:
                      if(iter == iterations[1] & smoothingWindow > 1) {
-                         smoothRange    <- (iter - smoothingWindow + 1) : iter
+                         smoothRange    <- (iter - smoothingWindow + 1) : iter         
                          lambdaMat[j, ] <<-
-                             colMeans(lambdaHistory[[j]][smoothRange, ])
+                             colMeans(lambdaHistory[[j]][smoothRange, ])        
                      }
                  }
              }

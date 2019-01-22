@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-15
+// Modified: 2018-JUN-13
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -78,6 +78,11 @@ public:
   // @param2: scale parameter
   // @return: random Inverse Gamma variate
 
+  double drawScaledInvChiSq(const double, const double);
+  // @param1: DF parameter
+  // @param2: scale parameter
+  // @return: random Scaled Inverse Chi-Squared variate
+    
   double calcIncGamma(const double, const double, const bool);
   // @param1: shape parameter of the underlying gamma distribution (scale = 1.0)
   // @param2: threshold value cutting off the upper or lower tail (i.e., the

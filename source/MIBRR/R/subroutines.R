@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-MAY-15
+### Modified: 2018-JUN-18
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -23,7 +23,7 @@
 ##----------------------------------------------------------------------------##
 
 
-init <- function(doBl,
+init <- function(penalty,
                  doImp,
                  doMcem,
                  data,
@@ -34,8 +34,10 @@ init <- function(doBl,
                  lam1PriorPar,
                  lam2PriorPar,
                  missCode,
+                 ridge,
                  verbose,
                  seed,
+                 userRng,
                  control)
 {
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
@@ -50,8 +52,11 @@ init <- function(doBl,
                          verbose     = verbose,
                          doImp       = doImp,
                          doMcem      = doMcem,
-                         doBl        = doBl,
-                         seed        = seed)
+                         seed        = seed,
+                         userRng     = userRng,
+                         ridge       = ridge,
+                         penalty     = as.integer(penalty)
+                         )
 
     ## Process and check the user inputs:
     mibrrFit$processInputs()
@@ -60,9 +65,10 @@ init <- function(doBl,
     mibrrFit$setupRng()
     
     ## Store Lambda's prior parameters:
-    if(!doMcem) mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
-                                         l2 = as.numeric(lam2PriorPar)
-                                         )
+    if(!doMcem & penalty != 0)
+        mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
+                                 l2 = as.numeric(lam2PriorPar)
+                                 )
     
     ## Update any user-specified control parameters:
     if(length(control) > 0) mibrrFit$setControl(control)
@@ -72,12 +78,17 @@ init <- function(doBl,
 
     ## Temporarily fill missing with single imputations:
     if(haveMiss) mibrrFit$simpleImpute(covsOnly = mibrrFit$fimlStarts)
+
+    ## Note known means and scales, if any:
+    if(!is.null(control$dataMeans))  mibrrFit$knownMeans <- TRUE
+    if(!is.null(control$dataScales)) mibrrFit$knownScales <- TRUE
     
     ## Compute summary statistics:
-    mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
+    if(!mibrrFit$knownMeans & !mibrrFit$knownScales)
+        mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
     
     if(mibrrFit$center) mibrrFit$meanCenter()
-  
+    
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()

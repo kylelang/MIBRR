@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-MAY-15
+// Modified: 2018-JUN-13
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -81,6 +81,12 @@ double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
   gamma_distribution<double> gam(shape, 1.0 / scale);
   return 1.0 / gam(_gen);
+}
+
+
+double MibrrSamplers::drawScaledInvChiSq(const double df, const double scale)
+{
+  return drawInvGamma(df / 2.0, (df * scale) / 2.0);
 }
 
 

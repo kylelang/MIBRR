@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-04
+// Modified: 2018-NOV-21
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -50,14 +50,14 @@ MibrrData::~MibrrData() {}
 vector<int> MibrrData::getObsRows(int targetIndex) const
 {
   int nObs = _data.rows();
-  
+    
   // Get an integer sequence of row indices:
   vector<int> allRows(nObs);
   std::iota(allRows.begin(), allRows.end(), 0);
-
+    
   // Get the indices for rows with missing values on targetIndex:
   vector<int> missRows = _missIndices[targetIndex];
-
+  
   // use std::set_difference to find the indices for rows with observed data on
   // targetIndex:
   vector<int>::iterator it;
@@ -77,14 +77,14 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 
 MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
-{ 
+{
   int         nVars    = _data.cols();
   int         rowIndex = 0;
   int         nObs     = _data.rows();
   MatrixXd    tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
   MatrixXd    outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
- 
+  
   if(_noMiss) {// Return full predictor matrix:
     outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
     
@@ -100,7 +100,7 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
       nObs    = _data.rows() - _respCounts[targetIndex];
       useRows = _missIndices[targetIndex];
     }
-    
+  
     outMat = MatrixXd::Zero(nObs, nVars - 1);
     
     for(int i : useRows) {

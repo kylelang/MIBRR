@@ -1,27 +1,25 @@
-\name{miben}
-\alias{miben}
+\name{vanilla}
+\alias{vanilla}
 \title{
-Multiple Imputation with the Bayesian Elastic Net
+Basic Multiple Imputation without Regularization
 }
 \description{
-  This function implements MIBEN, a robust MICE-based multiple imputation scheme
-  that employs the Bayesian elastic net as its elementary imputation method.
+  This function will implement a basic MICE-based multiple imputation
+  scheme that uses simple Bayesian linear regression as the elementary
+  imputation method.
 }
 \usage{
-miben(data,
-      targetVars   = NULL,
-      ignoreVars   = NULL,
-      iterations   = c(100, 10),
-      sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
-      doMcem       = TRUE,
-      lam1PriorPar = NULL,
-      lam2PriorPar = NULL,
-      missCode     = NA,
-      verbose      = TRUE,
-      seed         = NULL,
-      userRng      = "",
-      control      = list()
-      )  
+vanilla(data,
+        targetVars  = NULL,
+        ignoreVars  = NULL,
+        sampleSizes = rep(500, 2),
+        missCode    = NA,
+        ridge       = 1e-4,
+        verbose     = TRUE,
+        seed        = NULL,
+        userRng     = "",
+        control     = list()
+        )
 }
 \arguments{
   \item{data}{
@@ -37,39 +35,20 @@ miben(data,
     An optional character vector giving the column labels for those variables
     that should be excluded from the imputation model (e.g., ID variables).
   }
-  \item{iterations}{
-    A two-element numeric vector giving the number of iterations to employ
-    during the MCEM approximation and tuning phases, respectively.\cr
-    Defaults to \code{iterations = c(100, 10)}.
-  }
   \item{sampleSizes}{
-    A list or vector giving the desired Gibbs sample sizes (see
+    A two-element numeric vector giving the desired Gibbs sample sizes (see
     Details for more information).\cr 
-    Defaults to \code{sampleSizes = list(rep(25, 2), rep(250, 2),
-      rep(500, 2))}. 
-  }
-  \item{doMcem}{
-    A logical switch: Should the model be estimated using Markov Chain
-    Expectation Maximization (MCEM)? If \code{doMcem = FALSE} the model
-    is estimated as a fully Bayesian model by assigning hyper-priors to
-    the penalty parameters.\cr
-    Defaults to \code{doMcem = TRUE}.
-  }
-  \item{lam1PriorPar}{
-    A two-element numeric vector giving the prior shape and rate
-    parameters, respectively, for the squared LASSO penalty parameter's,
-    \eqn{\lambda_1^2}{lambda1^2}, gamma prior.
-  }
-  \item{lam2PriorPar}{
-    A two-element numeric vector giving the prior \eqn{\chi}{chi} and
-    \eqn{\psi}{psi} parameters, respectively, for the ridge penalty
-    parameter's, \eqn{\lambda_2}{lambda2}, generalized inverse Gaussian
-    prior.
+    Defaults to \code{sampleSizes = rep(500, 2)}. 
   }
   \item{missCode}{
     An optional integer-valued code used to flag the missing data in
     \code{data}. Should take a value that cannot naturally occur in
     \code{data}. Not needed when the missing data are coded as \code{NA}.
+  }
+  \item{ridge}{
+    The ridge penalty to apply to the crossproducts matrix of the
+    imputation models' predictor matrices.\cr
+    Defaults to \code{ridge = 1e-4}.
   }
   \item{verbose}{
     A logical switch: Should verbose output be printed to stdout?\cr
@@ -92,14 +71,7 @@ miben(data,
   }
 }
 \details{
-  The \code{sampleSizes} argument must be a three-element list when
-  \code{doMcem = TRUE}. In this case, the list must contain three
-  two-element numeric (integer) vectors giving the number of MCMC draws
-  to discard as burn-in and to retain, respectively, during the MCEM
-  approximation, tuning, and sampling phases.
-
-  When \code{doMcem = FALSE}, only a single Gibbs sample is drawn, so
-  the\code{sampleSizes} argument must be a  two-element numeric
+  The\code{sampleSizes} argument must be a two-element numeric
   (integer) vector giving the number of MCMC draws to discard as
   burn-in and the number to retain in the final Gibbs sample.
 
@@ -122,12 +94,12 @@ miben(data,
   being used to generate random numbers in the current session, this
   stream's name should be given as the \code{userRng} argument. For
   example, if \code{.lec.CurrentStream("s0")} has been called and
-  \code{.lec.CurrentStreamEnd()} has not been called, \code{miben} needs
+  \code{.lec.CurrentStreamEnd()} has not been called, \code{mibl} needs
   to be overtly notified of the non-standard RNG state via \code{userRng
-  = "s0"}. Doing so will tell \code{miben} to re-set \dQuote{s0} as the
+  = "s0"}. Doing so will tell \code{mibl} to re-set \dQuote{s0} as the
   active RNG stream on return. If no argument is provided for
-  \code{userRng}, \code{miben} will attempt to leave the RNG state as it
-  was when \code{miben} was called, but no \pkg{rlecuyer} RNG streams
+  \code{userRng}, \code{mibl} will attempt to leave the RNG state as it
+  was when \code{mibl} was called, but no \pkg{rlecuyer} RNG streams
   will not be re-set for use in the current session.
   
   \code{control} is a list containing the following named elements:
@@ -137,33 +109,6 @@ miben(data,
       \code{convThresh} arising from the final, retained Gibbs sample
       will trigger a warning.\cr
       Defaults to \code{convThres = 1.1}.
-    }
-    \item{lambda1Starts:}{
-      An optional numeric vector giving starting values for
-      the LASSO penalty parameter, \eqn{\lambda_1}{lambda1}. Values are recycled
-      to populate a vector with \code{size = length(targetVars)}.\cr
-      Defaults to \code{rep(0.5, length(targetVars))}.
-    }
-    \item{lambda2Starts:}{
-      An optional numeric vector giving starting values for
-      the ridge penalty parameter, \eqn{\lambda_2}{lambda2}. Values are recycled
-      to populate a vector with \code{size = length(targetVars)}.\cr
-      Defaults to \code{rep(0.1 * nPreds, length(targetVars))}, where
-      \code{nPreds} is the number of predictors in the imputation model.
-    }
-    \item{usePcStarts:}{
-      A logical switch: Use the starting values for \eqn{\lambda_1}{lambda1}
-      suggested by Park and Casella (2008)?\cr
-      Defaults to \code{usePcStarts = FALSE}.
-    }
-    \item{smoothingWindow:}{
-      An integer giving the number of approximation phase
-      \eqn{\Lambda}{Lambda} values to average over to get the starting
-      \eqn{\Lambda's}{Lambdas} for the MCEM tuning phase. Setting
-      \code{smoothingWindow} > 1 can facilitate convergence of the MCEM tuning phase
-      when burn-in \eqn{\Lambda}{Lambda} estimates are very noisy.\cr
-      Defaults to \code{smoothingWindow = min(10, ceiling(nApprox / 10))} where
-      \code{nApprox} is the number of MCEM approximation iterations. 
     }
     \item{center:}{
       A logical switch: Should the data be centered before
@@ -199,7 +144,8 @@ miben(data,
     \item{miceRidge:}{
       The ridge penalty used by the \pkg{mice} package when temporarily
       filling missing data before scaling or filling missing data on
-      covariates. Defaults to \code{miceRidge = 1e-4}.
+      covariates.\cr
+      Defaults to \code{miceRidge = 1e-4}.
     }
     \item{miceMethod:}{
       The elementary imputation method used by the \pkg{mice} package when
@@ -218,32 +164,6 @@ miben(data,
       as submitted?\cr
       Defaults to \code{preserveStructure = TRUE}.
     }
-    \item{optTraceLevel:}{
-      A non-negative integer passed to the \pkg{optimx} \code{trace}
-      argument. See \pkg{optimx} documentation for details.\cr
-      Defaults to \code{optTraceLevel = 0}.
-    }
-    \item{optCheckKkt:}{
-      A logical flag: Should the Kuhn, Jarush, Tucker optimality conditions be
-      checked when optimizing the penalty parameters?\cr
-      Defaults to \code{optCheckKkt = TRUE}.
-    }
-    \item{optMethod:}{
-      A character vector giving the optimization method(s) used by \pkg{optimx}
-      to estimate the penalty parameters. Possible options are
-      \dQuote{Nelder-Mead}, \dQuote{BFGS}, \dQuote{CG}, \dQuote{L-BFGS-B},
-      \dQuote{nlm}, \dQuote{nlminb}, \dQuote{spg}, \dQuote{ucminf},
-      \dQuote{newuoa}, \dQuote{bobyqa}, \dQuote{nmkb}, \dQuote{hjkb},
-      \dQuote{Rcgmin}, or \dQuote{Rvmmin}. When \code{length(optMethod) > 1},
-      \pkg{optimx}'s follow-on optimization is employed. See the \pkg{optimx}
-      documentation for details.\cr
-      Defaults to \code{optMethod = "L-BFGS-B"}.
-    }
-    \item{optBoundLambda:}{
-      A logical switch: Should the penalty parameters be bounded below
-      by zero?\cr
-      Defaults to \code{optBoundLambda = TRUE}.
-    }
     \item{checkConv:}{
       A logical switch: Should the stationary Gibbs samples be checked
       for convergence?\cr
@@ -257,15 +177,19 @@ miben(data,
   output can be accessed via the convenience functions
   \code{\link{getImpData}} and \code{\link{getParams}} as well as the
   \code{\link{getField}} function. See documentation for
-  \code{\link{MibrrFit}} for more details.
+  \code{\link{MibrrFit}} for more details. 
 }
 \references{
   Lang, K. M. (2015) \emph{MIBEN: Multiple imputation with the
     Bayesian elastic net} (Unpublished doctoral dissertation). University of
   Kansas.
   
-  Li, Q. and Lin, N. (2010) The Bayesian Elastic Net. \emph{Bayesian
-    Analysis}, \bold{5}(1), 151--170.
+  Park, T. and Casella, G. (2008) The Bayesian Lasso. \emph{Journal of
+    the American Statistical Association}, \bold{103}, 681--686.
+  
+  Zhao, Y., and Long, Q. (2013) Multiple imputation in the presence of
+  high-dimensional data. \emph{Statistical Methods in Medical Research},
+  \bold{0}(0), 1--15.
 }
 \author{
   Kyle M. Lang
@@ -279,25 +203,13 @@ miben(data,
   function is \strong{absolutely not} ready for use in real-world analyses!
 }
 \seealso{
-\code{\link{mibl}}, \code{\link[optimx]{optimx}},
-  \code{\link{getImpData}}, \code{\link{getParams}}, \code{\link{getField}}
+  \code{\link{miben}}, \code{\link{mibl}}, \code{\link{getImpData}},
+  \code{\link{getParams}}, \code{\link{getField}}
 }
 \examples{
 data(mibrrExampleData)
 
-## MCEM estimation:
-mibenOut <- miben(data       = mibrrExampleData,
-                  iterations = c(30, 10),
+vanOut <- vanilla(data       = mibrrExampleData,
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
-
-## Fully Bayesian estimation:
-mibenOut <- miben(data         = mibrrExampleData,
-                  targetVars   = c("y", paste0("x", c(1 : 3))),
-                  ignoreVars   = "idNum",
-                  sampleSizes  = c(500, 500),
-                  doMcem       = FALSE,
-                  lam1PriorPar = c(1.0, 0.1),
-                  lam2PriorPar = c(1.0, 0.1)
-                  )
 }
