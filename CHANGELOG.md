@@ -14,7 +14,22 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.1.0.9000 - 2019-01-15 - ACTIVE
+## 0.2.0.9000 - 2019-01-21 - ACTIVE
+
+### Fixed
+- The scaling issues addressed in the changes listed below seem to have been a 
+  large part of the poor performance exhibited in recent simulations. The full 
+  extent of the improvement still needs to be evaluated via new simulations.
+  
+### Changed
+- Beta samples are now returned in their raw metric
+- Predictors are standardized on-the-fly with respect to the "training set" 
+  used to estimate each elementary imputation model
+- Outcomes are left in their raw metric (uncentered) during model estimation
+- The "test sets" used to generate the imputations are standardized with 
+  respect to the "training set" moments
+
+## 0.1.0.9000 - 2019-01-15 
 
 ### Changed
 - Updated version number
@@ -64,7 +79,7 @@ NOTE:
 
 ### Changed
 - Removed restriction that forced 'L-BFGS-B' as the optimization method when 
-  doing contstrained optimization for MCEM
+  doing constrained optimization for MCEM
 - Improved implementation of 'mibrrW' and 'mibrrL' functions.
 
 ## 0.0.0.9004 - 2018-02-15
@@ -87,7 +102,7 @@ NOTE:
 
 ### Added 
 - Fully Bayesian estimation of the Elastic Net and LASSO penalty parameters
-- A `getImpData` function to replace missing values and generate the mulitply
+- A `getImpData` function to replace missing values and generate the multiply
   imputed datasets after a run of `miben` or `mibl`.
 - A `getParams` function to extract the posterior samples of the model parameters
   from a fitted `MibrrFit` object.
@@ -104,14 +119,14 @@ NOTE:
 - Pulled all main exported functions into new source file: 
   "exportedPrimaryFunctions.R"
 - Broke core estimation subroutines into a new source files "subroutines.R"
-- Pulled all samplers into a seperate class `MibrrSamplers`
+- Pulled all samplers into a separate class `MibrrSamplers`
 
     - `MibrrGibbs` now extends `MibrrSamplers`
 
 - Moved many R functions into the `MibrrFit` class as methods
-- Broke optimization/Gibbs sampling routines out into a seperate source file: 
+- Broke optimization/Gibbs sampling routines out into a separate source file: 
   "02_EstimationMethods.R"
-- Broke exported helper functions into a seperate source file: 
+- Broke exported helper functions into a separate source file: 
   "exportedHelperFunctions.R"
 	  
 ### Added

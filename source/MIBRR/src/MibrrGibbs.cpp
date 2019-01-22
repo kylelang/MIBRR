@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-NOV-21
+// Modified: 2019-JAN-21
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -30,7 +30,7 @@
   
 MibrrGibbs::MibrrGibbs() 
 {
-  // _beta, _tau, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
+  // _betas, _taus, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
   // values
   _sigma             = 0.0;
   _ridge             = 0.0;
@@ -80,19 +80,19 @@ double MibrrGibbs::getLambdas(int index) const
 //////////////////////////////// MUTATORS //////////////////////////////////////
 
 
-void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas         = betas;   }
-void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus          = taus;    }
-void MibrrGibbs::setSigma      (double sigma)      { _sigma         = sigma;   }
-void MibrrGibbs::setTargetIndex(int index)         { _targetIndex   = index;   }
-void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws        = nDraws;  }
-void MibrrGibbs::setDoImp      (bool doImp)        { _doImp         = doImp;   }
-void MibrrGibbs::beQuiet       ()                  { _verbose       = false;   }
-void MibrrGibbs::doFullBayes   ()                  { _fullBayes     = true;    }
-void MibrrGibbs::setPenType    (int penType)       { _penType       = penType; }
-void MibrrGibbs::setRidge      (double ridge)      { _ridge         = ridge;   }
-void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms       = l1Parms; }
-void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms       = l2Parms; }
-void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas       = lambdas; }
+void MibrrGibbs::setBetas      (VectorXd &betas)   { _betas       = betas;     }
+void MibrrGibbs::setTaus       (ArrayXd &taus)     { _taus        = taus;      }
+void MibrrGibbs::setSigma      (double sigma)      { _sigma       = sigma;     }
+void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;     }
+void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws      = nDraws;    }
+void MibrrGibbs::setDoImp      (bool doImp)        { _doImp       = doImp;     }
+void MibrrGibbs::beQuiet       ()                  { _verbose     = false;     }
+void MibrrGibbs::doFullBayes   ()                  { _fullBayes   = true;      }
+void MibrrGibbs::setPenType    (int penType)       { _penType     = penType;   }
+void MibrrGibbs::setRidge      (double ridge)      { _ridge       = ridge;     }
+void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms     = l1Parms;   }
+void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms     = l2Parms;   }
+void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas     = lambdas;   }
 
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
@@ -202,9 +202,10 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   if(_storeGibbsSamples) _lambdaSam.row(_drawNum) = _lambdas.transpose();
 }// END updateLambdas()
 
-  
+
+
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
-{
+{  
   int     nPreds   = mibrrData.nPreds();
   double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
@@ -248,15 +249,15 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 
 
 
-void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
+void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 {
   int             nPreds = mibrrData.nPreds();
   int             nObs   = mibrrData.nResp(_targetIndex);
   LDLT <MatrixXd> aMatChol;
     
   // Compute the IV's crossproducts matrix:
-  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true).transpose() *
-    mibrrData.getIVs(_targetIndex, true);
+  MatrixXd aMat = mibrrData.getIVs(_targetIndex, true, true).transpose() *
+    mibrrData.getIVs(_targetIndex, true, true);
   
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
@@ -282,57 +283,58 @@ void MibrrGibbs::updateBetas(const MibrrData &mibrrData)
     // to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
     betaMeans =
-      aMatChol.solve(mibrrData.getIVs(_targetIndex, true).transpose() *
+      aMatChol.solve(mibrrData.getIVs(_targetIndex, true, true).transpose() *
 		     mibrrData.getDV(_targetIndex)); 
-    betaCov =
-      aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
+    betaCov = aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
   }
   catch(exception &e) { betaError(e); }
   
   // Draw new values of the regression slope coefficients:
-  VectorXd newBetas(nPreds + 1); 
-  newBetas.tail(nPreds) = drawMvn(betaMeans, betaCov);
-
+  _betas.tail(nPreds) = drawMvn(betaMeans, betaCov);
+  
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
-  double intMean = mibrrData.getDV(_targetIndex).mean() -
-    mibrrData.getIVs(_targetIndex, true).colwise().mean() *
-    newBetas.tail(nPreds);
-   
+  double intMean = mibrrData.getDV(_targetIndex).mean();
+     
   // Draw a new value of the intercept term:  
-  newBetas[0] = drawNorm(intMean, intSd);
-   
-  _betas = newBetas; // Store the updated Betas
- 
-  // Add the updated Betas to their Gibbs sample:
-  if(_storeGibbsSamples) _betaSam.row(_drawNum) = newBetas.transpose();
+  _betas[0] = drawNorm(intMean, intSd);
+  
+  if(_storeGibbsSamples) {
+    VectorXd rawBetas = _betas;
+    
+    // Back-transform the standardized betas to their raw metric:
+    rawBetas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
+    rawBetas[0] -= mibrrData.getMeans(_targetIndex) * rawBetas.tail(nPreds);
+    
+    _betaSam.row(_drawNum) = rawBetas.transpose();
+  }
 }// END updateBetas()
 
 
 
-void MibrrGibbs::updateSigma(const MibrrData &mibrrData)
+void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
   double newSigma, sigmaShape, sigmaScale;
   int    nPreds = mibrrData.nPreds();
   int    nObs   = mibrrData.nResp(_targetIndex);
-  
+
   // Compute the linear predictor:
   VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
-    mibrrData.getIVs(_targetIndex, true) * _betas.tail(nPreds);
-  
+    mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
+ 
   // Compute the residual sum of squares:
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
     (mibrrData.getDV(_targetIndex) - eta);
-  
+ 
   if(_penType == 2) {// MIBEN Version
     double scaleSum =
       (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
-    
+ 
     sigmaShape = (double(nObs) / 2.0) + double(nPreds);
     sigmaScale =
       0.5 * (sse + _lambdas[1] * scaleSum +
 	     (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
-    
+ 
     bool   validDraw = false;
     double testDraw;
     while(!validDraw) {// Rejection sampling to draw a Sigma variate
@@ -385,7 +387,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
   VectorXd imps = _betas[0] * VectorXd::Ones(nMiss) +
-    mibrrData.getIVs(_targetIndex, false) * _betas.tail(nPreds) +
+    mibrrData.getIVs(_targetIndex, false, true) * _betas.tail(nPreds) +
     drawNorm(nMiss, 0.0, sqrt(_sigma));
   
   // Replace the missing data in the target variable with the imputations:
@@ -400,9 +402,9 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
   if(_fullBayes & (_penType != 0)) updateLambdas(mibrrData);
-    
+  
   if(_penType != 0) updateTaus(mibrrData);
-
+  
   updateBetas(mibrrData);
   updateSigma(mibrrData);
   

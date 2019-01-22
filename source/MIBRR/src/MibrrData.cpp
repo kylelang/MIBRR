@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-NOV-21
+// Modified: 2019-JAN-21
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -29,16 +29,18 @@
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrData::MibrrData(const MatrixXd        &data,
-		     const VectorXd        &dataScales,
 		     vector< vector<int> > missIndices,
 		     const VectorXi        &respCounts,
 		     const bool            noMiss) 
 {
   _data        = data;
-  _dataScales  = dataScales;
   _missIndices = missIndices;
   _respCounts  = respCounts;
   _noMiss      = noMiss;
+
+  MatrixXd tmp = MatrixXd::Zero(respCounts.size(), nPreds());
+  _means  = tmp;
+  _scales = tmp;
 }
 
 MibrrData::~MibrrData() {}
@@ -76,20 +78,19 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
 
 
 
-MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
+MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows, bool standardize)
 {
   int         nVars    = _data.cols();
   int         rowIndex = 0;
   int         nObs     = _data.rows();
-  MatrixXd    tmpMat   = _data * _dataScales.asDiagonal().inverse(); 
   MatrixXd    outMat   = MatrixXd::Zero(nObs, nVars - 1);
   vector<int> useRows;
   
   if(_noMiss) {// Return full predictor matrix:
-    outMat.leftCols(targetIndex) = tmpMat.leftCols(targetIndex);
+    outMat.leftCols(targetIndex) = _data.leftCols(targetIndex);
     
     outMat.rightCols(nVars - (targetIndex + 1)) =
-      tmpMat.rightCols(nVars - (targetIndex + 1));
+      _data.rightCols(nVars - (targetIndex + 1));
   }
   else {
     if(obsRows) {// Return predictor rows corresponding to observed DVs:
@@ -105,17 +106,22 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows) const
     
     for(int i : useRows) {
       outMat.block(rowIndex, 0, 1, targetIndex) =
-	tmpMat.block(i, 0, 1, targetIndex);
+	_data.block(i, 0, 1, targetIndex);
       
       outMat.block(rowIndex, targetIndex, 1, nVars - (targetIndex + 1)) = 
-	tmpMat.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
+	_data.block(i, targetIndex + 1, 1, nVars - (targetIndex + 1));
       
       rowIndex++;
     }
   }
+  
+  if(standardize) {
+    // Standardize the predictor matrix:
+    outMat.rowwise() -= _means.row(targetIndex);
+    outMat           *= _scales.row(targetIndex).asDiagonal().inverse();
+  }
   return outMat;
 }
-
 
 
 VectorXd MibrrData::getDV(int targetIndex) const
@@ -124,9 +130,9 @@ VectorXd MibrrData::getDV(int targetIndex) const
     return _data.col(targetIndex);
   }
   else {
-    int          rowIndex = 0;
-    VectorXd     outVec   = VectorXd::Zero(_respCounts[targetIndex]);
-    vector<int>  obsRows  = getObsRows(targetIndex);
+    int         rowIndex = 0;
+    VectorXd    outVec   = VectorXd::Zero(_respCounts[targetIndex]);
+    vector<int> obsRows  = getObsRows(targetIndex);
     
     for(int i : obsRows) {
       outVec[rowIndex] = _data(i, targetIndex);
@@ -137,19 +143,26 @@ VectorXd MibrrData::getDV(int targetIndex) const
 }
 
 
-
-double MibrrData::getDataScales(int targetIndex) const
-{
-  return _dataScales[targetIndex];
-}
-
 vector<int> MibrrData::getMissIndices(int targetIndex) const
 {
   return _missIndices[targetIndex];
 }
 
-MatrixXd MibrrData::getData()       const { return _data;                      }
-VectorXd MibrrData::getDataScales() const { return _dataScales;                }
+
+RowVectorXd MibrrData::getMeans(int targetIndex) const
+{
+  return _means.row(targetIndex);
+}
+
+
+RowVectorXd MibrrData::getScales(int targetIndex) const
+{
+  return _scales.row(targetIndex);
+}
+
+
+MatrixXd MibrrData::getData() const { return _data;                            }
+
 
 ///////////////////////////////// MUTATORS /////////////////////////////////////
 
@@ -166,20 +179,6 @@ void MibrrData::setDV(const VectorXd &newDV, const int targetIndex)
 void MibrrData::setElement(const double element, const int row, const int col)
 {
   _data(row, col) = element;
-}
-
-
-void MibrrData::computeDataScales()
-{
-  int nObs  = _data.rows();
-  int nVars = _data.cols();
-  
-  for(int v = 0; v < nVars; v++) {
-    double tmpMean = _data.col(v).mean();
-    double tmpVar  =
-      (_data.col(v).array() - tmpMean).square().sum() / double(nObs - 1);
-    _dataScales[v] = sqrt(tmpVar);
-  }
 }
 
 
@@ -207,6 +206,18 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
     rowIndex++;
   }
 }// END fillMissing()
+
+
+void MibrrData::updateMoments(const int targetIndex)
+{
+  _means.row(targetIndex)  = getIVs(targetIndex, true, false).colwise().mean();
+  _scales.row(targetIndex) =
+    (
+     (
+      getIVs(targetIndex, true, false).rowwise() - _means.row(targetIndex)
+      ).colwise().squaredNorm() * double(1.0 / (nResp(targetIndex) - 1.0))
+     ).cwiseSqrt();
+}
 
 
 //////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////

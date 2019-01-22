@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2018-NOV-08
+### Modified: 2019-JAN-15
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -11,7 +11,7 @@
 ###           returning any missing data imputations.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##

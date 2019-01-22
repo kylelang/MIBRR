@@ -8,7 +8,11 @@ Generate Posterior Predictions from MIBRR Models
   using \code{miben}, \code{mibl}, \code{ben}, or \code{bl}.
 }
 \usage{
-postPredict(mibrrFit, newData, targetVars = NULL, nDraws = 0)
+postPredict(mibrrFit,
+            newData,
+            targetVars = NULL,
+            nDraws     = 0,
+            scale      = TRUE)
 }
 \arguments{
   \item{mibrrFit}{
@@ -34,6 +38,10 @@ postPredict(mibrrFit, newData, targetVars = NULL, nDraws = 0)
     paramters. If \code{nDraws < 0} predictions are generated using the
     posterior means (i.e., EAP scores) of the model parameters.\cr
     Defaults to \code{nDraws = 0}.
+  }
+  \item{scale}{
+    A logical switch. Should the columns of \code{newData} be
+    standardized before generating predictions.
   }
 }
 \value{
