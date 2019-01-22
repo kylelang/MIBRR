@@ -1,7 +1,7 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2019-JAN-21
+### Modified: 2019-JAN-22
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
