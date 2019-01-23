@@ -37,12 +37,12 @@ drawGig <- function(n, lambda, chi, psi, seed) {
     .Call('_MIBRR_drawGig', PACKAGE = 'MIBRR', n, lambda, chi, psi, seed)
 }
 
-printObsIndices <- function(data, missIndices, respCounts, noMiss, targetIndex) {
-    .Call('_MIBRR_printObsIndices', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, targetIndex)
+printObsIndices <- function(data, missIndices, respCounts, targetIndex) {
+    .Call('_MIBRR_printObsIndices', PACKAGE = 'MIBRR', data, missIndices, respCounts, targetIndex)
 }
 
-printMissIndices <- function(data, missIndices, respCounts, noMiss, targetIndex) {
-    .Call('_MIBRR_printMissIndices', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, targetIndex)
+printMissIndices <- function(data, missIndices, respCounts, targetIndex) {
+    .Call('_MIBRR_printMissIndices', PACKAGE = 'MIBRR', data, missIndices, respCounts, targetIndex)
 }
 
 getX <- function(data, missIndices, respCounts, noMiss, xOnly, obsY, scale, targetIndex) {

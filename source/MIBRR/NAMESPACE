@@ -4,10 +4,11 @@ import(RcppEigen)
 import(methods)
 
 importFrom(Rcpp, evalCpp)
-importFrom(mice, mice, quickpred, complete)
-importFrom(lavaan, lavaan, inspect)
+#importFrom(mice, mice, mice.impute.pmm, quickpred, complete)
 importFrom(optimx, optimx)
 importFrom(mvtnorm, rmvnorm)
+importFrom(LaplacesDemon, rinvgamma, rinvchisq, rinvgaussian)
+importFrom(HyperbolicDist, rgig)
 importFrom(stats,
            anova,
            lm,
@@ -21,6 +22,7 @@ importFrom(stats,
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,
+           .lec.CurrentStream,
            .lec.ResetNextSubstream,
            .lec.GetState,
            .lec.DeleteStream)

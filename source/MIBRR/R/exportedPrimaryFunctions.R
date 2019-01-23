@@ -44,9 +44,12 @@ miben <- function(data,
                   verbose        = TRUE,
                   seed           = NULL,
                   userRng        = "",
-                  control        = list()
-                  )
+                  control        = list(),
+                  ...)
 {
+    ## Extract extra agruments:
+    args <- list(...)
+    
     ## Initialize the output object:
     mibrrFit <- init(penalty      = 2,
                      doImp        = TRUE,
@@ -64,7 +67,9 @@ miben <- function(data,
                      seed         = seed,
                      userRng      = userRng,
                      control      = control)
-
+    
+    if(args$initOnly) return(mibrrFit)
+    
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)
     else       mibrrFit$doGibbs()

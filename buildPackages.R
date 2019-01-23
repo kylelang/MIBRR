@@ -1,14 +1,14 @@
 ### Title:    Build R Packages
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2019-JAN-22
+### Modified: 2019-JAN-23
 ### Purpose:  Script to help build R packages
 
 rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-ver <- "0.2.0.9000"
+ver <- "0.3.0.9000"
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \
