@@ -14,7 +14,17 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.2.0.9000 - 2019-01-21 - ACTIVE
+## 0.3.0.9000 - 2019-01-23 - ACTIVE
+
+### Changed
+- Removed all dependencies except for **mice**; the necessary functions are now
+  imported from the previous dependencies.
+
+### Added
+- Unit tests for the random number samplers.
+- Unit tests for the missing data indexing.
+
+## 0.2.0.9000 - 2019-01-21
 
 ### Fixed
 - The scaling issues addressed in the changes listed below seem to have been a 
