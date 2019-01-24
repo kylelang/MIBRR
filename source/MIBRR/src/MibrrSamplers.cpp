@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2019-JAN-15
+// Modified: 2019-JAN-24
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -59,6 +59,7 @@ double MibrrSamplers::drawNorm(const double mean, const double sd)
   return mean + sd * _norm(_gen);
 }
 
+//----------------------------------------------------------------------------//
 
 VectorXd MibrrSamplers::drawNorm(const int    n,
 				 const double mean,
@@ -69,6 +70,7 @@ VectorXd MibrrSamplers::drawNorm(const int    n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::drawGamma(const double shape, const double rate)
 {
@@ -76,6 +78,7 @@ double MibrrSamplers::drawGamma(const double shape, const double rate)
   return gam(_gen);
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::drawInvGamma(const double shape, const double scale)
 {
@@ -83,12 +86,14 @@ double MibrrSamplers::drawInvGamma(const double shape, const double scale)
   return 1.0 / gam(_gen);
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::drawScaledInvChiSq(const double df, const double scale)
 {
   return drawInvGamma(df / 2.0, (df * scale) / 2.0);
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::calcIncGamma(const double shape, 
 				   const double cutVal,
@@ -101,6 +106,7 @@ double MibrrSamplers::calcIncGamma(const double shape,
   return Rf_pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::drawInvGauss(const double mu, const double lambda)
 { 
@@ -133,6 +139,7 @@ double MibrrSamplers::drawInvGauss(const double mu, const double lambda)
   return outVal;
 }// END drawInvGauss()
 
+//----------------------------------------------------------------------------//
 
 VectorXd MibrrSamplers::drawMvn(const VectorXd &meanVec, const MatrixXd &covMat)
 {
@@ -146,6 +153,7 @@ VectorXd MibrrSamplers::drawMvn(const VectorXd &meanVec, const MatrixXd &covMat)
   return meanVec + (covCholesky * normDraws);
 }// END drawMvn()
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::drawGig(const double lambda,
 			      const double chi,
@@ -207,7 +215,9 @@ double MibrrSamplers::drawGig(const double lambda,
   }
 } // END drawGig()
 
+
 ////////////////////////////// Private Functions ///////////////////////////////
+
 
 double MibrrSamplers::_gigMode() const
 {
@@ -220,6 +230,7 @@ double MibrrSamplers::_gigMode() const
 		     (1.0 - _gigLam));
 } // END _gigMode()
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::_gigRouNoShift()
 //----------------------------------------------------------------------------//
@@ -270,6 +281,7 @@ double MibrrSamplers::_gigRouNoShift()
   return (_gigLam0 < 0.0) ? (_alpha / X) : (_alpha * X);
 } // END _gigRouNoShift()
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::_gigNewApproach()
 //----------------------------------------------------------------------------//
@@ -374,6 +386,7 @@ double MibrrSamplers::_gigNewApproach()
 I've returned from a rejection sampling loop without a valid result.");
 } // END _gigNewApproach()
 
+//----------------------------------------------------------------------------//
 
 double MibrrSamplers::_gigRouShiftAlt()
 //----------------------------------------------------------------------------//

@@ -68,7 +68,7 @@ miben <- function(data,
                      userRng      = userRng,
                      control      = control)
     
-    if(args$initOnly) {
+    if(!is.null(args$initOnly) && args$initOnly) {
         mibrrFit <- postProcess(mibrrFit, ...)
         return(mibrrFit)
     }

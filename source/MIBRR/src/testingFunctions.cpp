@@ -1,7 +1,7 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2019-JAN-23
+// Modified: 2019-JAN-24
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
@@ -41,6 +41,7 @@ Eigen::VectorXd drawNorm(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawGamma(int          n,
@@ -57,6 +58,7 @@ Eigen::VectorXd drawGamma(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGamma(int          n,
@@ -73,6 +75,7 @@ Eigen::VectorXd drawInvGamma(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawScaledInvChiSq(int          n,
@@ -90,6 +93,7 @@ Eigen::VectorXd drawScaledInvChiSq(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::MatrixXd drawMvn(int             n,
@@ -108,6 +112,7 @@ Eigen::MatrixXd drawMvn(int             n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 double calcIncGamma(double shape, double cutVal, bool lowerTail)
@@ -116,6 +121,7 @@ double calcIncGamma(double shape, double cutVal, bool lowerTail)
   return mibrrSamplers.calcIncGamma(shape, cutVal, lowerTail);
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
@@ -129,6 +135,7 @@ Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawGig(int          n,
@@ -146,6 +153,7 @@ Eigen::VectorXd drawGig(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 std::vector<int>
@@ -158,6 +166,7 @@ printObsIndices(Eigen::MatrixXd                 data,
   return(mibrrData.getObsRows(targetIndex));
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 std::vector<int>
@@ -170,6 +179,7 @@ printMissIndices(Eigen::MatrixXd                 data,
   return(mibrrData.getMissIndices(targetIndex));
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::MatrixXd
@@ -195,6 +205,7 @@ getX(Eigen::MatrixXd                 data,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd
@@ -206,4 +217,20 @@ getY(Eigen::MatrixXd                 data,
 {
   MibrrData mibrrData(data, missIndices, respCounts, noMiss);
   return mibrrData.getDV(targetIndex);
+}
+
+//----------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+Eigen::VectorXd
+printFilledY(Eigen::VectorXd                 imps,
+	     Eigen::MatrixXd                 data,
+	     std::vector< std::vector<int> > missIndices,
+	     Eigen::VectorXi                 respCounts,
+	     int                             targetIndex)
+{
+  MibrrData mibrrData(data, missIndices, respCounts, false);
+  mibrrData.fillMissing(imps, targetIndex);
+
+  return mibrrData.getData().col(targetIndex);
 }

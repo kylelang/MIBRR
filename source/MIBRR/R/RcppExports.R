@@ -53,3 +53,7 @@ getY <- function(data, missIndices, respCounts, noMiss, targetIndex) {
     .Call('_MIBRR_getY', PACKAGE = 'MIBRR', data, missIndices, respCounts, noMiss, targetIndex)
 }
 
+printFilledY <- function(imps, data, missIndices, respCounts, targetIndex) {
+    .Call('_MIBRR_printFilledY', PACKAGE = 'MIBRR', imps, data, missIndices, respCounts, targetIndex)
+}
+

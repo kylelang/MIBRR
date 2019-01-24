@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-21
+// Modified: 2019-JAN-24
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -42,6 +42,7 @@ MibrrGibbs::MibrrGibbs()
   _fullBayes         = false;
 }
 
+//----------------------------------------------------------------------------//
 
 MibrrGibbs::~MibrrGibbs() {}
 
@@ -61,6 +62,7 @@ double   MibrrGibbs::getRidge()           const { return _ridge;               }
 bool     MibrrGibbs::getVerbosity()       const { return _verbose;             }
 bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
 
+//----------------------------------------------------------------------------//
 
 VectorXd MibrrGibbs::getLambdas() const
 { 
@@ -70,6 +72,7 @@ VectorXd MibrrGibbs::getLambdas() const
   return outLam; 
 }
 
+//----------------------------------------------------------------------------//
 
 double MibrrGibbs::getLambdas(int index) const 
 { 
@@ -94,6 +97,7 @@ void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms     = l1Parms;   }
 void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms     = l2Parms;   }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas     = lambdas;   }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::setLambdas(double lambda1, double lambda2) 
 {
@@ -101,6 +105,7 @@ void MibrrGibbs::setLambdas(double lambda1, double lambda2)
   _lambdas[1] = lambda2;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::setLambdas(double lambda) 
 {
@@ -108,6 +113,7 @@ void MibrrGibbs::setLambdas(double lambda)
   _lambdas[1] = 0.0;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::setLambdaParms(VectorXd& lambdaParms)
 {
@@ -115,6 +121,7 @@ void MibrrGibbs::setLambdaParms(VectorXd& lambdaParms)
   _l2Parms = lambdaParms.tail(2);
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 ArrayXd  &tauStarts,
@@ -129,6 +136,7 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _lambdas[1] = lambda2Start;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 ArrayXd  &tauStarts,
@@ -141,6 +149,7 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _lambdas = lambdaStartVec;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 {
@@ -202,7 +211,7 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   if(_storeGibbsSamples) _lambdaSam.row(_drawNum) = _lambdas.transpose();
 }// END updateLambdas()
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {  
@@ -247,7 +256,7 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   if(_storeGibbsSamples) _tauSam.row(_drawNum) = newTaus.transpose();
 }// END updateTaus()
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 {
@@ -310,7 +319,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   }
 }// END updateBetas()
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
@@ -377,7 +386,7 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
   if(_storeGibbsSamples) _sigmaSam[_drawNum] = newSigma;
 }// END updateSigma()
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::updateImputations(MibrrData &mibrrData)
 {
@@ -397,7 +406,7 @@ void MibrrGibbs::updateImputations(MibrrData &mibrrData)
   if(_storeGibbsSamples) _impSam.row(_drawNum) = imps.transpose();
 }// END updateImputations()
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 {
@@ -431,7 +440,7 @@ while updating Tau,\nand one of its scale values is non-positive.\n");
   }
 }
 
-
+//----------------------------------------------------------------------------//
 
 void MibrrGibbs::betaError(exception &e) const
 {

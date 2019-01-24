@@ -137,7 +137,7 @@ postProcess <- function(mibrrFit, ...) {
     ## Extract extra arguments:
     args <- list(...)
 
-    if(!args$initOnly) {
+    if(is.null(args$initOnly) || !args$initOnly) {
         ## Replace missing values:
         if(mibrrFit$doImp) mibrrFit$resetMissing()
         

@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-21
+// Modified: 2019-JAN-24
 // Purpose:  This class contains the data-related functions used by the MIBRR
 //           Gibbs sampler.
 
@@ -43,6 +43,8 @@ MibrrData::MibrrData(const MatrixXd        &data,
   _scales = tmp;
 }
 
+//----------------------------------------------------------------------------//
+
 MibrrData::~MibrrData() {}
 
 
@@ -76,7 +78,7 @@ vector<int> MibrrData::getObsRows(int targetIndex) const
   return obsRows;
 }
 
-
+//----------------------------------------------------------------------------//
 
 MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows, bool standardize)
 {
@@ -123,6 +125,7 @@ MatrixXd MibrrData::getIVs(int targetIndex, bool obsRows, bool standardize)
   return outMat;
 }
 
+//----------------------------------------------------------------------------//
 
 VectorXd MibrrData::getDV(int targetIndex) const
 { 
@@ -142,24 +145,28 @@ VectorXd MibrrData::getDV(int targetIndex) const
   }
 }
 
+//----------------------------------------------------------------------------//
 
 vector<int> MibrrData::getMissIndices(int targetIndex) const
 {
   return _missIndices[targetIndex];
 }
 
+//----------------------------------------------------------------------------//
 
 RowVectorXd MibrrData::getMeans(int targetIndex) const
 {
   return _means.row(targetIndex);
 }
 
+//----------------------------------------------------------------------------//
 
 RowVectorXd MibrrData::getScales(int targetIndex) const
 {
   return _scales.row(targetIndex);
 }
 
+//----------------------------------------------------------------------------//
 
 MatrixXd MibrrData::getData() const { return _data;                            }
 
@@ -169,18 +176,21 @@ MatrixXd MibrrData::getData() const { return _data;                            }
 
 void MibrrData::setData(const MatrixXd &newData) { _data = newData;            }
 
+//----------------------------------------------------------------------------//
 
 void MibrrData::setDV(const VectorXd &newDV, const int targetIndex)
 {
   _data.col(targetIndex) = newDV;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrData::setElement(const double element, const int row, const int col)
 {
   _data(row, col) = element;
 }
 
+//----------------------------------------------------------------------------//
 
 void MibrrData::fillMissing(const MatrixXd &newTargets)
 {
@@ -196,6 +206,7 @@ void MibrrData::fillMissing(const MatrixXd &newTargets)
   }
 }// END fillMissing()
 
+//----------------------------------------------------------------------------//
 
 void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
 {
@@ -207,6 +218,7 @@ void MibrrData::fillMissing(const VectorXd &newTarget, const int targetIndex)
   }
 }// END fillMissing()
 
+//----------------------------------------------------------------------------//
 
 void MibrrData::updateMoments(const int targetIndex)
 {
@@ -223,13 +235,17 @@ void MibrrData::updateMoments(const int targetIndex)
 //////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
 
 
-int MibrrData::nObs  ()                const { return _data.rows();            }
-int MibrrData::nPreds()                const { return _data.cols() - 1;        }
+int MibrrData::nObs  () const { return _data.rows();                           }
+int MibrrData::nPreds() const { return _data.cols() - 1;                       }
+
+//----------------------------------------------------------------------------//
 
 int MibrrData::nResp (int targetIndex) const
 {
   return _respCounts[targetIndex];
 }
+
+//----------------------------------------------------------------------------//
 
 int MibrrData::nMiss (int targetIndex) const
 {

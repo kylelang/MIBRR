@@ -352,3 +352,86 @@ testDataScaling <- function() {
     ## Success; no errors:
     TRUE
 }
+
+###--------------------------------------------------------------------------###
+
+### Missing Data Filling ###
+
+testMissFill <- function() {
+    data(mibrrExampleData)
+    
+    ## Initialize a MibrrFit object:
+    obj <- miben(data       = mibrrExampleData,
+                 targetVars = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars = "idNum",
+                 initOnly   = TRUE)
+
+    dat0       <- mibrrExampleData[ , colnames(obj$data)]
+    missList   <- obj$missList
+    respCounts <- nrow(dat0) - obj$missCounts
+
+    ## Check C++-level missing data replacement ##
+
+    for(v in 1 : ncol(dat0)) {
+        ## Create some dummy imputations:
+        imps <- runif(obj$missCounts[v])
+
+        ## Manually fill missing:
+        y0            <- dat0[ , v]
+        y0[is.na(y0)] <- imps
+
+        ## Fill the missing in C++ code:
+        y1 <- printFilledY(imps,
+                           as.matrix(obj$data),
+                           missList,
+                           respCounts,
+                           v - 1)
+        
+        ## Compare manual and C++ versions:
+        diff <- sum(y1 - y0)
+        if(diff != 0) stop("C++-level missing value replacement is broken.")
+    }
+    
+    ## Check R-level missing data replacement ##
+    
+    ## Generate a full MibrrFit object:
+    obj <- suppressWarnings(
+        miben(data         = mibrrExampleData,
+              ignoreVars   = "idNum",
+              sampleSizes  = c(5, 5), 
+              doMcem       = FALSE,
+              lam1PriorPar = c(1.0, 0.1),
+              lam2PriorPar = c(1.0, 0.1),
+              control      = list(checkConv = FALSE),
+              verbose      = FALSE)
+    )
+    
+    for(rep in 1 : 3) {
+        dat0 <- mibrrExampleData # Raw data
+        for(v in colnames(obj$data)) {
+            nMiss <- obj$missCounts[v]
+            
+            ## Generate some dummy imputations:
+            imp0  <- runif(nMiss)
+            
+            ## Replace MibrrFit imps with dummies:
+            obj$gibbsOut[[v]]$imps <- matrix(imp0,
+                                             length(obj$gibbsOut[[1]]$sigma),
+                                             nMiss,
+                                             byrow = TRUE)
+            
+            ## Replace raw data's missing with dummy imputations:
+            dat0[is.na(dat0[ , v]), v] <- imp0
+        }
+        
+        ## Get an imputed dataset from the MibrrFit object:
+        dat1 <- obj$getImpDataset()
+        
+        ## Compare the manual and MibrrFit imputations:
+        check <- all(dat1 == dat0)
+        if(!check) stop("R-level missing data replacement is broken.")
+    }
+    
+    ## Success, no errors:
+    TRUE
+}

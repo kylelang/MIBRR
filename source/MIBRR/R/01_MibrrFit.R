@@ -247,9 +247,9 @@ MibrrFit$methods(
                  ## Randomly choose a posterior draw to use as imputations:
                  impRow      <-  sample(impRowsPool, 1)
                  impRowsPool <<- setdiff(impRowsPool, impRow)
-                 
+
                  for(j in targetVars) {
-                     impSam <- gibbsOut[[j]]$imps[impRow, ]
+                     impSam                <- gibbsOut[[j]]$imps[impRow, ]
                      tmp[missList[[j]], j] <- impSam
                  }
                  
