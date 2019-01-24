@@ -133,23 +133,28 @@ mcem <- function(mibrrFit) {
 }# END mcem()
 
 
-postProcess <- function(mibrrFit) {
-    ## Replace missing values:
-    if(mibrrFit$doImp) mibrrFit$resetMissing()
-    
-    ## Compute the potential scale reduction factors (R-Hats) for the posterior
-    ## imputation model parameters:
-    if(mibrrFit$checkConv) {
-        mibrrFit$computeRHats()
-        mibrrFit$checkGibbsConv()
+postProcess <- function(mibrrFit, ...) {
+    ## Extract extra arguments:
+    args <- list(...)
+
+    if(!args$initOnly) {
+        ## Replace missing values:
+        if(mibrrFit$doImp) mibrrFit$resetMissing()
+        
+        ## Compute the potential scale reduction factors (R-Hats) for the
+        ## posterior imputation model parameters:
+        if(mibrrFit$checkConv) {
+            mibrrFit$computeRHats()
+            mibrrFit$checkGibbsConv()
+        }
+        
+        ## Provide some pretty names for the output objects:
+        mibrrFit$nameOutput()
     }
     
-    ## Provide some pretty names for the output objects:
-    mibrrFit$nameOutput()
-
     ## Clean the RNG state:
     mibrrFit$cleanRng()
-
+    
     ## Fix rlecuyer's random seed table when we have only 1 remaining stream:
     check <- !is.null(.lec.Random.seed.table$name) &&
         !is.matrix(.lec.Random.seed.table$Cg)

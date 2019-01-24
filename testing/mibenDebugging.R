@@ -104,3 +104,4 @@ colMeans(X2)
 apply(X2, 2, sd)
 apply(X2, 2, var)
 apply(X2, 2, crossprod)
+

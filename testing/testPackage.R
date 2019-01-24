@@ -20,6 +20,8 @@ library(SURF)
 
 MIBRR:::testMissIndex()
 MIBRR:::testSamplers()
+MIBRR:::testDataProcessing()
+MIBRR:::testDataScaling()
 
 ###--------------------------------------------------------------------------###
 

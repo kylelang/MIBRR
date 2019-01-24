@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2019-JAN-15
+### Modified: 2019-JAN-24
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -68,7 +68,10 @@ miben <- function(data,
                      userRng      = userRng,
                      control      = control)
     
-    if(args$initOnly) return(mibrrFit)
+    if(args$initOnly) {
+        mibrrFit <- postProcess(mibrrFit, ...)
+        return(mibrrFit)
+    }
     
     ## Estimate the model with MCEM:
     if(doMcem) mibrrFit <- mcem(mibrrFit)

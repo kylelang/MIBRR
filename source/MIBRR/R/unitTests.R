@@ -1,7 +1,7 @@
 ### Title:    R-Based Unit Tests for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2010-JAN-23
-### Modified: 2019-JAN-23
+### Modified: 2019-JAN-24
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -198,5 +198,157 @@ testMissIndex <- function() {
     }# END for(v in 1 : ncol(tmp$data))
 
     ## Success; no errors
+    TRUE
+}
+
+###--------------------------------------------------------------------------###
+
+### Data Manipulation ###
+
+testDataProcessing <- function() {
+    data(mibrrExampleData)
+    dat0 <- mibrrExampleData[ , -1]
+    
+    ## Initialize a MibrrFit object:
+    obj <- miben(data       = mibrrExampleData,
+                 targetVars = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars = "idNum",
+                 initOnly   = TRUE)
+
+    dat1       <- obj$data
+    missList   <- obj$missList
+    respCounts <- nrow(dat1) - obj$missCounts
+
+    ## Check initial data integrity:
+    diff <- sum(dat1 - dat0, na.rm = TRUE)
+    if(diff != 0) stop("MibrrFit$data doesn't match raw data.")
+
+    ## Check data subsetting:
+    for(v in 1 : ncol(dat0)) {
+        y0  <- dat0[ , v]
+        X0o <- dat0[!is.na(y0) , -v] 
+        X0m <- dat0[is.na(y0), -v]
+
+        ## Extract "training set" predictors:
+        X1o <- getX(data        = as.matrix(dat1),
+                    missIndices = missList,
+                    respCounts  = respCounts,
+                    noMiss      = FALSE,
+                    xOnly       = TRUE,
+                    obsY        = TRUE,
+                    scale       = FALSE,
+                    targetIndex = v - 1)
+        
+        diff <- sum(X1o - X0o, na.rm = TRUE)
+        if(diff != 0) stop("X subsetting is broken for observed y.")
+
+        ## Extract "testing set" predictors:
+        X1m <- getX(data        = as.matrix(dat1),
+                    missIndices = missList,
+                    respCounts  = respCounts,
+                    noMiss      = FALSE,
+                    xOnly       = TRUE,
+                    obsY        = FALSE,
+                    scale       = FALSE,
+                    targetIndex = v - 1)
+        
+        diff <- sum(X1m - X0m, na.rm = TRUE)
+        if(diff != 0) stop("X subsetting is broken for missing y.")
+        
+        y1 <- getY(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   noMiss      = FALSE,
+                   targetIndex = v - 1)
+
+        diff <- sum(y1 - na.omit(y0))
+        if(diff != 0) stop("y subsetting is broken.")
+    }
+
+    ## Success; no errors:
+    TRUE
+}
+
+###--------------------------------------------------------------------------###
+
+### Data Scaling ###
+
+testDataScaling <- function() {
+    data(mibrrExampleData)
+       
+    ## Initialize a MibrrFit object:
+    obj <- miben(data       = mibrrExampleData,
+                 targetVars = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars = "idNum",
+                 initOnly   = TRUE)
+
+    dat1       <- obj$data
+    missList   <- obj$missList
+    respCounts <- nrow(dat1) - obj$missCounts
+    
+    ## Check data subsetting:
+    for(v in 1 : ncol(dat1)) {
+        ## Extract "training set" predictors:
+        Xo <- getX(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   noMiss      = FALSE,
+                   xOnly       = TRUE,
+                   obsY        = TRUE,
+                   scale       = TRUE,
+                   targetIndex = v - 1)
+
+        m1    <- colMeans(Xo)
+        check <- all.equal(m1, rep(0, ncol(dat1) - 1))
+
+        if(!check) stop("Training set mean centering is broken.")
+        
+        s1    <- apply(Xo, 2, sd)
+        check <- all.equal(s1, rep(1, ncol(dat1) - 1))
+
+        if(!check) stop("Training set scaling is broken.")
+        
+        ## Extract scaled "testing set" predictors:
+        Xm <- getX(data        = as.matrix(dat1),
+                   missIndices = missList,
+                   respCounts  = respCounts,
+                   noMiss      = FALSE,
+                   xOnly       = TRUE,
+                   obsY        = FALSE,
+                   scale       = TRUE,
+                   targetIndex = v - 1)
+
+        ## Compute centers and scales:
+        tmp <- getX(data        = as.matrix(dat1),
+                    missIndices = missList,
+                    respCounts  = respCounts,
+                    noMiss      = FALSE,
+                    xOnly       = TRUE,
+                    obsY        = TRUE,
+                    scale       = FALSE,
+                    targetIndex = v - 1)
+        
+        m0 <- matrix(colMeans(tmp), nrow(Xm), ncol(Xm), byrow = TRUE)
+        s0 <- matrix(apply(tmp, 2, sd), nrow(Xm), ncol(Xm), byrow = TRUE)
+
+        ## Revert scaling of the testing set predictors:
+        Xm0 <- Xm * s0 + m0
+
+        ## Extract raw "testing set" predictors:
+        Xm1 <- getX(data        = as.matrix(dat1),
+                    missIndices = missList,
+                    respCounts  = respCounts,
+                    noMiss      = FALSE,
+                    xOnly       = TRUE,
+                    obsY        = FALSE,
+                    scale       = FALSE,
+                    targetIndex = v - 1)
+
+        ## Check that we can recover the raw data:
+        check <- all.equal(Xm1, Xm0)
+        if(!check) stop("Testing set scaling is broken.")
+    }
+    
+    ## Success; no errors:
     TRUE
 }

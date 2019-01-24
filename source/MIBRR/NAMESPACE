@@ -25,7 +25,8 @@ importFrom(rlecuyer,
            .lec.CurrentStream,
            .lec.ResetNextSubstream,
            .lec.GetState,
-           .lec.DeleteStream)
+           .lec.DeleteStream,
+           .lec.CurrentStreamEnd)
 
 export(mibl,
        miben,
