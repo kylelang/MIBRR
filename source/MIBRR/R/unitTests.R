@@ -111,7 +111,7 @@ testIncGamma <- function() {
     cut   <- 5
     
     out1 <- calcIncGamma(shape, cut, FALSE)
-    out2 <- pgamma(q = cut, shape = shape, lower = FALSE) * gamma(shape)
+    out2 <- pgamma(q = cut, shape = shape, lower.tail = FALSE) * gamma(shape)
     
     all.equal(out1, out2)
 }
@@ -149,7 +149,7 @@ testSamplers <- function(reps = 5000, n = 1000, p = 0.1, seed = NA) {
 ### Missing Data Indexing ###
 
 testMissIndex <- function() {
-    data(mibrrExampleData)
+    data(mibrrExampleData, package = "MIBRR", envir = parent.frame())
     
     ## Summarize missing data in the raw data file:
     missList0   <- lapply(mibrrExampleData, function(x) which(is.na(x)) - 1)
@@ -206,7 +206,7 @@ testMissIndex <- function() {
 ### Data Manipulation ###
 
 testDataProcessing <- function() {
-    data(mibrrExampleData)
+    data(mibrrExampleData, envir = parent.frame())
     dat0 <- mibrrExampleData[ , -1]
     
     ## Initialize a MibrrFit object:
@@ -274,7 +274,7 @@ testDataProcessing <- function() {
 ### Data Scaling ###
 
 testDataScaling <- function() {
-    data(mibrrExampleData)
+    data(mibrrExampleData, envir = parent.frame())
        
     ## Initialize a MibrrFit object:
     obj <- miben(data       = mibrrExampleData,
@@ -358,7 +358,7 @@ testDataScaling <- function() {
 ### Missing Data Filling ###
 
 testMissFill <- function() {
-    data(mibrrExampleData)
+    data(mibrrExampleData, envir = parent.frame())
     
     ## Initialize a MibrrFit object:
     obj <- miben(data       = mibrrExampleData,

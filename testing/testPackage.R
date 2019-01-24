@@ -5,16 +5,21 @@
 
 rm(list = ls(all = TRUE))
 
-library(mitools)
-library(psych)
-library(MIBRR)
+source("subroutines.R")
+
 library(devtools)
 library(parallel)
 library(HyperbolicDist)
 library(LaplacesDemon)
+library(monomvn)
+library(rstan)
 
-install_github("kylelang/SURF/source/SURF")
+                                        #install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
+                                        #install_github("kylelang/SURF/source/SURF")
+library(MIBRR)
 library(SURF)
+
+rstan_options(auto_write = TRUE)
 
 ###--------------------------------------------------------------------------###
 
@@ -28,231 +33,192 @@ MIBRR:::testMissFill()
 
 ###--------------------------------------------------------------------------###
 
-### Prepare Data for Testing ###
+### Compare MIBRR::bl to a reference implementation ###
 
-data(bfi)
-tmp <- na.omit(bfi)
+## Generate some data:
+dat1 <- simRegData(nObs  = 500,
+                   nVars = 10,
+                   r2    = 0.5,
+                   sigma = 0.2,
+                   beta  = matrix(c(0.25, rep(0.75, 10)))
+                   )
 
-ed.d           <- model.matrix(~factor(tmp$education))[ , -1]
-colnames(ed.d) <-
-    c("finish_hs", "some_college", "college_grad", "graduate_degree")
+xNames <- setdiff(colnames(dat1), "y")
+iters  <- c(500, 20)
+sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
 
-male            <- tmp$gender
-male[male == 2] <- 0
+### MCEM Estimation:
 
-cn   <- setdiff(colnames(bfi), c("gender", "education"))
-bfi2 <- data.frame(tmp[ , cn], male, ed.d)
+## Estimate the model using monomvn::blasso:
+bl0 <- bl0Mcem(data      = dat1,
+               yName     = "y",
+               xNames    = xNames,
+               iters     = iters,
+               sams      = sams,
+               intercept = TRUE,
+               norm      = TRUE)
 
-rownames(bfi2) <- NULL
+## Estimate the model using MIBRR:bl:
+bl1 <-
+    bl(data        = dat1,
+       y           = "y",
+       X           = xNames,
+       iterations  = iters,
+       sampleSizes = sams,
+       verbose     = TRUE,
+       control     = list(lambda1Starts = 1.0)
+       )
 
-targets  <- list(mar = paste0(c("A", "E"), rep(c(1 : 5), each = 2)),
-                 mcar = NA,
-                 mnar = NA)
-pm       <- list(mar = 0.3)
-snr      <- list(mar = 5)
-marPreds <- c("age",
-              "male",
-              "finish_hs",
-              "some_college",
-              "college_grad",
-              "graduate_degree")
-cn       <- c(targets$mar, marPreds)
+## Generate posterior predictive samples:
+pp0 <- predBl0(bl0$out, X = as.matrix(dat1[ , xNames]))[ , -1]
+pp1 <-
+    postPredict(bl1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
 
-dat1 <- bfi2[sample(c(1 : nrow(bfi2)), 500), cn]
-dat2 <- imposeMissData(data    = dat1,
-                       targets = targets,
-                       preds   = marPreds,
-                       pm      = pm,
-                       snr     = snr)$data 
+## Plot 25 randomly sample posterior predictive densities:
+par(mfrow = c(5, 5))
+
+for(x in sample(1 : nrow(dat1), 25)) {
+    d0 <- density(pp0[x, ])
+    d1 <- density(pp1[x, ])
+
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}
+
+## Extract parameter samples:
+b0 <- cbind(bl0$out$mu[-1], bl0$out$beta[-1, ])
+b1 <- getParams(bl1, "y")$beta
+
+par(mfrow = c(4, 4))
+
+for(x in 1 : ncol(b1)) {
+    d0 <- density(b0[ , x])
+    d1 <- density(b1[ , x])
+    
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}   
+
+### Fully Bayesian Estimation:
+
+## Estimate the model using monomvn::blasso:
+bl0 <- blasso(y         = dat1$y,
+              X         = dat1[ , xNames],
+              T         = sams[[3]][2],
+              thin      = sams[[3]][1],
+              lambda2   = 1.0,
+              s2        = with(dat1, var(y - mean(y))),
+              beta      = rnorm(ncol(dat1) - 1),
+              rd        = c(0.5, 0.5),
+              RJ        = FALSE,
+              rao.s2    = FALSE,
+              icept     = TRUE,
+              normalize = TRUE)
+
+## Estimate the model using MIBRR:bl:
+bl1 <-
+    bl(data         = dat1,
+       y            = "y",
+       X            = xNames,
+       sampleSizes  = sams[[3]],
+       verbose      = TRUE,
+       doMcem       = FALSE,
+       lam1PriorPar = c(0.5, 0.5),
+       control      = list(lambda1Starts = 1.0)
+       )
+
+## Generate posterior predictive samples:
+pp0 <- predBl0(bl0, X = as.matrix(dat1[ , xNames]))[ , -1]
+pp1 <-
+    postPredict(bl1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+
+## Plot 25 randomly sample posterior predictive densities:
+par(mfrow = c(5, 5))
+
+for(x in sample(1 : nrow(dat1), 25)) {
+    d0 <- density(pp0[x, ])
+    d1 <- density(pp1[x, ])
+
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}
+
+## Extract parameter samples:
+b0 <- cbind(bl0$mu[-1], bl0$beta[-1, ])
+b1 <- getParams(bl1, "y")$beta
+
+par(mfrow = c(4, 4))
+
+for(x in 1 : ncol(b1)) {
+    d0 <- density(b0[ , x])
+    d1 <- density(b1[ , x])
+    
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}   
 
 ###--------------------------------------------------------------------------###
 
-### Test MIBEN and MIBL ###
+### Compare MIBRR::ben to a reference implementation ###
 
-testFun <- function(rp, data, env) {
-    cn       <- env$cn
-    targets  <- env$targets
-    marPreds <- env$marPreds
-    pm       <- env$pm
-    snr      <- env$snr
-    nImps    <- env$nImps
-    keys     <- env$keys
+## Compile the Stan model:
+benMod <- stan_model("ben_model.stan")
+
+## Create a data list for Stan:
+stanData <- list(N = nrow(dat1),
+                 P = ncol(dat1) - 1,
+                 y = dat1$y,
+                 X = dat1[ , xNames])
+
+## Sample from the Stan model:
+ben0 <- sampling(object = benMod,
+                 data   = stanData,
+                 iter   = sum(sams[[3]]),
+                 warmup = sams[[3]][1],
+                 chains = 1)
+
+## Estimate the model using MIBRR:ben:
+ben1 <-
+    ben(data         = dat1,
+        y            = "y",
+        X            = xNames,
+        iterations   = iters,
+        sampleSizes  = sams[[3]],
+        doMcem       = FALSE,
+        lam1PriorPar = c(1.0, 0.1),
+        lam2PriorPar = c(1.0, 0.1),
+        verbose      = TRUE)
+
+## Generate posterior predictive samples:
+pp0 <- predBen0(obj = ben0, X = as.matrix(dat1[ , xNames]))
+pp1 <-
+    postPredict(ben1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+
+## Plot 25 randomly sample posterior predictive densities:
+par(mfrow = c(5, 5))
+
+for(x in sample(1 : nrow(dat1), 25)) {
+    d0 <- density(pp0[x, ])
+    d1 <- density(pp1[x, ])
     
-    dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
-    dat2 <- imposeMissData(data    = dat1,
-                           targets = targets,
-                           preds   = marPreds,
-                           pm      = pm,
-                           snr     = snr)$data
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}
 
-    mibenOut <- miben(data       = dat2,
-                      targetVars = targets$mar,
-                      ignoreVars = NULL,
-                      iterations = c(50, 10),
-                      verbose    = FALSE)
-    mibenImps <- getImpData(mibenOut, nImps)
+## Extract parameter samples:
+tmp <- extract(ben0, pars = c("mu", "beta"))
+b0  <- cbind(tmp[["mu"]], tmp[["beta"]])
+b1  <- getParams(ben1, "y")$beta
+
+par(mfrow = c(4, 4))
+
+for(x in 1 : ncol(b1)) {
+    d0 <- density(b0[ , x])
+    d1 <- density(b1[ , x])
     
-    miblOut <- mibl(data       = dat2,
-                    targetVars = targets$mar,
-                    ignoreVars = NULL,
-                    iterations = c(50, 10),
-                    verbose    = FALSE)
-    miblImps <- getImpData(miblOut, nImps)
-    
-    miceOut <-
-        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
-
-    mibenList <- miblList <- miceList <- list()
-    for(m in 1 : nImps) {
-        ## MIBEN estimates:
-        scores         <- scoreItems(keys  = keys,
-                                     items = mibenImps[[m]])$scores
-        mibenList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
-                            mA = mean(scores[ , "agree"]),
-                            mE = mean(scores[ , "extra"])
-                            )
-        ## MIBL estimates:
-        scores        <- scoreItems(keys  = keys,
-                                    items = miblImps[[m]])$scores
-        miblList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
-                           mA = mean(scores[ , "agree"]),
-                           mE = mean(scores[ , "extra"])
-                           )
-        ## MICE estimates:
-        scores        <- scoreItems(keys  = keys,
-                                    items = mice::complete(miceOut, m))$scores
-        miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
-                           mA = mean(scores[ , "agree"]),
-                           mE = mean(scores[ , "extra"])
-                           )
-    }
-
-    list(miben = colMeans(do.call(rbind, mibenList)),
-         mibl  = colMeans(do.call(rbind, miblList)),
-         mice  = colMeans(do.call(rbind, miceList))
-         )
-} # END testFun()
-
-nReps <- 4
-nImps <- 10
-keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
-              extra = c("-E1", "-E2", "E3", "E4", "E5")
-              )
-
-simOut <- mclapply(X        = c(1 : nReps),
-                   FUN      = testFun,
-                   data     = bfi2,
-                   env      = parent.frame(),
-                   mc.cores = 4)
-
-tmp <- do.call(rbind, lapply(simOut, unlist))
-
-mibenFrame <- tmp[ , grep("miben", colnames(tmp))]
-miblFrame  <- tmp[ , grep("mibl", colnames(tmp))]
-miceFrame  <- tmp[ , grep("mice", colnames(tmp))]
-
-## Complete data result: 
-scores  <- scoreItems(keys = keys, items = bfi2)$scores
-compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
-             mA = mean(scores[ , "agree"]),
-             mE = mean(scores[ , "extra"])
-             )
-
-## Percent Relative Bias:
-100 * (colMeans(mibenFrame) - compRes) / compRes
-100 * (colMeans(miblFrame) - compRes) / compRes
-100 * (colMeans(miceFrame) - compRes) / compRes
-
-# Monte Carlo SD:
-apply(mibenFrame, 2, sd)
-apply(miblFrame, 2, sd)
-apply(miceFrame, 2, sd)
-
-###--------------------------------------------------------------------------###
-
-### Test Vanilla MI ###
-
-testFun <- function(rp, data, env) {
-    cn       <- env$cn
-    targets  <- env$targets
-    marPreds <- env$marPreds
-    pm       <- env$pm
-    snr      <- env$snr
-    nImps    <- env$nImps
-    keys     <- env$keys
-    
-    dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
-    dat2 <- imposeMissData(data    = dat1,
-                           targets = targets,
-                           preds   = marPreds,
-                           pm      = pm,
-                           snr     = snr)$data
-    
-    vanOut <- vanilla(data       = dat2,
-                      targetVars = targets$mar,
-                      ignoreVars = NULL,
-                      verbose    = FALSE)
-    
-    vanImps <- getImpData(vanOut, nImps)
-    
-    miceOut <-
-        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
-
-    vanList <- miceList <- list()
-    for(m in 1 : nImps) {
-        ## Vanilla estimates:
-        scores         <- scoreItems(keys  = keys,
-                                     items = vanImps[[m]])$scores
-        vanList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
-                          mA = mean(scores[ , "agree"]),
-                          mE = mean(scores[ , "extra"])
-                          )
-
-        ## MICE estimates:
-        scores        <- scoreItems(keys  = keys,
-                                    items = mice::complete(miceOut, m))$scores
-        miceList[[m]] <- c(r  = cor(scores[ , 1], scores[ , 2]),
-                           mA = mean(scores[ , "agree"]),
-                           mE = mean(scores[ , "extra"])
-                           )
-    }
-
-    list(van  = colMeans(do.call(rbind, vanList)),
-         mice = colMeans(do.call(rbind, miceList))
-         )
-} # END testFun()
-
-nReps <- 20
-nImps <- 10
-keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
-              extra = c("-E1", "-E2", "E3", "E4", "E5")
-              )
-
-simOut <- mclapply(X        = c(1 : nReps),
-                   FUN      = testFun,
-                   data     = bfi2,
-                   env      = parent.frame(),
-                   mc.cores = 4)
-
-tmp <- do.call(rbind, lapply(simOut, unlist))
-
-vanFrame  <- tmp[ , grep("van", colnames(tmp))]
-miceFrame <- tmp[ , grep("mice", colnames(tmp))]
-
-## Complete data result: 
-scores  <- scoreItems(keys = keys, items = bfi2)$scores
-compRes <- c(r  = cor(scores[ , 1], scores[ , 2]),
-             mA = mean(scores[ , "agree"]),
-             mE = mean(scores[ , "extra"])
-             )
-
-## Percent Relative Bias:
-100 * (colMeans(vanFrame) - compRes) / compRes
-100 * (colMeans(miceFrame) - compRes) / compRes
-
-# Monte Carlo SD:
-apply(vanFrame, 2, sd)
-apply(miceFrame, 2, sd)
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}   
 
 ###--------------------------------------------------------------------------###
 
@@ -264,7 +230,7 @@ mvnMu          <- rep(10, 3)
 mvnSigma       <- matrix(5, 3, 3)
 diag(mvnSigma) <- 20
 
-out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma, seed = 235711)
+out1.1 <- MIBRR:::drawMvn(nObs, mvnMu, mvnSigma, 235711)
 out1.2 <- rmvnorm(nObs, mvnMu, mvnSigma)
 
 par(mfrow = c(1, 3))
@@ -313,147 +279,6 @@ out5.2 <- rinvchisq(nObs, df, scale)
 
 plot(density(out5.1), col = "red")
 lines(density(out5.2), col = "blue")
-
-## Incomplete gamma calculation:
-incGamShape <- 10
-incGamCut   <- 5
-
-out6.1 <- MIBRR:::calcIncGamma(incGamShape, incGamCut, FALSE)
-out6.2 <- pgamma(q     = incGamCut,
-                 shape = incGamShape,
-                 lower = FALSE) * gamma(incGamShape)
-
-###--------------------------------------------------------------------------###
-
-### Test BEN and BL ###
-
-testFun <- function(rp, parms) {
-    nObs   <- parms$nObs
-    nPreds <- parms$nPreds
-    r2     <- parms$r2
-    collin <- parms$collin
-    beta   <- parms$beta
-    means  <- parms$means
-    scales <- parms$scales
-    ipp    <- parms$ipp
-    lamSq  <- parms$reliability
-    nIvs   <- ifelse(ipp > 1, nPreds * ipp, nPreds)
-    
-    dat1 <- simRegData(nObs            = nObs,
-                       nPreds          = nPreds,
-                       r2              = r2,
-                       collin          = collin,
-                       beta            = beta,
-                       means           = means,
-                       scales          = scales,
-                       itemsPerPred    = ipp,
-                       predReliability = lamSq)
-    
-    enOut <- try(
-        ben(data    = dat1,
-            y       = "y",
-            X       = paste0("x", c(1 : nIvs)),
-            verbose = parms$verbose,
-            control = list(center          = parms$center,
-                           scale           = parms$scale,
-                           adaptScales     = parms$adaptScales,
-                           simpleIntercept = parms$simpleInt,
-                           optCheckKkt     = parms$checkKkt)
-            )
-    )
-    
-    blOut <- try(
-        bl(data    = dat1,
-           y       = "y",
-           X       = paste0("x", c(1 : nIvs)),
-           verbose = parms$verbose,
-           control = list(center          = parms$center,
-                          scale           = parms$scale,
-                          adaptScales     = parms$adaptScales,
-                          simpleIntercept = parms$simpleInt)
-           )
-    )
-
-    form1 <-
-        as.formula(paste0("y ~ ", paste0("x", c(1 : nIvs), collapse = " + ")))
-    lmOut <- try(lm(form1, data = dat1))
-    
-    mseMat <- matrix(NA, parms$nTests, 3)
-    for(i in 1 : parms$nTests) {
-        testDat <- simRegData(nObs            = nObs,
-                              nPreds          = nPreds,
-                              r2              = r2,
-                              collin          = collin,
-                              beta            = beta,
-                              means           = means,
-                              scales          = scales,
-                              itemsPerPred    = ipp,
-                              predReliability = lamSq)
-        
-        if(class(enOut) != "try-error") {
-            enPred       <- postPredict(mibrrFit = enOut, newData = testDat)$y
-            mseMat[i, 1] <- mean((enPred - testDat$y)^2)
-        } else {
-            mseMat[i, 1] <- NA
-        }
-        
-        if(class(blOut) != "try-error") {
-            blPred       <- postPredict(mibrrFit = blOut, newData = testDat)$y
-            mseMat[i, 2] <- mean((blPred - testDat$y)^2)
-        } else {
-            mseMat[i, 2] <- NA
-        }
-        
-        if(class(lmOut) != "try-error") {
-            lmPred       <- predict(lmOut, newdata = testDat)
-            mseMat[i, 3] <- mean((lmPred - testDat$y)^2)
-        } else {
-            mseMat[i, 3] <- NA
-        }
-    }
-       
-    outMat           <- rbind(colMeans(mseMat), apply(mseMat, 2, var))
-    colnames(outMat) <- c("BEN", "BL", "MLR")
-    rownames(outMat) <- c("MSE", "var(MSE)")
-
-    errorList <- list()
-    if(class(enOut) == "try-error") errorList$ben <- enOut
-    if(class(blOut) == "try-error") errorList$bl  <- blOut
-    if(class(lmOut) == "try-error") errorList$lm  <- lmOut
-    
-    list(results = outMat, errors = errorList)
-}# END testFun()
-
-## Parameterize mini-simulation:
-alpha  <- 0.5
-nPreds <- 8
-
-parms             <- list()
-parms$nObs        <- 100
-parms$nPreds      <- nPreds
-parms$r2          <- 0.5
-parms$collin      <- 0.1
-parms$beta        <- matrix(c(alpha, runif(nPreds, 0.3, 0.6)))
-parms$means       <- runif(nPreds, 0, 1)
-parms$scales      <- rep(1, nPreds)
-parms$center      <- TRUE
-parms$scale       <- TRUE
-parms$simpleInt   <- FALSE
-parms$verbose     <- FALSE
-parms$adaptScales <- TRUE
-parms$nTests      <- 100
-parms$checkKkt    <- FALSE
-parms$ipp         <- 10
-parms$reliability <- 0.8
-
-## Run mini-simulation in parallel:
-nReps   <- 8
-mseList <- mclapply(X        = c(1 : nReps),
-                    FUN      = testFun,
-                    parms    = parms,
-                    mc.cores = 4)
-
-mseList
 
 ###--------------------------------------------------------------------------###
 

@@ -14,15 +14,25 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.3.0.9000 - 2019-01-23 - ACTIVE
+## 0.3.0.9000 - 2019-01-24 - ACTIVE
 
 ### Changed
 - Removed all dependencies except for **mice**; the necessary functions are now
   imported from the previous dependencies.
+- Updated the testing script: */testing/testPackage.R* to systematize the 
+  testing implemented therein.
 
 ### Added
-- Unit tests for the random number samplers.
-- Unit tests for the missing data indexing.
+- A new R syntax file: *unitTests.R*.
+- Unit tests for the random number samplers (`testMvn`, `testInvGamma`, 
+  `testInvGauss`, `testGig`, `testScaledInvChiSq`, `testIncGamma`, and 
+  `testSamplers`; not currently exported).
+- Unit test for the missing data indexing (`testMissIndex`; not currently 
+  exported).
+- Unit test for data manipulation/subsetting (`testDataProcessing`; not 
+  currently exported).
+- Unit test for data scaling (`testDataScaling`; not currently exported).
+- Unit test for missing data filling (`testMissFill`; not currently exported).
 
 ## 0.2.0.9000 - 2019-01-21
 

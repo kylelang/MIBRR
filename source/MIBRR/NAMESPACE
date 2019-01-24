@@ -4,7 +4,7 @@ import(RcppEigen)
 import(methods)
 
 importFrom(Rcpp, evalCpp)
-#importFrom(mice, mice, mice.impute.pmm, quickpred, complete)
+importFrom(mice, mice, quickpred, complete)
 importFrom(optimx, optimx)
 importFrom(mvtnorm, rmvnorm)
 importFrom(LaplacesDemon, rinvgamma, rinvchisq, rinvgaussian)
@@ -16,9 +16,12 @@ importFrom(stats,
            rexp,
            rgamma,
            rnorm,
+           runif,
            sd,
            var,
-           density)
+           density,
+           na.omit,
+           ks.test)
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,

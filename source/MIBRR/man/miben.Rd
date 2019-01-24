@@ -20,8 +20,8 @@ miben(data,
       verbose      = TRUE,
       seed         = NULL,
       userRng      = "",
-      control      = list()
-      )  
+      control      = list(),
+      ...)  
 }
 \arguments{
   \item{data}{
@@ -89,6 +89,10 @@ miben(data,
   \item{control}{
     A list of control parameters for the Gibbs sampler and penalty parameter
     optimization (see Details for more information).
+  }
+  \item{...}{
+    Extra arguments passed to internal functions. Used for internal
+    testing purposes.
   }
 }
 \details{
