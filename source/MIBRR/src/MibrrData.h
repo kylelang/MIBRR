@@ -1,12 +1,12 @@
 // Title:    Header file for MibrrData Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2018-MAY-04
+// Modified: 2019-JAN-21
 // Purpose:  This class contains data- and sampling-related functions used by
 //           the MIBRR Gibbs sampler.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -36,15 +36,13 @@ public:
   //////////////////////// CONSTRUCTORS / DESTRUCTOR ///////////////////////////
     
   MibrrData(const MatrixXd&,
-	    const VectorXd&,
 	    vector< vector<int> >,
 	    const VectorXi&,
 	    const bool);
   // @param1: data matrix
-  // @param2: data scales
-  // @param3: list of indices for missing rows
-  // @param4: vector or response counts
-  // @param5: logical flag denoting completely observed data
+  // @param2: list of indices for missing rows
+  // @param3: vector or response counts
+  // @param4: logical flag denoting completely observed data
     
   ~MibrrData();
 
@@ -56,8 +54,11 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the row indices for the observed rows of the target variable
   
-  MatrixXd getIVs(int, bool) const;
-  // @param:  the column-index of the current target variable
+  MatrixXd getIVs(int, bool, bool);
+  // @param1: the column-index of the current target variable
+  // @param2: return the rows corresponding to observed entries in Y or return
+  //          the rows corresponding to the missing entries in Y?
+  // @param3: standardize the predictor matrix before returning or not?
   // @return: the IVs of the imputation model with rows corresponding to
   //          missing DV observations deleted
 
@@ -65,19 +66,20 @@ public:
   // @param:  the column-index of the current target variable
   // @return: the (listwise deleted) DV of the imputation model
   
-  double getDataScales(int) const;
-  // @param:  a column index
-  // @return: the  scale of the data in the specified column
-
   vector<int> getMissIndices(int targetIndex) const;
   // @param:  a column index
   // @return: the row indices of missing values in the specified column
+  
+  RowVectorXd getMeans(int) const;
+  // @param:  column index of the target variable
+  // @return: column-wise means of the training data for the target variable
+  
+  RowVectorXd getScales(int) const;
+  // @param:  column index of the target variable
+  // @return: column-wise scales of the training data for the target variable
 
   MatrixXd getData() const;
   // @return: the data matrix
-  
-  VectorXd getDataScales() const;
-  // @return: the column-wise scales of the data
 
   
   //////////////////////////////// MUTATORS ////////////////////////////////////
@@ -94,9 +96,6 @@ public:
   // @param1: a new data element
   // @param2: the row index of the element to replace
   // @param3: the column index of the element to replace
-
-  void computeDataScales();
-  // @effect: update the value of _dataScales based on imputed data
   
   void fillMissing(const MatrixXd&);
   // @param:  a matrix of new values to fill in missing target data
@@ -107,6 +106,11 @@ public:
   // @param2: the column index of the variable to fill
   // @effect: fill the missing values in the specified column with the values
   //          in the provided vector
+
+  void updateMoments(const int);
+  // @param:  column index of the target variable
+  // @effect: updated the centers and scales for the target variables training
+  //          set predictors
 
   
   ////////////////////////// DESCRIPTIVE FUNCTIONS /////////////////////////////
@@ -130,8 +134,9 @@ public:
 private:
   bool                  _noMiss;
   MatrixXd              _data;
+  MatrixXd              _means;
+  MatrixXd              _scales;
   VectorXi              _respCounts;
-  VectorXd              _dataScales;
   vector< vector<int> > _missIndices;
 };
 

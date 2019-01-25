@@ -1,10 +1,10 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2018-JUN-18
+### Modified: 2019-JAN-21
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -77,25 +77,12 @@ init <- function(penalty,
     haveMiss <- any(mibrrFit$countMissing() > 0)
 
     ## Temporarily fill missing with single imputations:
-    if(haveMiss) mibrrFit$simpleImpute(covsOnly = mibrrFit$fimlStarts)
-
-    ## Note known means and scales, if any:
-    if(!is.null(control$dataMeans))  mibrrFit$knownMeans <- TRUE
-    if(!is.null(control$dataScales)) mibrrFit$knownScales <- TRUE
-    
-    ## Compute summary statistics:
-    if(!mibrrFit$knownMeans & !mibrrFit$knownScales)
-        mibrrFit$computeStats(useFiml = mibrrFit$fimlStarts)
-    
-    if(mibrrFit$center) mibrrFit$meanCenter()
+    if(haveMiss) mibrrFit$simpleImpute()
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
     mibrrFit$startParams()
-  
-    ## Fill remaining missing data with an integer code:
-    if(mibrrFit$fimlStarts & haveMiss) mibrrFit$applyMissCode()
-
+    
     mibrrFit
 }# END init()
 
@@ -146,26 +133,28 @@ mcem <- function(mibrrFit) {
 }# END mcem()
 
 
-postProcess <- function(mibrrFit) {
-    ## Uncenter the data:
-    if(mibrrFit$center) mibrrFit$meanCenter(revert = TRUE)
-    
-    ## Replace missing values:
-    if(mibrrFit$doImp) mibrrFit$applyMissCode(revert = TRUE)
-    
-    ## Compute the potential scale reduction factors (R-Hats) for the posterior
-    ## imputation model parameters:
-    if(mibrrFit$checkConv) {
-        mibrrFit$computeRHats()
-        mibrrFit$checkGibbsConv()
+postProcess <- function(mibrrFit, ...) {
+    ## Extract extra arguments:
+    args <- list(...)
+
+    if(is.null(args$initOnly) || !args$initOnly) {
+        ## Replace missing values:
+        if(mibrrFit$doImp) mibrrFit$resetMissing()
+        
+        ## Compute the potential scale reduction factors (R-Hats) for the
+        ## posterior imputation model parameters:
+        if(mibrrFit$checkConv) {
+            mibrrFit$computeRHats()
+            mibrrFit$checkGibbsConv()
+        }
+        
+        ## Provide some pretty names for the output objects:
+        mibrrFit$nameOutput()
     }
     
-    ## Provide some pretty names for the output objects:
-    mibrrFit$nameOutput()
-
     ## Clean the RNG state:
     mibrrFit$cleanRng()
-
+    
     ## Fix rlecuyer's random seed table when we have only 1 remaining stream:
     check <- !is.null(.lec.Random.seed.table$name) &&
         !is.matrix(.lec.Random.seed.table$Cg)

@@ -1,10 +1,10 @@
 ### Title:    License/Warranty Information Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2016-MAY-09
-### Modified: 2018-MAY-04
+### Modified: 2019-JAN-15
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##

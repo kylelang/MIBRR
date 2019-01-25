@@ -1,12 +1,12 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2018-NOV-21
+### Modified: 2019-JAN-19
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -42,7 +42,6 @@ MibrrFit$methods(
                 
                  gibbsOut <<-
                      runGibbs(data        = as.matrix(data),
-                              dataScales  = dataScales,
                               nTargets    = nTargets,
                               missList    = missList[targetVars],
                               respCounts  = respCounts[targetVars],
@@ -59,20 +58,13 @@ MibrrFit$methods(
                               ridge       = ridge,
                               verbose     = verbose,
                               fullBayes   = !doMcem,
-                              adaptScales = adaptScales,
                               noMiss      = all(missCounts == 0),
                               seeds       = seedVec)
                  
                  names(gibbsOut) <<- targetVars
                  
                  ## Update the parameters' starting values:
-                 if(doMcem)
-                     for(j in 1 : nTargets) {
-                         sigmaStarts[j]   <<- mean(gibbsOut[[j]]$sigma)
-                         tauStarts[ , j]  <<- colMeans(gibbsOut[[j]]$tau)
-                         betaStarts[ , j] <<-
-                             colMeans(gibbsOut[[j]]$beta[ , -1])
-                     }
+                 if(doMcem) startParams(restart = TRUE)
              },
              
              eNetLL = function(lambdaVec, index) {
@@ -147,7 +139,7 @@ MibrrFit$methods(
                                   index   = index)
                  
                  if(length(method) > 1) optOut <- optOut[nrow(optOut), ]
-                                               
+                                
                  if(optCheckKkt) {
                      if(!optOut$kkt1)
                          stop("First KKT optimality condition not satisfied when optimizing Lambda")

@@ -2,7 +2,7 @@
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
 // Created:  2017-NOV-23
-// Modified: 2018-JUN-13
+// Modified: 2019-JAN-15
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other
@@ -11,7 +11,7 @@
 //           bugs induced by the port are my own responsibility. 
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -146,7 +146,6 @@ private:
   double       _alpha;
   double       _mode;
   unsigned int _seed;
-  
 };
 
 #endif

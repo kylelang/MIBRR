@@ -5,9 +5,10 @@ import(methods)
 
 importFrom(Rcpp, evalCpp)
 importFrom(mice, mice, quickpred, complete)
-importFrom(lavaan, lavaan, inspect)
 importFrom(optimx, optimx)
 importFrom(mvtnorm, rmvnorm)
+importFrom(LaplacesDemon, rinvgamma, rinvchisq, rinvgaussian)
+importFrom(HyperbolicDist, rgig)
 importFrom(stats,
            anova,
            lm,
@@ -15,15 +16,21 @@ importFrom(stats,
            rexp,
            rgamma,
            rnorm,
+           runif,
            sd,
            var,
-           density)
+           density,
+           na.omit,
+           ks.test,
+           quantile)
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,
+           .lec.CurrentStream,
            .lec.ResetNextSubstream,
            .lec.GetState,
-           .lec.DeleteStream)
+           .lec.DeleteStream,
+           .lec.CurrentStreamEnd)
 
 export(mibl,
        miben,

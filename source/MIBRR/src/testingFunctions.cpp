@@ -1,10 +1,10 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2018-JUN-13
+// Modified: 2019-JAN-24
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2018 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -41,6 +41,8 @@ Eigen::VectorXd drawNorm(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
+
 // [[Rcpp::export]]
 Eigen::VectorXd drawGamma(int          n,
 			  double       shape,
@@ -55,6 +57,8 @@ Eigen::VectorXd drawGamma(int          n,
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawGamma(shape, rate);
   return out;
 }
+
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGamma(int          n,
@@ -71,6 +75,8 @@ Eigen::VectorXd drawInvGamma(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
+
 // [[Rcpp::export]]
 Eigen::VectorXd drawScaledInvChiSq(int          n,
 				   double       df,
@@ -86,6 +92,8 @@ Eigen::VectorXd drawScaledInvChiSq(int          n,
     out[i] = mibrrSamplers.drawScaledInvChiSq(df, scale);
   return out;
 }
+
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::MatrixXd drawMvn(int             n,
@@ -104,12 +112,16 @@ Eigen::MatrixXd drawMvn(int             n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
+
 // [[Rcpp::export]]
 double calcIncGamma(double shape, double cutVal, bool lowerTail)
 {
   MibrrSamplers mibrrSamplers;
   return mibrrSamplers.calcIncGamma(shape, cutVal, lowerTail);
 }
+
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
@@ -122,6 +134,8 @@ Eigen::VectorXd drawInvGauss(int n, double mu, double lambda, unsigned int seed)
   for(int i = 0; i < n; i++) out[i] = mibrrSamplers.drawInvGauss(mu, lambda);
   return out;
 }
+
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 Eigen::VectorXd drawGig(int          n,
@@ -139,29 +153,84 @@ Eigen::VectorXd drawGig(int          n,
   return out;
 }
 
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 std::vector<int>
 printObsIndices(Eigen::MatrixXd                 data,
-		Eigen::VectorXd                 scales,
 		std::vector< std::vector<int> > missIndices,
 		Eigen::VectorXi                 respCounts,
-		bool                            noMiss,
 		int                             targetIndex)
 {
-  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, false);
   return(mibrrData.getObsRows(targetIndex));
 }
+
+//----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
 std::vector<int>
 printMissIndices(Eigen::MatrixXd                 data,
-		 Eigen::VectorXd                 scales,
 		 std::vector< std::vector<int> > missIndices,
 		 Eigen::VectorXi                 respCounts,
-		 bool                            noMiss,
 		 int                             targetIndex)
 {
-  MibrrData mibrrData(data, scales, missIndices, respCounts, noMiss);
+  MibrrData mibrrData(data, missIndices, respCounts, false);
   return(mibrrData.getMissIndices(targetIndex));
+}
+
+//----------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+Eigen::MatrixXd
+getX(Eigen::MatrixXd                 data,
+     std::vector< std::vector<int> > missIndices,
+     Eigen::VectorXi                 respCounts,
+     bool                            noMiss,
+     bool                            xOnly,
+     bool                            obsY,
+     bool                            scale,
+     int                             targetIndex)
+{
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
+  
+  Eigen::MatrixXd out;
+
+  // Compute centers and scales:
+  mibrrData.updateMoments(targetIndex);
+  
+  if(xOnly) out = mibrrData.getIVs(targetIndex, obsY, scale);
+  else      out = mibrrData.getData();
+  
+  return out;
+}
+
+//----------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+Eigen::VectorXd
+getY(Eigen::MatrixXd                 data,
+     std::vector< std::vector<int> > missIndices,
+     Eigen::VectorXi                 respCounts,
+     bool                            noMiss,
+     int                             targetIndex)
+{
+  MibrrData mibrrData(data, missIndices, respCounts, noMiss);
+  return mibrrData.getDV(targetIndex);
+}
+
+//----------------------------------------------------------------------------//
+
+// [[Rcpp::export]]
+Eigen::VectorXd
+printFilledY(Eigen::VectorXd                 imps,
+	     Eigen::MatrixXd                 data,
+	     std::vector< std::vector<int> > missIndices,
+	     Eigen::VectorXi                 respCounts,
+	     int                             targetIndex)
+{
+  MibrrData mibrrData(data, missIndices, respCounts, false);
+  mibrrData.fillMissing(imps, targetIndex);
+
+  return mibrrData.getData().col(targetIndex);
 }

@@ -20,8 +20,8 @@ miben(data,
       verbose      = TRUE,
       seed         = NULL,
       userRng      = "",
-      control      = list()
-      )  
+      control      = list(),
+      ...)  
 }
 \arguments{
   \item{data}{
@@ -89,6 +89,10 @@ miben(data,
   \item{control}{
     A list of control parameters for the Gibbs sampler and penalty parameter
     optimization (see Details for more information).
+  }
+  \item{...}{
+    Extra arguments passed to internal functions. Used for internal
+    testing purposes.
   }
 }
 \details{
@@ -165,25 +169,6 @@ miben(data,
       Defaults to \code{smoothingWindow = min(10, ceiling(nApprox / 10))} where
       \code{nApprox} is the number of MCEM approximation iterations. 
     }
-    \item{center:}{
-      A logical switch: Should the data be centered before
-      estimating the imputation model? When \code{center = TRUE} the data
-      centers are added back to the imputed data before the function
-      returns.\cr
-      Defaults to \code{center = TRUE}.
-    }
-    \item{scale:}{
-      A logical switch: Should the predictor data be scaled to have
-      unit variance before estimating the imputation model? When \code{scale =
-	TRUE} imputed data are reverted to their original scaling before the
-      function returns.\cr
-      Defaults to \code{scale = TRUE}.
-    }
-    \item{adaptScales:}{
-      A logical switch: Should the target variables' scales be
-      actively updated as part of imputation model estimation?\cr
-      Defaults to \code{adaptScales = TRUE}.
-    }
     \item{minPredCor:}{
       The minimum correlation used by \code{mice::quickpred}
       when temporarily filling missing data before scaling or when filling
@@ -206,12 +191,6 @@ miben(data,
       temporarily filling missing data before scaling or filling missing data on
       covariates.\cr
       Defaults to \code{miceMethod = "pmm"}.
-    }
-    \item{fimlStarts:}{
-      A logical switch: Should the model moments from a saturated FIML model be
-      used to scale the target variables? When \code{fimlStarts = TRUE}, the
-      saturated model is estimated using \pkg{lavaan}.\cr
-      Defaults to \code{fimlStarts = FALSE}.
     }
     \item{preserveStructure:}{
       A logical switch: Should the data columns be returned in the same order

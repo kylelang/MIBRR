@@ -51,6 +51,8 @@ cn       <- c(targets$mar, marPreds)
 ### Define a function to run each replication ###
 
 testFun <- function(rp, data, env) {
+    print(paste("Doing rep", rp))
+    
     cn       <- env$cn
     targets  <- env$targets
     marPreds <- env$marPreds
@@ -58,6 +60,7 @@ testFun <- function(rp, data, env) {
     snr      <- env$snr
     nImps    <- env$nImps
     keys     <- env$keys
+    verb     <- env$verb
     
     dat1 <- data[sample(c(1 : nrow(data)), 500), cn]
     dat2 <- imposeMissData(data    = dat1,
@@ -70,24 +73,24 @@ testFun <- function(rp, data, env) {
                       targetVars = targets$mar,
                       ignoreVars = NULL,
                       iterations = c(50, 10),
-                      verbose    = FALSE)
+                      verbose    = verb)
     mibenImps <- getImpData(mibenOut, nImps)
     
     miblOut <- mibl(data       = dat2,
                     targetVars = targets$mar,
                     ignoreVars = NULL,
                     iterations = c(50, 10),
-                    verbose    = FALSE)
+                    verbose    = verb)
     miblImps <- getImpData(miblOut, nImps)
 
     vanOut <- vanilla(data       = dat2,
                       targetVars = targets$mar,
                       ignoreVars = NULL,
-                      verbose    = FALSE)
+                      verbose    = verb)
     vanImps <- getImpData(vanOut, nImps)
     
     miceOut <-
-        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = FALSE)
+        mice(dat2, m = nImps, maxit = 10, method = "norm", printFlag = verb)
 
     mibenList <- miblList <- vanList <- miceList <- list()
     for(m in 1 : nImps) {
@@ -135,6 +138,7 @@ testFun <- function(rp, data, env) {
 
 ### Run the simulation ###
 
+verb  <- FALSE
 nReps <- 100
 nImps <- 20
 keys  <- list(agree = c("-A1", "A2", "A3", "A4", "A5"),
