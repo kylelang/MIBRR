@@ -1,7 +1,7 @@
 ### Title:    R-Based Unit Tests for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2010-JAN-23
-### Modified: 2019-JAN-24
+### Modified: 2019-JAN-25
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -24,143 +24,178 @@
 
 ### Random Number Samplers ###
 
-## MVN sampler:
-testMvn <- function(n = 1000, p = 0.1, seed = NA) {
-    mu          <- rep(10, 2)
-    sigma       <- matrix(5, 2, 2)
-    diag(sigma) <- 20
-
+## Compare MIBRR's multivariate normal sampler to a reference implementation
+## using the Kolmogorov-Smirnov Statistic:
+testMvn <- function(n = 1000, seed = NA, ...) {
+    pars <- list(...)[[1]]
+      
+    if(!is.null(pars$mu)) mu <- pars$mu
+    else                  mu <- rep(0, 2)
+    
+    if(!is.null(pars$sigma)) sigma <- pars$sigma
+    else                     sigma <- diag(2)
+    
     if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
-
+    
     sam1 <- drawMvn(n, mu, sigma, seed)
     sam2 <- rmvnorm(n, mu, sigma)
     
-    pVec <- rep(NA, 2)
-    for(v in 1 : 2)
-        pVec[v] <- ks.test(x = sam1[ , v], y = sam2[ , v])$p.value
+    out <- list()
+    for(v in 1 : length(mu))
+        out[[v]] <- ks.test(x = sam1[ , v], y = sam2[ , v])
     
-    all(pVec >= p)
+    out
 }
 
 ###--------------------------------------------------------------------------###
 
-## Inverse gamma sampler:
-testInvGamma <- function(n = 1000, p = 0.1, seed = NA) {
-    shape <- 10
-    scale <- 10
-    
-    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
+## Compare MIBRR's inverse gamma sampler to a reference implementation using the
+## Kolmogorov-Smirnov Statistic:
+testInvGamma <- function(n = 1000, seed = NA, ...) {
+    pars <- list(...)[[1]]
 
+    if(!is.null(pars$shape)) shape <- pars$shape
+    else                     shape <- 1
+    
+    if(!is.null(pars$scale)) scale <- pars$scale
+    else                     scale <- 1
+
+    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
+    
     sam1 <- drawInvGamma(n, shape, scale, seed)
     sam2 <- rinvgamma(n, shape, scale)
     
-    ks.test(x = sam1, y = sam2)$p.value >= p
+    ks.test(x = sam1, y = sam2)
 }
 
 ###--------------------------------------------------------------------------###
 
-## Inverse Gaussian sampler:
-testInvGauss <- function(n = 1000, p = 0.1, seed = NA) {
-    mu  <- 1
-    lam <- 2
-
-    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
+## Compare MIBRR's scaled inverse chi-squared sampler to a reference
+## implementation using the Kolmogorov-Smirnov Statistic:
+testInvChiSq <- function(n = 1000, seed = NA, ...) {
+    pars <- list(...)[[1]]
     
-    sam1 <- drawInvGauss(n, mu, lam, seed)
-    sam2 <- rinvgaussian(n, mu, lam)
+    if(!is.null(pars$df)) df <- pars$df
+    else                  df <- 1
     
-    ks.test(x = sam1, y = sam2)$p.value >= p
-}
+    if(!is.null(pars$scale)) scale <- pars$scale
+    else                     scale <- 1
 
-###--------------------------------------------------------------------------###
-
-## Generalized inverse Gaussian sampler:
-testGig <- function(n = 1000, p = 0.1, seed = NA) {
-    lam <- 1
-    chi <- 2
-    psi <- 2
-
-    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
-    
-    sam1 <- drawGig(n, lam, chi, psi, seed)
-    sam2 <- rgig(n, c(lam, chi, psi))
-
-    ks.test(x = sam1, y = sam2)$p.value >= p
-}
-
-###--------------------------------------------------------------------------###
-
-## Scaled inverse chi-squared sampler:
-testScaledInvChiSq <- function(n = 1000, p = 0.1, seed = NA) {
-    df    <- 100
-    scale <- 10
- 
     if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
     
     sam1 <- drawScaledInvChiSq(n, df, scale, seed)
     sam2 <- rinvchisq(n, df, scale)
     
-    ks.test(x = sam1, y = sam2)$p.value >= p
+    ks.test(x = sam1, y = sam2)
 }
 
 ###--------------------------------------------------------------------------###
 
-## Incomplete gamma calculation:
-testIncGamma <- function() {
-    shape <- 10
-    cut   <- 5
+## Compare MIBRR's inverse Gaussian sampler to a reference implementation using
+## the Kolmogorov-Smirnov Statistic:
+testInvGauss <- function(n = 1000, seed = NA, ...) {
+    pars <- list(...)[[1]]
     
-    out1 <- calcIncGamma(shape, cut, FALSE)
-    out2 <- pgamma(q = cut, shape = shape, lower.tail = FALSE) * gamma(shape)
+    if(!is.null(pars$mu)) mu <- pars$mu
+    else                  mu <- 1
     
-    all.equal(out1, out2)
+    if(!is.null(pars$lambda)) lambda <- pars$lambda
+    else                      lambda <- 1
+    
+    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
+    
+    sam1 <- drawInvGauss(n, mu, lambda, seed)
+    sam2 <- rinvgaussian(n, mu, lambda)
+    
+    ks.test(x = sam1, y = sam2)
 }
 
 ###--------------------------------------------------------------------------###
 
-## Run a single iteration of all sampler tests:
-combSamTests <- function(n = 1000, p = 0.1, seed = NA) {
-    c(mvn       = testMvn(n, p, seed),
-      invGamma  = testInvGamma(n, p, seed),
-      invGauss  = testInvGauss(n, p, seed),
-      gig       = testGig(n, p, seed),
-      sInvChiSq = testScaledInvChiSq(n, p, seed),
-      incGamma  = testIncGamma()
-      )
+## Compare MIBRR's generalized inverse Gaussian sampler to a reference
+## implementation using the Kolmogorov-Smirnov Statistic:
+testGig <- function(n = 1000, seed = NA, ...) {
+    pars <- list(...)[[1]]
+    
+    if(!is.null(pars$lambda)) lambda <- pars$lambda
+    else                      lambda <- 1
+
+    if(!is.null(pars$chi)) chi <- pars$chi
+    else                   chi <- 1
+    
+    if(!is.null(pars$psi)) psi <- pars$psi
+    else                   psi <- 1
+
+    if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
+    
+    sam1 <- drawGig(n, lambda, chi, psi, seed)
+    sam2 <- rgig(n, c(lambda, chi, psi))
+
+    ks.test(x = sam1, y = sam2)
+}
+
+###--------------------------------------------------------------------------###
+
+## Run each sampler test once:
+samTestUnit <- function(n = 1000, ...) {
+    pars <- list(...)
+    
+    ## Generate an RNG seed:
+    seed <- floor(runif(1, 1e5, 1e6))
+    
+    mvn        <- sapply(testMvn(n, seed, pars$mvn), "[[", x = "statistic")
+    names(mvn) <- paste0("mvn", 1 : length(mvn))
+
+    out <- c(mvn,
+             invGamma = testInvGamma(n, seed, pars$invGamma)$statistic,
+             invGauss = testInvGauss(n, seed, pars$invGauss)$statistic,
+             gig      = testGig(n, seed, pars$gig)$statistic,
+             invChiSq = testInvChiSq(n, seed, pars$invChiSq)$statistic)
+
+    names(out) <- gsub("\\.D", "", names(out))
+    out
 }
 
 ###--------------------------------------------------------------------------###
 
 ## Run a Monte Carlo test of the samplers:
-testSamplers <- function(reps = 5000, n = 1000, p = 0.1, seed = NA) {
+testSamplers <- function(reps = 1000, n = 1000, ...) {
     out <- list()
-    for(i in 1 : reps) out[[i]] <- combSamTests(n, p, seed)
+    for(i in 1 : reps) out[[i]] <- samTestUnit(n, ...)
+
+    note <- strwrap("The following table summarizes the Monte Carlo sampling distributions of KS statistics that compare samples generated by MIBRR's samplers to those generated by R-based reference implementations from the mvtnorm, LaplacesDemon, and HyperbolicDist packages.",
+                    width = 81)
     
-    res <- rbind(colMeans(do.call(rbind, out)),
-                 c(1 - 2*p, rep(1 - p, 4), 1)
+    for(i in note) message(i)
+    
+    message(paste0("\nNo. of Monte Carlo replications = ", reps, "\n"))
+    message(paste0("No. of observations in each sample = ", n, "\n"))
+    
+    out <- do.call(rbind, out)
+    out <- rbind(colMeans(out),
+                 apply(out, 2, sd),
+                 apply(out, 2, quantile, probs = c(0.9, 0.95, 0.99, 0.999)),
+                 apply(out, 2, max)
                  )
     
-    rownames(res) <- c("Estimated", "Nominal")
-    res
+    rownames(out) <- c("Mean",
+                       "SD",
+                       paste0(c(90, 95, 99, 99.9), "th %ile"),
+                       "Maximum")
+    out
 }
 
 ###--------------------------------------------------------------------------###
 
 ### Missing Data Indexing ###
 
-testMissIndex <- function() {
-    data(mibrrExampleData, package = "MIBRR", envir = parent.frame())
-    
+testMissIndex <- function(data) {
     ## Summarize missing data in the raw data file:
-    missList0   <- lapply(mibrrExampleData, function(x) which(is.na(x)) - 1)
-    respCounts0 <- colSums(!is.na(mibrrExampleData))
+    missList0   <- lapply(data, function(x) which(is.na(x)) - 1)
+    respCounts0 <- colSums(!is.na(data))
     
     ## Initialize a MibrrFit object:
-    tmp <- miben(data       = mibrrExampleData,
-                 iterations = c(30, 10),
-                 targetVars = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars = "idNum",
-                 initOnly   = TRUE)
+    tmp <- suppressWarnings(miben(data = data, initOnly = TRUE))
     
     respCounts <- nrow(tmp$data) - tmp$missCounts
 
@@ -205,29 +240,23 @@ testMissIndex <- function() {
 
 ### Data Manipulation ###
 
-testDataProcessing <- function() {
-    data(mibrrExampleData, envir = parent.frame())
-    dat0 <- mibrrExampleData[ , -1]
-    
+testDataProcessing <- function(data) {
     ## Initialize a MibrrFit object:
-    obj <- miben(data       = mibrrExampleData,
-                 targetVars = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars = "idNum",
-                 initOnly   = TRUE)
+    obj <- suppressWarnings(miben(data = data, initOnly = TRUE))
 
     dat1       <- obj$data
     missList   <- obj$missList
     respCounts <- nrow(dat1) - obj$missCounts
-
+    
     ## Check initial data integrity:
-    diff <- sum(dat1 - dat0, na.rm = TRUE)
+    diff <- sum(dat1 - data, na.rm = TRUE)
     if(diff != 0) stop("MibrrFit$data doesn't match raw data.")
 
     ## Check data subsetting:
-    for(v in 1 : ncol(dat0)) {
-        y0  <- dat0[ , v]
-        X0o <- dat0[!is.na(y0) , -v] 
-        X0m <- dat0[is.na(y0), -v]
+    for(v in 1 : ncol(data)) {
+        y0  <- data[ , v]
+        X0o <- data[!is.na(y0) , -v] 
+        X0m <- data[is.na(y0), -v]
 
         ## Extract "training set" predictors:
         X1o <- getX(data        = as.matrix(dat1),
@@ -273,14 +302,9 @@ testDataProcessing <- function() {
 
 ### Data Scaling ###
 
-testDataScaling <- function() {
-    data(mibrrExampleData, envir = parent.frame())
-       
+testDataScaling <- function(data) {
     ## Initialize a MibrrFit object:
-    obj <- miben(data       = mibrrExampleData,
-                 targetVars = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars = "idNum",
-                 initOnly   = TRUE)
+    obj <- suppressWarnings(miben(data = data, initOnly = TRUE))
 
     dat1       <- obj$data
     missList   <- obj$missList
@@ -357,27 +381,21 @@ testDataScaling <- function() {
 
 ### Missing Data Filling ###
 
-testMissFill <- function() {
-    data(mibrrExampleData, envir = parent.frame())
-    
+testMissFill <- function(data) {
     ## Initialize a MibrrFit object:
-    obj <- miben(data       = mibrrExampleData,
-                 targetVars = c("y", paste0("x", c(1 : 3))),
-                 ignoreVars = "idNum",
-                 initOnly   = TRUE)
+    obj <- suppressWarnings(miben(data = data, initOnly = TRUE))
 
-    dat0       <- mibrrExampleData[ , colnames(obj$data)]
     missList   <- obj$missList
-    respCounts <- nrow(dat0) - obj$missCounts
+    respCounts <- nrow(data) - obj$missCounts
 
     ## Check C++-level missing data replacement ##
 
-    for(v in 1 : ncol(dat0)) {
+    for(v in 1 : ncol(data)) {
         ## Create some dummy imputations:
         imps <- runif(obj$missCounts[v])
 
         ## Manually fill missing:
-        y0            <- dat0[ , v]
+        y0            <- data[ , v]
         y0[is.na(y0)] <- imps
 
         ## Fill the missing in C++ code:
@@ -396,8 +414,7 @@ testMissFill <- function() {
     
     ## Generate a full MibrrFit object:
     obj <- suppressWarnings(
-        miben(data         = mibrrExampleData,
-              ignoreVars   = "idNum",
+        miben(data         = data,
               sampleSizes  = c(5, 5), 
               doMcem       = FALSE,
               lam1PriorPar = c(1.0, 0.1),
@@ -407,7 +424,7 @@ testMissFill <- function() {
     )
     
     for(rep in 1 : 3) {
-        dat0 <- mibrrExampleData # Raw data
+        dat0 <- data # Raw data
         for(v in colnames(obj$data)) {
             nMiss <- obj$missCounts[v]
             

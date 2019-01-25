@@ -1,56 +1,67 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2019-JAN-24
+### Modified: 2019-JAN-25
 
 rm(list = ls(all = TRUE))
 
+                                        #library(devtools)
+                                        #install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
+                                        #install_github("kylelang/SURF/source/SURF")
+
 source("subroutines.R")
 
-library(devtools)
+library(MIBRR)
+library(SURF)
 library(parallel)
 library(HyperbolicDist)
 library(LaplacesDemon)
 library(monomvn)
 library(rstan)
 
-                                        #install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
-                                        #install_github("kylelang/SURF/source/SURF")
-library(MIBRR)
-library(SURF)
-
 rstan_options(auto_write = TRUE)
 
 ###--------------------------------------------------------------------------###
 
-### Run Unit Tests ###
-
-MIBRR:::testMissIndex()
-MIBRR:::testSamplers()
-MIBRR:::testDataProcessing()
-MIBRR:::testDataScaling()
-MIBRR:::testMissFill()
-
-###--------------------------------------------------------------------------###
-
-### Compare MIBRR::bl to a reference implementation ###
-
 ## Generate some data:
-dat1 <- simRegData(nObs  = 500,
+dat0 <- simRegData(nObs  = 500,
                    nVars = 10,
                    r2    = 0.5,
                    sigma = 0.2,
                    beta  = matrix(c(0.25, rep(0.75, 10)))
                    )
 
-xNames <- setdiff(colnames(dat1), "y")
+## Impose missing values:
+dat1 <- imposeMissData(data    = dat0,
+                       targets = list(mar  = colnames(dat0)[1 : 8],
+                                      mcar = colnames(dat0)[9 : 11]
+                                      ),
+                       preds   = colnames(dat0)[9 : 11],
+                       pm      = list(mar = 0.3, mcar = 0.1),
+                       snr     = 5.0)$data
+
+###--------------------------------------------------------------------------###
+
+### Run Internal (Unit-ish) Tests ###
+
+MIBRR:::testMissIndex(dat1)
+MIBRR:::testDataProcessing(dat1)
+MIBRR:::testDataScaling(dat1)
+MIBRR:::testMissFill(dat1)
+MIBRR:::testSamplers()
+
+###--------------------------------------------------------------------------###
+
+### Compare MIBRR::bl to a reference implementation ###
+
+xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
 sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
 
 ### MCEM Estimation:
 
 ## Estimate the model using monomvn::blasso:
-bl0 <- bl0Mcem(data      = dat1,
+bl0 <- bl0Mcem(data      = dat0,
                yName     = "y",
                xNames    = xNames,
                iters     = iters,
@@ -60,7 +71,7 @@ bl0 <- bl0Mcem(data      = dat1,
 
 ## Estimate the model using MIBRR:bl:
 bl1 <-
-    bl(data        = dat1,
+    bl(data        = dat0,
        y           = "y",
        X           = xNames,
        iterations  = iters,
@@ -70,14 +81,14 @@ bl1 <-
        )
 
 ## Generate posterior predictive samples:
-pp0 <- predBl0(bl0$out, X = as.matrix(dat1[ , xNames]))[ , -1]
+pp0 <- predBl0(bl0$out, X = as.matrix(dat0[ , xNames]))[ , -1]
 pp1 <-
-    postPredict(bl1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+    postPredict(bl1, newData = dat0, nDraws = sams[[3]][2], scale = FALSE)[[1]]
 
 ## Plot 25 randomly sample posterior predictive densities:
 par(mfrow = c(5, 5))
 
-for(x in sample(1 : nrow(dat1), 25)) {
+for(x in sample(1 : nrow(dat0), 25)) {
     d0 <- density(pp0[x, ])
     d1 <- density(pp1[x, ])
 
@@ -102,13 +113,13 @@ for(x in 1 : ncol(b1)) {
 ### Fully Bayesian Estimation:
 
 ## Estimate the model using monomvn::blasso:
-bl0 <- blasso(y         = dat1$y,
-              X         = dat1[ , xNames],
+bl0 <- blasso(y         = dat0$y,
+              X         = dat0[ , xNames],
               T         = sams[[3]][2],
               thin      = sams[[3]][1],
               lambda2   = 1.0,
-              s2        = with(dat1, var(y - mean(y))),
-              beta      = rnorm(ncol(dat1) - 1),
+              s2        = with(dat0, var(y - mean(y))),
+              beta      = rnorm(ncol(dat0) - 1),
               rd        = c(0.5, 0.5),
               RJ        = FALSE,
               rao.s2    = FALSE,
@@ -117,7 +128,7 @@ bl0 <- blasso(y         = dat1$y,
 
 ## Estimate the model using MIBRR:bl:
 bl1 <-
-    bl(data         = dat1,
+    bl(data         = dat0,
        y            = "y",
        X            = xNames,
        sampleSizes  = sams[[3]],
@@ -128,14 +139,14 @@ bl1 <-
        )
 
 ## Generate posterior predictive samples:
-pp0 <- predBl0(bl0, X = as.matrix(dat1[ , xNames]))[ , -1]
+pp0 <- predBl0(bl0, X = as.matrix(dat0[ , xNames]))[ , -1]
 pp1 <-
-    postPredict(bl1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+    postPredict(bl1, newData = dat0, nDraws = sams[[3]][2], scale = FALSE)[[1]]
 
 ## Plot 25 randomly sample posterior predictive densities:
 par(mfrow = c(5, 5))
 
-for(x in sample(1 : nrow(dat1), 25)) {
+for(x in sample(1 : nrow(dat0), 25)) {
     d0 <- density(pp0[x, ])
     d1 <- density(pp1[x, ])
 
@@ -165,10 +176,10 @@ for(x in 1 : ncol(b1)) {
 benMod <- stan_model("ben_model.stan")
 
 ## Create a data list for Stan:
-stanData <- list(N = nrow(dat1),
-                 P = ncol(dat1) - 1,
-                 y = dat1$y,
-                 X = dat1[ , xNames])
+stanData <- list(N = nrow(dat0),
+                 P = ncol(dat0) - 1,
+                 y = dat0$y,
+                 X = dat0[ , xNames])
 
 ## Sample from the Stan model:
 ben0 <- sampling(object = benMod,
@@ -179,7 +190,7 @@ ben0 <- sampling(object = benMod,
 
 ## Estimate the model using MIBRR:ben:
 ben1 <-
-    ben(data         = dat1,
+    ben(data         = dat0,
         y            = "y",
         X            = xNames,
         iterations   = iters,
@@ -190,14 +201,14 @@ ben1 <-
         verbose      = TRUE)
 
 ## Generate posterior predictive samples:
-pp0 <- predBen0(obj = ben0, X = as.matrix(dat1[ , xNames]))
+pp0 <- predBen0(obj = ben0, X = as.matrix(dat0[ , xNames]))
 pp1 <-
-    postPredict(ben1, newData = dat1, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+    postPredict(ben1, newData = dat0, nDraws = sams[[3]][2], scale = FALSE)[[1]]
 
 ## Plot 25 randomly sample posterior predictive densities:
 par(mfrow = c(5, 5))
 
-for(x in sample(1 : nrow(dat1), 25)) {
+for(x in sample(1 : nrow(dat0), 25)) {
     d0 <- density(pp0[x, ])
     d1 <- density(pp1[x, ])
     
@@ -461,4 +472,3 @@ mibrrL()
 
 ?mibrrW
 mibrrW()
-

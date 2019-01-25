@@ -21,7 +21,8 @@ importFrom(stats,
            var,
            density,
            na.omit,
-           ks.test)
+           ks.test,
+           quantile)
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,
