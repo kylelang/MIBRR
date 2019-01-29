@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-21
+### Modified: 2019-JAN-29
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -483,6 +483,16 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
+
+#############################################################################################3
+                     print(c("vanilla", "mibl", "mibrr")[penalty + 1])
+                     print(" ")
+                     print(j)
+                     print(" ")
+                     print(rHats[[j]]$beta)
+                     print(" ")
+##############################################################################################
+                     
                      badBetaCount <- sum(rHats[[j]]$beta > convThresh)
                      maxBetaRHat  <- max(rHats[[j]]$beta)
                      badSigmaFlag <- rHats[[j]]$sigma > convThresh
