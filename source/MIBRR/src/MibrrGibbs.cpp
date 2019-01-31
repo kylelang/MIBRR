@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-24
+// Modified: 2019-JAN-31
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -40,6 +40,7 @@ MibrrGibbs::MibrrGibbs()
   _verbose           = true;
   _penType           = 2;
   _fullBayes         = false;
+  _savePpSams        = false;
 }
 
 //----------------------------------------------------------------------------//
@@ -55,6 +56,7 @@ MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;             }
 ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;              }
 VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;            }
 MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;              }
+MatrixXd MibrrGibbs::getPpSam()           const { return _ppSam;               }
 MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;           }
 int      MibrrGibbs::getNDraws()          const { return _nDraws;              }
 int      MibrrGibbs::getPenType()         const { return _penType;             }
@@ -91,6 +93,7 @@ void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws      = nDraws;    }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp       = doImp;     }
 void MibrrGibbs::beQuiet       ()                  { _verbose     = false;     }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes   = true;      }
+void MibrrGibbs::savePpSams    ()                  { _savePpSams  = true;      }
 void MibrrGibbs::setPenType    (int penType)       { _penType     = penType;   }
 void MibrrGibbs::setRidge      (double ridge)      { _ridge       = ridge;     }
 void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms     = l1Parms;   }
@@ -153,18 +156,14 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 
 void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
 {
-  if(_doImp) {
-    int nMiss = mibrrData.nMiss(_targetIndex);
-    _impSam   = MatrixXd(_nDraws, nMiss);
-  }
-  else {
-    _impSam = MatrixXd::Zero(1, 1);
-  }
-
-  if(_fullBayes)
-    _lambdaSam = MatrixXd(_nDraws, 2);
-  else
-    _lambdaSam = MatrixXd::Zero(1, 1);
+  if(_doImp) _impSam = MatrixXd(_nDraws, mibrrData.nMiss(_targetIndex));
+  else       _impSam = MatrixXd::Zero(1, 1);
+  
+  if(_savePpSams) _ppSam = MatrixXd(_nDraws, mibrrData.nResp(_targetIndex));
+  else            _ppSam = MatrixXd::Zero(1, 1);
+  
+  if(_fullBayes) _lambdaSam = MatrixXd(_nDraws, 2);
+  else           _lambdaSam = MatrixXd::Zero(1, 1);
   
   _betaSam  = MatrixXd(_nDraws, _betas.size());
   _tauSam   = MatrixXd(_nDraws, _taus.size());
@@ -271,7 +270,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   // Compute an appropriate penalty term:
   VectorXd transTaus = VectorXd::Zero(nPreds);
   MatrixXd penalty;
-  if(_penType == 2) {// MIBEN Version
+  if(_penType == 2) {     // MIBEN Version
     transTaus = _taus / (_taus - 1.0);
     penalty   = _lambdas[1] * transTaus.asDiagonal();    
   }
@@ -279,7 +278,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     transTaus = 1.0 / _taus;
     penalty   = transTaus.asDiagonal();
   }
-  else                // Basic ridge penalty
+  else                    // Basic ridge penalty
     penalty = (aMat.diagonal() * _ridge).asDiagonal();
   
   // Penalize the IV's crossproducts matrix:
@@ -388,22 +387,31 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 
 //----------------------------------------------------------------------------//
 
-void MibrrGibbs::updateImputations(MibrrData &mibrrData)
+void MibrrGibbs::updateImputations(MibrrData &mibrrData, bool ppSam)
 {
-  int nMiss  = mibrrData.nMiss(_targetIndex);
   int nPreds = mibrrData.nPreds();
-   
+
+  int size;
+  if(ppSam) size = mibrrData.nResp(_targetIndex);
+  else      size = mibrrData.nMiss(_targetIndex);
+  
   // Draw a vector of imputations from the posterior predictive distribution
   // of the missing data:
-  VectorXd imps = _betas[0] * VectorXd::Ones(nMiss) +
-    mibrrData.getIVs(_targetIndex, false, true) * _betas.tail(nPreds) +
-    drawNorm(nMiss, 0.0, sqrt(_sigma));
+  VectorXd imps = _betas[0] * VectorXd::Ones(size) +
+    mibrrData.getIVs(_targetIndex, ppSam, true) * _betas.tail(nPreds) +
+    drawNorm(size, 0.0, sqrt(_sigma));
   
-  // Replace the missing data in the target variable with the imputations:
-  mibrrData.fillMissing(imps, _targetIndex);
-  
-  // Add the updated imputations to their Gibbs sample:
-  if(_storeGibbsSamples) _impSam.row(_drawNum) = imps.transpose();
+  if(ppSam) {
+    // Add the updated posterior predictive sample to its Gibbs sample:
+    _ppSam.row(_drawNum) = imps.transpose();
+  }
+  else {
+    // Replace the missing data in the target variable with the imputations:
+    mibrrData.fillMissing(imps, _targetIndex);
+    
+    // Add the updated imputations to their Gibbs sample:
+    if(_storeGibbsSamples) _impSam.row(_drawNum) = imps.transpose();
+  }
 }// END updateImputations()
 
 //----------------------------------------------------------------------------//
@@ -417,9 +425,13 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
   updateBetas(mibrrData);
   updateSigma(mibrrData);
   
-  if(_doImp) updateImputations(mibrrData);
+  if(_doImp) updateImputations(mibrrData, false);
   
-  if(_storeGibbsSamples) _drawNum++;
+  if(_storeGibbsSamples) {
+    // Save a posterior predictive sample of Y_obs:
+    if(_savePpSams) updateImputations(mibrrData, true);
+    _drawNum++;
+  }
 }// END doGibbsIteration()
 
 

@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-21
+// Modified: 2019-JAN-31
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -60,7 +60,10 @@ public:
   // @return: (burnt in) Gibbs sample of sigma
 
   MatrixXd getImpSam() const;
-  // @return: (burnt in) Gibbs sample of the DV
+  // @return: (burnt in) Gibbs sample of Y_miss
+
+  MatrixXd getPpSam() const;
+  // @return: (burnt in ) posterior predictive sample of Y_obs
 
   MatrixXd getLambdaSam() const;
   // @return: (burnt in) Gibbs sample of the penalty parameters
@@ -112,12 +115,15 @@ public:
 
   void setDoImp(bool);
   // @param: new value for the logical switch for imputation
-  
+
   void beQuiet();
   // @effect: turn off verbose output
 
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
+  
+  void savePpSams();
+  // @effect: set flag to save posterior predictive samples
 
   void setPenType(int);
   // @param: a new value for the integer code of regularization type
@@ -162,7 +168,7 @@ public:
   void startGibbsSampling(const MibrrData&);
   // @effect: start storing the parameters' Gibbs sampled values
 
-
+  
   ///////////////////////// PARAMETER UPDATE FUNCTIONS /////////////////////////
 
   void updateLambdas(const MibrrData&);
@@ -180,8 +186,10 @@ public:
   // @param:  an initialized MibrrData object
   // @effect: update _sigma based on current values of other member variables
   
-  void updateImputations(MibrrData&);
-  // @param:  an initialized MibrrData object
+  void updateImputations(MibrrData&, bool);
+  // @param1: an initialized MibrrData object
+  // @param2: store a posterior predictive sample (true) or update the
+  //          imputations (false)?
   // @effect: update the imputations based on current values of member variables
   
   void doGibbsIteration(MibrrData&);
@@ -218,6 +226,7 @@ private:
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;
   MatrixXd _impSam;
+  MatrixXd _ppSam;
   MatrixXd _lambdaSam;
   int      _targetIndex;
   int      _nDraws;
@@ -226,6 +235,7 @@ private:
   bool     _verbose;
   bool     _storeGibbsSamples;
   bool     _doImp;
+  bool     _savePpSams;
   bool     _fullBayes;
 };
 

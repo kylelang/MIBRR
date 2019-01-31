@@ -77,13 +77,15 @@ bl1 <-
        iterations  = iters,
        sampleSizes = sams,
        verbose     = TRUE,
-       control     = list(lambda1Starts = 1.0)
+       control     = list(lambda1Starts = 1.0, savePpSams = TRUE)
        )
+
+## Generate a PP check plot:
+MIBRR:::ppCheck(bl1)
 
 ## Generate posterior predictive samples:
 pp0 <- predBl0(bl0$out, X = as.matrix(dat0[ , xNames]))[ , -1]
-pp1 <-
-    postPredict(bl1, newData = dat0, nDraws = sams[[3]][2], scale = FALSE)[[1]]
+pp1 <- postPredict(bl1, newData = dat0, nDraws = sams[[3]][2])[[1]]
 
 ## Plot 25 randomly sample posterior predictive densities:
 par(mfrow = c(5, 5))
@@ -135,8 +137,13 @@ bl1 <-
        verbose      = TRUE,
        doMcem       = FALSE,
        lam1PriorPar = c(0.5, 0.5),
-       control      = list(lambda1Starts = 1.0)
+       control      = list(lambda1Starts = 1.0, savePpSams = TRUE)
        )
+
+par(mfrow = c(1, 1))
+
+## Generate a PP check plot:
+MIBRR:::ppCheck(bl1)
 
 ## Generate posterior predictive samples:
 pp0 <- predBl0(bl0, X = as.matrix(dat0[ , xNames]))[ , -1]

@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2019-JAN-16
+### Modified: 2019-JAN-31
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -22,6 +22,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+###--------------------------------------------------------------------------###
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
@@ -31,7 +32,7 @@ getImpData <- function(mibrrFit, nImps) {
     impList
 }# END getImputedData()
 
-
+###--------------------------------------------------------------------------###
 
 ## Extract the parameter samples from a fitted MibrrFit object:
 getParams <- function(mibrrFit, target) {
@@ -49,25 +50,25 @@ getParams <- function(mibrrFit, target) {
     out
 }
 
-
+###--------------------------------------------------------------------------###
 
 ## Generate posterior predictions from a fitted BEN or BL model:
 postPredict <- function(mibrrFit,
                         newData,
                         targetVars = NULL,
                         nDraws     = 0,
-                        scale      = TRUE)
+                        scale      = FALSE)
 {
     if(!is.data.frame(newData)) stop("'newData' must be a data.frame")
     if(is.null(targetVars))     targetVars <- mibrrFit$targetVars
-
+    
     if(scale) newData <- scale(newData)
     
     outList <- list()
     for(nm in targetVars) {
         pars     <- getParams(mibrrFit, nm)
         testData <- cbind(1, as.matrix(newData[ , colnames(pars$tau)]))
-
+        
         if(nDraws > 0) {
             index <- sample(c(1 : length(pars$sigma)), nDraws)
             beta  <- pars$beta[index, ]
@@ -94,32 +95,35 @@ postPredict <- function(mibrrFit,
     outList
 }
 
+###--------------------------------------------------------------------------###
 
+## Plot the posterior predictive density of targetVars vs. their observed
+## densities:
+ppCheck <- function(mibrrFit, targetVars = NULL) {
+    
+    if(!mibrrFit$savePpSams)
+        stop("The object provided for 'mibrrFit' does not contain posterior predictive samples.")
+    
+    if(is.null(targetVars)) targetVars <- mibrrFit$targetVars
+    
+    for(v in targetVars) {
+        ppSams <- mibrrFit$gibbsOut[[v]]$ppSams
+        
+        d0 <- density(mibrrFit$data[ , v], na.rm = TRUE)
+        d1 <- density(colMeans(ppSams))
+        
+        plot(d0,
+             ylim = range(d0$y, d1$y),
+             xlim = range(d0$x, d1$x),
+             main = paste0("Variable = ",
+                           v,
+                           "\nPP Density (Red) vs. Obs. Density (Black)")
+             )
+        lines(d1, col = "red")
+    }
+}
+
+###--------------------------------------------------------------------------###
+    
 ## Access arbitrary fields in a 'MibrrFit' object:
 getField <- function(mibrrFit, what) mibrrFit$field(what)
-
-
-## Calculate the potential scale reduction factor (R-Hat)
-                                        #calcRHat <- function(simsIn, nChains = 1)
-                                        #{
-                                        #    subChainLen <- floor(length(simsIn) / 2)
-                                        #    nSubChains  <- nChains * 2
-                                        #
-                                        #    if(length(simsIn) %% nSubChains == 0) {
-                                        #        simsMat <- matrix(simsIn, ncol = nSubChains)
-                                        #    } else {
-                                        #        simsMat <- matrix(
-                                        #            simsIn[1 : (length(simsIn) - (nSubChains - 1))],
-                                        #            ncol = nSubChains
-                                        #        )
-                                        #    }
-                                        #
-                                        #    wMean     <- colMeans(simsMat)
-                                        #    grandMean <- mean(simsMat)
-                                        #
-                                        #    bVar <- (subChainLen / (nSubChains - 1)) * sum((wMean - grandMean)^2)
-                                        #    wVar <- mean(apply(simsMat, 2, var))
-                                        #    tVar <- ((subChainLen - 1) / subChainLen) * wVar + (1 / subChainLen) * bVar
-                                        #    
-                                        #    sqrt(tVar / wVar)
-                                        #}# END calcRHat()

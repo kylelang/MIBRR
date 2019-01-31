@@ -49,6 +49,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    bool                      verbose,
 		    bool                      fullBayes,
 		    bool                      noMiss,
+		    bool                      savePpSams,
 		    std::vector<unsigned int> seeds)
 {
   // Unpack the list of missing row indices:
@@ -75,9 +76,11 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
       mibrrGibbs[j].setLam1Parms(l1Parms);
   
       if(penType == 2)// Doing MIBEN?
-	mibrrGibbs[j].setLam2Parms(l2Parms); 
+	mibrrGibbs[j].setLam2Parms(l2Parms);
     }
-  
+    
+    if(savePpSams) mibrrGibbs[j].savePpSams();
+    
     mibrrGibbs[j].seedRng(seeds[j]);
  
     mibrrGibbs[j].startParameters(betaStartVec,
@@ -138,7 +141,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
   RList outList(nTargets);
   for(int j = 0; j < nTargets; j++)
     outList[j] = 
-      RList::create(Rcpp::Named("imps"  ) = mibrrGibbs[j].getImpSam(), 
+      RList::create(Rcpp::Named("imps"  ) = mibrrGibbs[j].getImpSam(),
+		    Rcpp::Named("ppSams") = mibrrGibbs[j].getPpSam(),
 		    Rcpp::Named("beta"  ) = mibrrGibbs[j].getBetaSam(),
 		    Rcpp::Named("tau"   ) = mibrrGibbs[j].getTauSam(),
 		    Rcpp::Named("sigma" ) = mibrrGibbs[j].getSigmaSam(),

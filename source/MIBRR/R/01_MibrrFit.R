@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-29
+### Modified: 2019-JAN-31
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -75,7 +75,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             rng0              = "character",
                             userRng           = "character",
                             ridge             = "numeric",
-                            penalty           = "integer"
+                            penalty           = "integer",
+                            savePpSams        = "logical"
                         )
                         )
 
@@ -127,6 +128,7 @@ MibrrFit$methods(
                      userRng           <<- userRng
                      ridge             <<- ridge
                      penalty           <<- penalty
+                     savePpSams        <<- FALSE
                  },
              
 ################################### MUTATORS ###################################
@@ -489,7 +491,13 @@ MibrrFit$methods(
                      print(" ")
                      print(j)
                      print(" ")
+                     print("R-hats")
+                     print(" ")
                      print(rHats[[j]]$beta)
+                     print(" ")
+                     print("Beta")
+                     print(" ")
+                     print(gibbsOut[[j]]$beta)
                      print(" ")
 ##############################################################################################
                      

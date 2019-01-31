@@ -59,6 +59,7 @@ MibrrFit$methods(
                               verbose     = verbose,
                               fullBayes   = !doMcem,
                               noMiss      = all(missCounts == 0),
+                              savePpSams  = savePpSams,
                               seeds       = seedVec)
                  
                  names(gibbsOut) <<- targetVars
