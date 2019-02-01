@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2019-JAN-29
+### Modified: 2019-FEB-01
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -140,20 +140,12 @@ MibrrFit$methods(
                                   index   = index)
                  
                  if(length(method) > 1) optOut <- optOut[nrow(optOut), ]
-                                
-                 #if(optCheckKkt) {
-                 #    if(!optOut$kkt1)
-                 #        stop("First KKT optimality condition not satisfied when optimizing Lambda")
-                 #    
-                 #    if(!optOut$kkt2)
-                 #        stop("Second KKT optimality condition not satisfied when optimizing Lambda")
-                 #}
-
+                 
                  ## Store the optimized lambdas:
-                 lambdaMat[index, ] <<- c(optOut[[1]], optOut[[2]])
-
-                 ## Return KKT optimality checks:
-                 if(optCheckKkt) optOut[c("kkt1", "kkt2")]
+                 lambdaMat[index, ] <<- coef(optOut)
+                 
+                 ## Return convergence code and KKT optimality checks
+                 optOut[c("convcode", "kkt1", "kkt2")]
              },
              
              updateBlLambda = function(index) {
@@ -184,33 +176,18 @@ MibrrFit$methods(
                      if(optTraceLevel == 0) sink(nullFile) # Suppress optimx output
                      
                      ## Apply over targets to optimize lambdas:
-                     check <- lapply(X         = 1 : nTargets,
-                                     FUN       = .self$optWrap,
-                                     method    = optMethod,
-                                     lowBounds = lowBounds)
+                     convList <- lapply(X         = 1 : nTargets,
+                                        FUN       = .self$optWrap,
+                                        method    = optMethod,
+                                        lowBounds = lowBounds)
                      
                      if(optTraceLevel == 0) sink()
                      options(warn = 0)
-                     
-                     if(optCheckKkt) {
-                         for(v in 1 : nTargets) {
-                             if(!check[[v]]$kkt1)
-                                 warning(paste0("For imputation target = ",
-                                                targets[v],
-                                                ", the first KKT optimality condition was not satisfied when optimizing Lambda")
-                                         )
-                             if(!check[[v]]$kkt2)
-                                 warning(paste0("For imputation target = ",
-                                                targets[v],
-                                                ", the second KKT optimality condition not satisfied when optimizing Lambda")
-                                         )
-                         }
-                     }
-                     
                  }# CLOSE if(penalty == 1); else
                  
                  for(j in 1 : nTargets) {
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
+                     lambdaConv[[j]][iter, ]    <<- convList[[j]]
                      
                      ## Smooth Lambda estimates if beginning 'tuning' phase:
                      if(iter == iterations[1] & smoothingWindow > 1) {

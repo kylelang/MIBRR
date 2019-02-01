@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-JAN-31
+### Modified: 2019-FEB-01
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -62,6 +62,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             rHats             = "list",
                             lambdaMat         = "matrix",
                             lambdaHistory     = "list",
+                            lambdaConv        = "list",
                             betaStarts        = "matrix",
                             tauStarts         = "matrix",
                             sigmaStarts       = "numeric",
@@ -401,15 +402,23 @@ MibrrFit$methods(
                  lambda2Starts <<- rep(nPreds / 10, nTargets)
                                  
                  if(doMcem) {
+                     nLam <- totalIters - 1
                      lambdaHistory <<-
                          lapply(targetVars,
                                 function(x) {
-                                    tmp <-
-                                        matrix(NA, totalIters - 1, 2)
+                                    tmp <- matrix(NA, nLam, 2)
                                     colnames(tmp) <- c("lambda1", "lambda2")
                                     tmp
                                 })
-                     names(lambdaHistory) <<- targetVars
+                     lambdaConv <<-
+                         lapply(targetVars,
+                                function(x)
+                                    data.frame(code = vector("integer", nLam),
+                                               kkt1 = vector("logical", nLam),
+                                               kkt2 = vector("logical", nLam)
+                                               )
+                                )
+                     names(lambdaHistory) <<- names(lambdaConv) <<- targetVars
                  }
              },
              
@@ -487,18 +496,18 @@ MibrrFit$methods(
                      ## Find nonconvergent Gibbs samples:
 
 #############################################################################################3
-                     print(c("vanilla", "mibl", "mibrr")[penalty + 1])
-                     print(" ")
-                     print(j)
-                     print(" ")
-                     print("R-hats")
-                     print(" ")
-                     print(rHats[[j]]$beta)
-                     print(" ")
-                     print("Beta")
-                     print(" ")
-                     print(gibbsOut[[j]]$beta)
-                     print(" ")
+                                        #print(c("vanilla", "mibl", "mibrr")[penalty + 1])
+                                        #print(" ")
+                                        #print(j)
+                                        #print(" ")
+                                        #print("R-hats")
+                                        #print(" ")
+                                        #print(rHats[[j]]$beta)
+                                        #print(" ")
+                                        #print("Beta")
+                                        #print(" ")
+                                        #print(gibbsOut[[j]]$beta)
+                                        #print(" ")
 ##############################################################################################
                      
                      badBetaCount <- sum(rHats[[j]]$beta > convThresh)
