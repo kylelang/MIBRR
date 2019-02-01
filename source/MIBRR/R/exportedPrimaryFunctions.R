@@ -29,6 +29,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+###--------------------------------------------------------------------------###
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
@@ -81,6 +82,7 @@ miben <- function(data,
     postProcess(mibrrFit)
 }# END miben()
 
+###--------------------------------------------------------------------------###
 
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Lasso (MIBL):
@@ -124,6 +126,7 @@ mibl <- function(data,
     postProcess(mibrrFit)
 }# END mibl()
 
+###--------------------------------------------------------------------------###
 
 ### Specify a wrapper function to fit the Bayesian Elastic Net (BEN):
 ben <- function(data,
@@ -169,6 +172,7 @@ ben <- function(data,
     postProcess(mibrrFit)
 }# END ben()
 
+###--------------------------------------------------------------------------###
 
 ### Specify a wrapper function to fit the Bayesian LASSO (BL):
 bl <- function(data,
@@ -213,6 +217,7 @@ bl <- function(data,
     postProcess(mibrrFit)
 }# END bl()
 
+###--------------------------------------------------------------------------###
 
 ### Specify a wrapper function to implement basic Multiple Imputation without
 ### shrinkage priors:
@@ -252,3 +257,45 @@ vanilla <- function(data,
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
 }# END mibl()
+
+###--------------------------------------------------------------------------###
+
+### Specify a wrapper function to fit the Bayesian vanilla linear regression:
+bvr <- function(data,
+                y,
+                X            = NULL,
+                sampleSizes  = rep(500, 2),
+                missCode     = NA,
+                ridge        = 1e-4,
+                verbose      = TRUE,
+                seed         = NULL,
+                userRng      = "",
+                control      = list()
+                )
+{
+    if(length(y) > 1) stop("Only one outcome variable is allowed.")
+    
+    ## Initialize the output object:
+    mibrrFit <- init(penalty      = 0,
+                     doImp        = FALSE,
+                     doMcem       = FALSE,
+                     data         = data,
+                     targetVars   = y,
+                     ignoreVars   = setdiff(colnames(data), c(y, X)),
+                     iterations   = NULL,
+                     sampleSizes  = sampleSizes,
+                     lam1PriorPar = NULL,
+                     lam2PriorPar = NULL,
+                     missCode     = missCode,
+                     ridge        = ridge,
+                     verbose      = verbose,
+                     seed         = seed,
+                     userRng      = userRng,
+                     control      = control)
+
+    ## Estimate the model:
+    mibrrFit$doGibbs()
+    
+    ## Clean up and return the fitted model object:
+    postProcess(mibrrFit)
+}# END bvr()

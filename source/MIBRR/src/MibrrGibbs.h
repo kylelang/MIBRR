@@ -222,6 +222,7 @@ private:
   VectorXd _lambdas;
   VectorXd _l1Parms;
   VectorXd _l2Parms;
+  VectorXd _betaMeans;
   MatrixXd _betaSam;
   ArrayXXd _tauSam;
   VectorXd _sigmaSam;

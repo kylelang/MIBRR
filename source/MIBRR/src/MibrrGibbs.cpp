@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-31
+// Modified: 2019-FEB-01
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -137,6 +137,8 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _sigma      = sigmaStart;
   _lambdas[0] = lambda1Start;
   _lambdas[1] = lambda2Start;
+
+  _betaMeans = VectorXd::Zero(_betas.size());
 }
 
 //----------------------------------------------------------------------------//
@@ -150,6 +152,8 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _taus    = tauStarts;
   _sigma   = sigmaStart;
   _lambdas = lambdaStartVec;
+  
+  _betaMeans = VectorXd::Zero(_betas.size());
 }
 
 //----------------------------------------------------------------------------//
@@ -290,7 +294,8 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     // Compute the Cholesky decomposition of the IV's crossproducts, and use it
     // to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
-    betaMeans =
+    //betaMeans =
+    _betaMeans.tail(nPreds) = 
       aMatChol.solve(mibrrData.getIVs(_targetIndex, true, true).transpose() *
 		     mibrrData.getDV(_targetIndex)); 
     betaCov = aMatChol.solve(_sigma * MatrixXd::Identity(nPreds, nPreds));
@@ -302,10 +307,11 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));
-  double intMean = mibrrData.getDV(_targetIndex).mean();
-     
+  //double intMean = mibrrData.getDV(_targetIndex).mean();
+  _betaMeans[0] = mibrrData.getDV(_targetIndex).mean();
+  
   // Draw a new value of the intercept term:  
-  _betas[0] = drawNorm(intMean, intSd);
+  _betas[0] = drawNorm(_betaMeans[0], intSd); //drawNorm(intMean, intSd);
   
   if(_storeGibbsSamples) {
     VectorXd rawBetas = _betas;
@@ -322,14 +328,17 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 
 void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
-  double newSigma, sigmaShape, sigmaScale;
-  int    nPreds = mibrrData.nPreds();
+  double par1, par2; // parameters of sigma's posterior distribution
   int    nObs   = mibrrData.nResp(_targetIndex);
-
+  int    nPreds = mibrrData.nPreds();
+  double nBetas = double(nPreds) + 1.0;
+  
   // Compute the linear predictor:
-  VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
-    mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
- 
+  //VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
+  //  mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
+  VectorXd eta = _betaMeans[0] * VectorXd::Ones(nObs) +
+    mibrrData.getIVs(_targetIndex, true, true) * _betaMeans.tail(nPreds);
+  
   // Compute the residual sum of squares:
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
     (mibrrData.getDV(_targetIndex) - eta);
@@ -338,26 +347,26 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     double scaleSum =
       (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
  
-    sigmaShape = (double(nObs) / 2.0) + double(nPreds);
-    sigmaScale =
-      0.5 * (sse + _lambdas[1] * scaleSum +
-	     (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
+    par1 = (double(nObs) / 2.0) + nBetas; //double(nPreds);
+    par2 = 0.5 * (sse + _lambdas[1] * scaleSum +
+		  (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
  
     bool   validDraw = false;
     double testDraw;
     while(!validDraw) {// Rejection sampling to draw a Sigma variate
-      testDraw = drawInvGamma(sigmaShape, sigmaScale);
+      testDraw = drawInvGamma(par1, par2);
       
       double igShape = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
       double igDraw  = calcIncGamma(0.5, igShape, false);
+      double thresh  = _unif(_gen);
       
-      double thresh = _unif(_gen);
-      validDraw     = log(thresh) <=
-	(double(nPreds) * log(tgamma(0.5))) - (double(nPreds) * log(igDraw));
+      validDraw =
+	log(thresh) <= (nBetas * log(tgamma(0.5))) - (nBetas * log(igDraw));
+      //(double(nPreds) * log(tgamma(0.5))) - (double(nPreds) * log(igDraw));
       
       Rcpp::checkUserInterrupt();
     };
-    newSigma = testDraw;
+    _sigma = testDraw;
   }
   else if(_penType == 1) {// MIBL Version
     VectorXd transTaus = 1.0 / _taus;
@@ -365,24 +374,26 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     double   penalty   =
       _betas.tail(nPreds).transpose() * tmpMat * _betas.tail(nPreds);
 
-    sigmaShape = 0.5 * ((double(nObs) - 1.0) + double(nPreds));
-    sigmaScale = 0.5 * (sse + penalty);
+    par1 = 0.5 * ((double(nObs) - 1.0) + nBetas); //double(nPreds));
+    par2 = 0.5 * (sse + penalty);
     
     // Draw a new sigma variate:
-    newSigma = drawInvGamma(sigmaShape, sigmaScale);
+    _sigma = drawInvGamma(par1, par2);
   }
   else {// Basic Ridge Version
-    sigmaShape = 0.5 * (double(nObs) - double(nPreds));
-    sigmaScale = 0.5 * sse;
+    //sigmaShape = 0.5 * (double(nObs) - double(nPreds));
+    //sigmaScale = 0.5 * sse;
+    
+    par1 = double(nObs) - nBetas;
+    par2 = sse / par1;
     
     // Draw a new sigma variate:
-    newSigma = drawInvGamma(sigmaShape, sigmaScale);
+    //_sigma = drawInvGamma(sigmaShape, sigmaScale);
+    _sigma = drawInvChiSq(par1, par2);
   }
   
-  _sigma = newSigma; // Store the updated Sigma
-  
   // Add the updated sigma to its Gibbs sample:
-  if(_storeGibbsSamples) _sigmaSam[_drawNum] = newSigma;
+  if(_storeGibbsSamples) _sigmaSam[_drawNum] = _sigma;
 }// END updateSigma()
 
 //----------------------------------------------------------------------------//
@@ -390,7 +401,7 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 void MibrrGibbs::updateImputations(MibrrData &mibrrData, bool ppSam)
 {
   int nPreds = mibrrData.nPreds();
-
+  
   int size;
   if(ppSam) size = mibrrData.nResp(_targetIndex);
   else      size = mibrrData.nMiss(_targetIndex);

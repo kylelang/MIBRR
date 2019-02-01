@@ -3,6 +3,17 @@
 ### Created:  2014-DEC-07
 ### Modified: 2019-JAN-25
 
+### NOTE #######################################################################
+
+## You replaced the _betas in updateSigma() with _betaMeans
+## You did this to try to reproduce the simple vanilla regression's sigma sample
+## The package is currently broken. Maybe something about how you're
+## initializing _betaMeans?
+
+################################################################################
+
+
+
 rm(list = ls(all = TRUE))
 
                                         #library(devtools)
@@ -56,7 +67,7 @@ MIBRR:::testSamplers()
 
 xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
-sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
+sams   <- list(c(25, 25), c(100, 100), c(5000, 5000))
 
 ### MCEM Estimation:
 
@@ -79,9 +90,6 @@ bl1 <-
        verbose     = TRUE,
        control     = list(lambda1Starts = 1.0, savePpSams = TRUE)
        )
-
-## Generate a PP check plot:
-MIBRR:::ppCheck(bl1)
 
 ## Generate posterior predictive samples:
 pp0 <- predBl0(bl0$out, X = as.matrix(dat0[ , xNames]))[ , -1]
@@ -139,11 +147,6 @@ bl1 <-
        lam1PriorPar = c(0.5, 0.5),
        control      = list(lambda1Starts = 1.0, savePpSams = TRUE)
        )
-
-par(mfrow = c(1, 1))
-
-## Generate a PP check plot:
-MIBRR:::ppCheck(bl1)
 
 ## Generate posterior predictive samples:
 pp0 <- predBl0(bl0, X = as.matrix(dat0[ , xNames]))[ , -1]
@@ -237,6 +240,148 @@ for(x in 1 : ncol(b1)) {
     plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
     lines(d1, col = "red")
 }   
+
+###--------------------------------------------------------------------------###
+
+### Compare MIBRR::bvr to a reference implementation ###
+
+## Define a simple Bayesian regression function:
+bReg <- function(data, y, X, nSams, scale = "none") {
+    ## Define the model formula:
+    f1    <- paste(y, paste(X, collapse = " + "), sep = " ~ ")
+    
+    if(scale == "X")
+        data[ , X] <- scale(data[ , X])
+    else if(scale == "y")
+        data[ , y] <- scale(data[ , y])
+    else if(scale == "all")
+        data <- scale(data)
+    
+    ## Get the expected betas via least squares:
+    fit   <- lm(f1, data = data)
+    beta0 <- coef(fit)
+    
+    ## Sample sigma:
+    sigma2 <- rinvchisq(nSams, df = fit$df, scale = summary(fit)$sigma^2)
+    
+    ## Sample beta:
+    beta           <- matrix(NA, nSams, length(X) + 1)
+    colnames(beta) <- paste0("b", 0 : length(X))
+    for(n in 1 : nSams) {
+        betaVar   <- sigma2[n] * solve(crossprod(qr.X(fit$qr)))
+        beta[n, ] <- rmvnorm(1, mean = beta0, sigma = betaVar)
+    }
+    
+    ## Return the posterior samples:
+    list(beta = beta, sigma2 = sigma2)
+}
+
+## Run both versions:
+par0 <- bReg(data = dat0, y = "y", X = xNames, nSams = 10000)
+br1  <- bvr(data        = dat0,
+            y           = "y",
+            X           = xNames,
+            sampleSizes = rep(10000, 2),
+            ridge       = 0.0,
+            control     = list(checkConv = FALSE)
+            )
+par1 <- getParams(br1, "y")
+
+par1
+
+?miben
+
+## Extract and visualize sigma samples:
+s0 <- par0$sigma2
+s1 <- par1$sigma
+
+par(mfrow = c(1, 1))
+
+d0 <- density(s0)
+d1 <- density(s1)
+
+plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+lines(d1, col = "red")
+   
+## Extract and visualize beta samples:
+b0 <- par0$beta
+b1 <- getParams(br1, "y")$beta
+
+par(mfrow = c(3, 4))
+
+for(x in 1 : ncol(b1)) {
+    d0 <- density(b0[ , x])
+    d1 <- density(b1[ , x])
+    
+    plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+    lines(d1, col = "red")
+}   
+
+###--------------------------------------------------------------------------###
+
+### Do Posterior Predictive Checks ###
+
+## MIBEN ##
+
+## MCEM estimation:
+mibenOut <- miben(data       = dat1,
+                  iterations = c(30, 10),
+                  targetVars = c("y", paste0("x", c(1 : 3))),
+                  control    = list(savePpSams = TRUE)
+                  )
+
+par(mfrow = c(2, 2))
+MIBRR:::ppCheck(mibenOut)
+
+## Fully Bayesian estimation:
+mibenOut <- miben(data         = dat1,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1),
+                  control      = list(savePpSams = TRUE)
+                  )
+
+par(mfrow = c(2, 2))
+MIBRR:::ppCheck(mibenOut)
+
+## MIBL ##
+
+## MCEM estimation:
+miblOut <- mibl(data       = dat1,
+                iterations = c(30, 10),
+                targetVars = c("y", paste0("x", c(1 : 3))),
+                control    = list(savePpSams = TRUE)
+                )
+
+par(mfrow = c(2, 2))
+MIBRR:::ppCheck(miblOut)
+
+## Fully Bayesian estimation:
+miblOut <- mibl(data         = dat1,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                sampleSizes  = c(500, 500),
+                doMcem       = FALSE,
+                lam1PriorPar = c(1.0, 0.1),
+                control      = list(savePpSams = TRUE)
+                )
+
+par(mfrow = c(2, 2))
+MIBRR:::ppCheck(miblOut)
+
+## Vanilla MI ##
+
+tmp <- as.data.frame(scale(dat1))
+vanOut <- vanilla(data        = tmp,
+                  targetVars  = c("y", paste0("x", c(1 : 3))),
+                  sampleSizes = c(500, 500),
+                  ridge       = 1e-6,
+                  control     = list(savePpSams = TRUE)
+                  )
+
+par(mfrow = c(2, 2))
+MIBRR:::ppCheck(vanOut)
 
 ###--------------------------------------------------------------------------###
 

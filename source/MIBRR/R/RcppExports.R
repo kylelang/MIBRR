@@ -17,8 +17,8 @@ drawInvGamma <- function(n, shape, scale, seed) {
     .Call('_MIBRR_drawInvGamma', PACKAGE = 'MIBRR', n, shape, scale, seed)
 }
 
-drawScaledInvChiSq <- function(n, df, scale, seed) {
-    .Call('_MIBRR_drawScaledInvChiSq', PACKAGE = 'MIBRR', n, df, scale, seed)
+drawInvChiSq <- function(n, df, scale, seed) {
+    .Call('_MIBRR_drawInvChiSq', PACKAGE = 'MIBRR', n, df, scale, seed)
 }
 
 drawMvn <- function(n, meanVec, covMat, seed) {

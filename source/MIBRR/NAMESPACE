@@ -42,7 +42,9 @@ export(mibl,
        getImpData,
        getField,
        getParams,
-       vanilla)
+       vanilla,
+       bvr,
+       ppCheck)
 
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their

@@ -1,7 +1,7 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-20
-// Modified: 2019-JAN-24
+// Modified: 2019-FEB-01
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
@@ -78,10 +78,10 @@ Eigen::VectorXd drawInvGamma(int          n,
 //----------------------------------------------------------------------------//
 
 // [[Rcpp::export]]
-Eigen::VectorXd drawScaledInvChiSq(int          n,
-				   double       df,
-				   double       scale,
-				   unsigned int seed)
+Eigen::VectorXd drawInvChiSq(int          n,
+			     double       df,
+			     double       scale,
+			     unsigned int seed)
 {
   MibrrSamplers mibrrSamplers;
   mibrrSamplers.seedRng(seed);
@@ -89,7 +89,7 @@ Eigen::VectorXd drawScaledInvChiSq(int          n,
   VectorXd out(n);
   
   for(int i = 0; i < n; i++)
-    out[i] = mibrrSamplers.drawScaledInvChiSq(df, scale);
+    out[i] = mibrrSamplers.drawInvChiSq(df, scale);
   return out;
 }
 

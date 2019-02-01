@@ -78,9 +78,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// drawScaledInvChiSq
-Eigen::VectorXd drawScaledInvChiSq(int n, double df, double scale, unsigned int seed);
-RcppExport SEXP _MIBRR_drawScaledInvChiSq(SEXP nSEXP, SEXP dfSEXP, SEXP scaleSEXP, SEXP seedSEXP) {
+// drawInvChiSq
+Eigen::VectorXd drawInvChiSq(int n, double df, double scale, unsigned int seed);
+RcppExport SEXP _MIBRR_drawInvChiSq(SEXP nSEXP, SEXP dfSEXP, SEXP scaleSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -88,7 +88,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type df(dfSEXP);
     Rcpp::traits::input_parameter< double >::type scale(scaleSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(drawScaledInvChiSq(n, df, scale, seed));
+    rcpp_result_gen = Rcpp::wrap(drawInvChiSq(n, df, scale, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -230,7 +230,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MIBRR_drawNorm", (DL_FUNC) &_MIBRR_drawNorm, 4},
     {"_MIBRR_drawGamma", (DL_FUNC) &_MIBRR_drawGamma, 4},
     {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 4},
-    {"_MIBRR_drawScaledInvChiSq", (DL_FUNC) &_MIBRR_drawScaledInvChiSq, 4},
+    {"_MIBRR_drawInvChiSq", (DL_FUNC) &_MIBRR_drawInvChiSq, 4},
     {"_MIBRR_drawMvn", (DL_FUNC) &_MIBRR_drawMvn, 4},
     {"_MIBRR_calcIncGamma", (DL_FUNC) &_MIBRR_calcIncGamma, 3},
     {"_MIBRR_drawInvGauss", (DL_FUNC) &_MIBRR_drawInvGauss, 4},

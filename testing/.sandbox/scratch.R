@@ -57,3 +57,16 @@ ans8
 
 coef(ans8)
 ans8[ , c("convcode", "kkt1", "kkt2")]
+
+
+x <- rnorm(1000, 5, 25)
+
+y <- 2 + 3 * x
+
+beta1 <- matrix(coef(lm(y ~ x)))
+yHat1 <- cbind(1, x) %*% beta1
+
+beta2 <- matrix(coef(lm(y ~ scale(x))))
+yHat2 <- cbind(1, scale(x)) %*% beta2
+
+sum(yHat1 - yHat2)

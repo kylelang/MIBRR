@@ -78,7 +78,7 @@ public:
   // @param2: scale parameter
   // @return: random Inverse Gamma variate
 
-  double drawScaledInvChiSq(const double, const double);
+  double drawInvChiSq(const double, const double);
   // @param1: DF parameter
   // @param2: scale parameter
   // @return: random Scaled Inverse Chi-Squared variate

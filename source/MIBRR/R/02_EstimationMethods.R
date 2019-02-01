@@ -187,7 +187,9 @@ MibrrFit$methods(
                  
                  for(j in 1 : nTargets) {
                      lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
-                     lambdaConv[[j]][iter, ]    <<- convList[[j]]
+
+                     if(penalty == 2)
+                         lambdaConv[[j]][iter, ] <<- convList[[j]]
                      
                      ## Smooth Lambda estimates if beginning 'tuning' phase:
                      if(iter == iterations[1] & smoothingWindow > 1) {
