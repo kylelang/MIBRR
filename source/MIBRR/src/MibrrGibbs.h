@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-JAN-31
+// Modified: 2019-FEB-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -150,19 +150,21 @@ public:
   void setLambdas(double);
   // @param1: new value for the LASSO lambda
 
-  void startParameters(VectorXd&, ArrayXd&, double, double, double);
+  void startParameters(VectorXd&, ArrayXd&, double, double, double, bool);
   // @param1: starting values for beta
   // @param2: starting values for tau
   // @param3: starting value for sigma
   // @param4: starting value for lambda1
   // @param5: starting value for lambda2
+  // @param6: should we use the means of beta to update sigma?
   // @effect: provide starting values for all model parameters
 
-  void startParameters(VectorXd&, ArrayXd&, double, VectorXd&);
+  void startParameters(VectorXd&, ArrayXd&, double, VectorXd&, bool);
   // @param1: starting values for beta
   // @param2: starting values for tau
   // @param3: starting value for sigma
   // @param4: starting value for Lambda
+  // @param6: should we use the means of beta to update sigma?
   // @effect: provide starting values for all model parameters
 
   void startGibbsSampling(const MibrrData&);
@@ -238,6 +240,7 @@ private:
   bool     _doImp;
   bool     _savePpSams;
   bool     _fullBayes;
+  bool     _useBetaMeans;
 };
 
 #endif

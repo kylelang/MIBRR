@@ -77,7 +77,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             userRng           = "character",
                             ridge             = "numeric",
                             penalty           = "integer",
-                            savePpSams        = "logical"
+                            savePpSams        = "logical",
+                            useBetaMeans      = "logical"
                         )
                         )
 
@@ -130,6 +131,7 @@ MibrrFit$methods(
                      ridge             <<- ridge
                      penalty           <<- penalty
                      savePpSams        <<- FALSE
+                     useBetaMeans      <<- FALSE
                  },
              
 ################################### MUTATORS ###################################

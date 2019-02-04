@@ -1,7 +1,7 @@
 ### Title:    R-Based Unit Tests for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2010-JAN-23
-### Modified: 2019-JAN-25
+### Modified: 2019-FEB-04
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -83,7 +83,7 @@ testInvChiSq <- function(n = 1000, seed = NA, ...) {
 
     if(is.na(seed)) seed <- floor(runif(1, 1e5, 1e6))
     
-    sam1 <- drawScaledInvChiSq(n, df, scale, seed)
+    sam1 <- drawInvChiSq(n, df, scale, seed)
     sam2 <- rinvchisq(n, df, scale)
     
     ks.test(x = sam1, y = sam2)

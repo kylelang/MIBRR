@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2019-FEB-01
+### Modified: 2019-FEB-04
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -41,26 +41,27 @@ MibrrFit$methods(
                  }
                 
                  gibbsOut <<-
-                     runGibbs(data        = as.matrix(data),
-                              nTargets    = nTargets,
-                              missList    = missList[targetVars],
-                              respCounts  = respCounts[targetVars],
-                              lambda1     = lambdaMat[ , 1], 
-                              lambda2     = lambdaMat[ , 2], # Ignored for BL
-                              l1Parms     = l1Pars, # Ignored when
-                              l2Parms     = l2Pars, # doMcem = TRUE
-                              sigmaStarts = sigmaStarts,
-                              tauStarts   = tauStarts,
-                              betaStarts  = betaStarts,
-                              burnSams    = sampleSizes[[phase]][1],
-                              totalSams   = sum(sampleSizes[[phase]]),
-                              penType     = penalty,
-                              ridge       = ridge,
-                              verbose     = verbose,
-                              fullBayes   = !doMcem,
-                              noMiss      = all(missCounts == 0),
-                              savePpSams  = savePpSams,
-                              seeds       = seedVec)
+                     runGibbs(data         = as.matrix(data),
+                              nTargets     = nTargets,
+                              missList     = missList[targetVars],
+                              respCounts   = respCounts[targetVars],
+                              lambda1      = lambdaMat[ , 1], 
+                              lambda2      = lambdaMat[ , 2], # Ignored for BL
+                              l1Parms      = l1Pars, # Ignored when
+                              l2Parms      = l2Pars, # doMcem = TRUE
+                              sigmaStarts  = sigmaStarts,
+                              tauStarts    = tauStarts,
+                              betaStarts   = betaStarts,
+                              burnSams     = sampleSizes[[phase]][1],
+                              totalSams    = sum(sampleSizes[[phase]]),
+                              penType      = penalty,
+                              ridge        = ridge,
+                              verbose      = verbose,
+                              fullBayes    = !doMcem,
+                              noMiss       = all(missCounts == 0),
+                              savePpSams   = savePpSams,
+                              useBetaMeans = useBetaMeans,
+                              seeds        = seedVec)
                  
                  names(gibbsOut) <<- targetVars
                  

@@ -1,18 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
-### Modified: 2019-JAN-25
-
-### NOTE #######################################################################
-
-## You replaced the _betas in updateSigma() with _betaMeans
-## You did this to try to reproduce the simple vanilla regression's sigma sample
-## The package is currently broken. Maybe something about how you're
-## initializing _betaMeans?
-
-################################################################################
-
-
+### Modified: 2019-FEB-04
 
 rm(list = ls(all = TRUE))
 
@@ -67,7 +56,7 @@ MIBRR:::testSamplers()
 
 xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
-sams   <- list(c(25, 25), c(100, 100), c(5000, 5000))
+sams   <- list(c(25, 25), c(100, 100), c(100000, 100000))
 
 ### MCEM Estimation:
 
@@ -88,7 +77,7 @@ bl1 <-
        iterations  = iters,
        sampleSizes = sams,
        verbose     = TRUE,
-       control     = list(lambda1Starts = 1.0, savePpSams = TRUE)
+       control     = list(lambda1Starts = 1.0, useBetaMeans = TRUE)
        )
 
 ## Generate posterior predictive samples:
@@ -145,7 +134,7 @@ bl1 <-
        verbose      = TRUE,
        doMcem       = FALSE,
        lam1PriorPar = c(0.5, 0.5),
-       control      = list(lambda1Starts = 1.0, savePpSams = TRUE)
+       control      = list(lambda1Starts = 1.0, useBetaMeans = FALSE)
        )
 
 ## Generate posterior predictive samples:
@@ -164,7 +153,20 @@ for(x in sample(1 : nrow(dat0), 25)) {
     lines(d1, col = "red")
 }
 
+## Extract and visualize sigma samples:
+s0 <- bl0$s2
+s1 <- getParams(bl1, "y")$sigma
+
+par(mfrow = c(1, 1))
+
+d0 <- density(s0)
+d1 <- density(s1)
+
+plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+lines(d1, col = "red")
+
 ## Extract parameter samples:
+
 b0 <- cbind(bl0$mu[-1], bl0$beta[-1, ])
 b1 <- getParams(bl1, "y")$beta
 
@@ -208,7 +210,9 @@ ben1 <-
         doMcem       = FALSE,
         lam1PriorPar = c(1.0, 0.1),
         lam2PriorPar = c(1.0, 0.1),
-        verbose      = TRUE)
+        verbose      = TRUE,
+        control      = list(useBetaMeans = FALSE)
+        )
 
 ## Generate posterior predictive samples:
 pp0 <- predBen0(obj = ben0, X = as.matrix(dat0[ , xNames]))
@@ -225,6 +229,18 @@ for(x in sample(1 : nrow(dat0), 25)) {
     plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
     lines(d1, col = "red")
 }
+
+## Extract and visualize sigma samples:
+s0 <- extract(ben0, pars = "sigma")[[1]]
+s1 <- getParams(ben1, "y")$sigma
+
+par(mfrow = c(1, 1))
+
+d0 <- density(s0^2)
+d1 <- density(s1)
+
+plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
+lines(d1, col = "red")
 
 ## Extract parameter samples:
 tmp <- extract(ben0, pars = c("mu", "beta"))
@@ -283,7 +299,7 @@ br1  <- bvr(data        = dat0,
             X           = xNames,
             sampleSizes = rep(10000, 2),
             ridge       = 0.0,
-            control     = list(checkConv = FALSE)
+            control     = list(useBetaMeans = FALSE)
             )
 par1 <- getParams(br1, "y")
 

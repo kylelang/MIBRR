@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-FEB-01
+// Modified: 2019-FEB-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -130,7 +130,8 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 ArrayXd  &tauStarts,
 				 double   sigmaStart,
 				 double   lambda1Start,
-				 double   lambda2Start)
+				 double   lambda2Start,
+				 bool     useBetaMeans)
 {
   _betas      = betaStarts;
   _taus       = tauStarts;
@@ -138,7 +139,8 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
   _lambdas[0] = lambda1Start;
   _lambdas[1] = lambda2Start;
 
-  _betaMeans = VectorXd::Zero(_betas.size());
+  _useBetaMeans = useBetaMeans;
+  _betaMeans    = VectorXd::Zero(_betas.size());
 }
 
 //----------------------------------------------------------------------------//
@@ -146,14 +148,16 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 void MibrrGibbs::startParameters(VectorXd &betaStarts,
 				 ArrayXd  &tauStarts,
 				 double   sigmaStart,
-				 VectorXd &lambdaStartVec)
+				 VectorXd &lambdaStartVec,
+				 bool     useBetaMeans)
 {
   _betas   = betaStarts;
   _taus    = tauStarts;
   _sigma   = sigmaStart;
   _lambdas = lambdaStartVec;
-  
-  _betaMeans = VectorXd::Zero(_betas.size());
+
+  _useBetaMeans = useBetaMeans;
+  _betaMeans    = VectorXd::Zero(_betas.size());
 }
 
 //----------------------------------------------------------------------------//
@@ -332,12 +336,16 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
   int    nObs   = mibrrData.nResp(_targetIndex);
   int    nPreds = mibrrData.nPreds();
   double nBetas = double(nPreds) + 1.0;
+
+  VectorXd betas;
+  if(_useBetaMeans) betas = _betaMeans;
+  else              betas = _betas;
   
   // Compute the linear predictor:
   //VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
   //  mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
-  VectorXd eta = _betaMeans[0] * VectorXd::Ones(nObs) +
-    mibrrData.getIVs(_targetIndex, true, true) * _betaMeans.tail(nPreds);
+  VectorXd eta = betas[0] * VectorXd::Ones(nObs) +
+    mibrrData.getIVs(_targetIndex, true, true) * betas.tail(nPreds);
   
   // Compute the residual sum of squares:
   double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
@@ -345,7 +353,7 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
  
   if(_penType == 2) {// MIBEN Version
     double scaleSum =
-      (_taus / (_taus - 1.0) * _betas.tail(nPreds).array().square()).sum();
+      (_taus / (_taus - 1.0) * betas.tail(nPreds).array().square()).sum();
  
     par1 = (double(nObs) / 2.0) + nBetas; //double(nPreds);
     par2 = 0.5 * (sse + _lambdas[1] * scaleSum +
@@ -372,7 +380,7 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     VectorXd transTaus = 1.0 / _taus;
     MatrixXd tmpMat    = transTaus.asDiagonal();
     double   penalty   =
-      _betas.tail(nPreds).transpose() * tmpMat * _betas.tail(nPreds);
+      betas.tail(nPreds).transpose() * tmpMat * betas.tail(nPreds);
 
     par1 = 0.5 * ((double(nObs) - 1.0) + nBetas); //double(nPreds));
     par2 = 0.5 * (sse + penalty);
