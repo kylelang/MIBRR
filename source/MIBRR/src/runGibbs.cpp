@@ -55,7 +55,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
   // Unpack the list of missing row indices:
   std::vector< std::vector<int> > missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
-   
+  
   // Initialize the various classes needed below:
   MibrrData  mibrrData(data, missIndices, respCounts, noMiss);
   MibrrGibbs *mibrrGibbs = new MibrrGibbs[nTargets];
@@ -95,7 +95,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
      
     if(!verbose) mibrrGibbs[j].beQuiet(); 
   }// CLOSE for(in j ==0; j < nTargets; j++)
- 
+  
   for(int i = 0; i < totalSams; i++) {// LOOP over Gibbs iterations
     // Print a nice progress message:
     if(verbose) {
@@ -125,11 +125,11 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     // Improve the output's aesthetics:
     bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
     if(check1) Rcpp::Rcout << "\n";
-
+    
     for(int j = 0; j < nTargets; j++) {// LOOP over target variables
       // Compute new centers and scales for the jth target's predictors:
       mibrrData.updateMoments(j);
-      
+
       // Update the Gibbs samples:
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       

@@ -303,7 +303,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   catch(exception &e) { betaError(e); }
   
   // Draw new values of the regression slope coefficients:
-  _betas.tail(nPreds) = drawMvn(betaMeans, betaCov);
+  _betas.tail(nPreds) = drawMvn(_betaMeans.tail(nPreds), betaCov);
   
   // Compute parameters of the intercept's distribution:
   double intSd   = sqrt(_sigma / double(nObs));

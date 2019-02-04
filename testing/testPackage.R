@@ -287,10 +287,6 @@ br1  <- bvr(data        = dat0,
             )
 par1 <- getParams(br1, "y")
 
-par1
-
-?miben
-
 ## Extract and visualize sigma samples:
 s0 <- par0$sigma2
 s1 <- par1$sigma

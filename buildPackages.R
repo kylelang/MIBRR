@@ -1,4 +1,3 @@
-
 ### Title:    Build/Install the MIBRR R Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-07
