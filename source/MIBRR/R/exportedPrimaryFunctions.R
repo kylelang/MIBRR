@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-12
-### Modified: 2019-JAN-24
+### Modified: 2019-FEB-06
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -263,14 +263,14 @@ vanilla <- function(data,
 ### Specify a wrapper function to fit the Bayesian vanilla linear regression:
 bvr <- function(data,
                 y,
-                X            = NULL,
-                sampleSizes  = rep(500, 2),
-                missCode     = NA,
-                ridge        = 1e-4,
-                verbose      = TRUE,
-                seed         = NULL,
-                userRng      = "",
-                control      = list()
+                X           = NULL,
+                sampleSizes = rep(500, 2),
+                missCode    = NA,
+                ridge       = 1e-4,
+                verbose     = TRUE,
+                seed        = NULL,
+                userRng     = "",
+                control     = list()
                 )
 {
     if(length(y) > 1) stop("Only one outcome variable is allowed.")

@@ -9,6 +9,7 @@ importFrom(optimx, optimx)
 importFrom(mvtnorm, rmvnorm)
 importFrom(LaplacesDemon, rinvgamma, rinvchisq, rinvgaussian)
 importFrom(HyperbolicDist, rgig)
+importFrom(graphics, plot, lines)
 importFrom(stats,
            anova,
            lm,

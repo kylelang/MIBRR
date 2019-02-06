@@ -56,7 +56,7 @@ MIBRR:::testSamplers()
 
 xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
-sams   <- list(c(25, 25), c(100, 100), c(100000, 100000))
+sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
 
 ### MCEM Estimation:
 
@@ -77,7 +77,7 @@ bl1 <-
        iterations  = iters,
        sampleSizes = sams,
        verbose     = TRUE,
-       control     = list(lambda1Starts = 1.0, useBetaMeans = TRUE)
+       control     = list(lambda1Starts = 1.0, useBetaMeans = FALSE)
        )
 
 ## Generate posterior predictive samples:
@@ -211,7 +211,7 @@ ben1 <-
         lam1PriorPar = c(1.0, 0.1),
         lam2PriorPar = c(1.0, 0.1),
         verbose      = TRUE,
-        control      = list(useBetaMeans = FALSE)
+        control      = list(useBetaMeans = TRUE)
         )
 
 ## Generate posterior predictive samples:

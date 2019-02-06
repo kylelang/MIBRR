@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-AUG-24
-// Modified: 2019-FEB-04
+// Modified: 2019-FEB-06
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -26,8 +26,10 @@
 
 #include "MibrrGibbs.h"
 
+
 //////////////////////// CONSTRUCTORS / DESTRUCTOR /////////////////////////////
-  
+
+
 MibrrGibbs::MibrrGibbs() 
 {
   // _betas, _taus, _nDraws, _l1Parms, and _l2Parms need user-supplied starting
@@ -47,7 +49,9 @@ MibrrGibbs::MibrrGibbs()
 
 MibrrGibbs::~MibrrGibbs() {}
 
+
 //////////////////////////////// ACCESSORS /////////////////////////////////////
+
 
 VectorXd MibrrGibbs::getBetas()           const { return _betas;               }
 ArrayXd  MibrrGibbs::getTaus()            const { return _taus;                }
@@ -253,14 +257,11 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
   for(int i = 0; i < nPreds; i++)
     tmpDraws[i] = drawInvGauss(tauMeans[i], tauScale);
   
-  ArrayXd newTaus;
-  if(_penType == 2) newTaus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
-  else              newTaus = 1.0 / tmpDraws;              // MIBL Version
-  
-  _taus = newTaus; // Store the updated Taus
+  if(_penType == 2) _taus = (tmpDraws + 1.0) / tmpDraws; // MIBEN Version   
+  else              _taus = 1.0 / tmpDraws;              // MIBL Version
   
   // Add the updated Taus to their Gibbs sample:
-  if(_storeGibbsSamples) _tauSam.row(_drawNum) = newTaus.transpose();
+  if(_storeGibbsSamples) _tauSam.row(_drawNum) = _taus.transpose();
 }// END updateTaus()
 
 //----------------------------------------------------------------------------//
@@ -276,15 +277,14 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     mibrrData.getIVs(_targetIndex, true, true);
   
   // Compute an appropriate penalty term:
-  VectorXd transTaus = VectorXd::Zero(nPreds);
   MatrixXd penalty;
   if(_penType == 2) {     // MIBEN Version
-    transTaus = _taus / (_taus - 1.0);
-    penalty   = _lambdas[1] * transTaus.asDiagonal();    
+    VectorXd transTaus = _taus / (_taus - 1.0);
+    penalty = _lambdas[1] * transTaus.asDiagonal();    
   }
   else if(_penType == 1) {// MIBL Version
-    transTaus = 1.0 / _taus;
-    penalty   = transTaus.asDiagonal();
+    VectorXd transTaus = 1.0 / _taus;
+    penalty = transTaus.asDiagonal();
   }
   else                    // Basic ridge penalty
     penalty = (aMat.diagonal() * _ridge).asDiagonal();
@@ -298,7 +298,6 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     // Compute the Cholesky decomposition of the IV's crossproducts, and use it
     // to compute the moments of beta's fully conditional posterior:
     aMatChol.compute(aMat);
-    //betaMeans =
     _betaMeans.tail(nPreds) = 
       aMatChol.solve(mibrrData.getIVs(_targetIndex, true, true).transpose() *
 		     mibrrData.getDV(_targetIndex)); 
@@ -309,13 +308,11 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   // Draw new values of the regression slope coefficients:
   _betas.tail(nPreds) = drawMvn(_betaMeans.tail(nPreds), betaCov);
   
-  // Compute parameters of the intercept's distribution:
-  double intSd   = sqrt(_sigma / double(nObs));
-  //double intMean = mibrrData.getDV(_targetIndex).mean();
+  // Compute the mean of the intercept's distribution:
   _betaMeans[0] = mibrrData.getDV(_targetIndex).mean();
   
   // Draw a new value of the intercept term:  
-  _betas[0] = drawNorm(_betaMeans[0], intSd); //drawNorm(intMean, intSd);
+  _betas[0] = drawNorm(_betaMeans[0], sqrt(_sigma / double(nObs)));
   
   if(_storeGibbsSamples) {
     VectorXd rawBetas = _betas;
@@ -338,24 +335,23 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
   double nBetas = double(nPreds) + 1.0;
 
   VectorXd betas;
-  if(_useBetaMeans) betas = _betaMeans;
-  else              betas = _betas;
+  if((_penType == 0) | _useBetaMeans) betas = _betaMeans;
+  else                                betas = _betas;
   
-  // Compute the linear predictor:
-  //VectorXd eta = _betas[0] * VectorXd::Ones(nObs) +
-  //  mibrrData.getIVs(_targetIndex, true, true) * _betas.tail(nPreds);
-  VectorXd eta = betas[0] * VectorXd::Ones(nObs) +
-    mibrrData.getIVs(_targetIndex, true, true) * betas.tail(nPreds);
+  // Compute the OLS residuals:
+  VectorXd resid = mibrrData.getDV(_targetIndex) -
+    (betas[0] * VectorXd::Ones(nObs) +
+     mibrrData.getIVs(_targetIndex, true, true) * betas.tail(nPreds)
+     );
   
   // Compute the residual sum of squares:
-  double sse = (mibrrData.getDV(_targetIndex) - eta).transpose() *
-    (mibrrData.getDV(_targetIndex) - eta);
- 
-  if(_penType == 2) {// MIBEN Version
+  double sse = resid.squaredNorm();
+  
+  if(_penType == 2) {     // MIBEN Version
     double scaleSum =
       (_taus / (_taus - 1.0) * betas.tail(nPreds).array().square()).sum();
  
-    par1 = (double(nObs) / 2.0) + nBetas; //double(nPreds);
+    par1 = (double(nObs) / 2.0) + nBetas; 
     par2 = 0.5 * (sse + _lambdas[1] * scaleSum +
 		  (pow(_lambdas[0], 2) / (4.0 * _lambdas[1])) * _taus.sum());
  
@@ -365,12 +361,11 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
       testDraw = drawInvGamma(par1, par2);
       
       double igShape = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
-      double igDraw  = calcIncGamma(0.5, igShape, false);
+      double igVal   = calcIncGamma(0.5, igShape, false);
       double thresh  = _unif(_gen);
       
       validDraw =
-	log(thresh) <= (nBetas * log(tgamma(0.5))) - (nBetas * log(igDraw));
-      //(double(nPreds) * log(tgamma(0.5))) - (double(nPreds) * log(igDraw));
+	log(thresh) <= (nBetas * log(tgamma(0.5))) - (nBetas * log(igVal));
       
       Rcpp::checkUserInterrupt();
     };
@@ -378,25 +373,20 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
   }
   else if(_penType == 1) {// MIBL Version
     VectorXd transTaus = 1.0 / _taus;
-    MatrixXd tmpMat    = transTaus.asDiagonal();
-    double   penalty   =
-      betas.tail(nPreds).transpose() * tmpMat * betas.tail(nPreds);
-
-    par1 = 0.5 * ((double(nObs) - 1.0) + nBetas); //double(nPreds));
+    double   penalty   = betas.tail(nPreds).transpose() *
+      transTaus.asDiagonal() * betas.tail(nPreds);
+    
+    par1 = 0.5 * ((double(nObs) - 1.0) + nBetas);
     par2 = 0.5 * (sse + penalty);
     
     // Draw a new sigma variate:
     _sigma = drawInvGamma(par1, par2);
   }
-  else {// Basic Ridge Version
-    //sigmaShape = 0.5 * (double(nObs) - double(nPreds));
-    //sigmaScale = 0.5 * sse;
-    
+  else {                  // Basic Ridge Version
     par1 = double(nObs) - nBetas;
     par2 = sse / par1;
     
     // Draw a new sigma variate:
-    //_sigma = drawInvGamma(sigmaShape, sigmaScale);
     _sigma = drawInvChiSq(par1, par2);
   }
   

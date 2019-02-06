@@ -12,7 +12,7 @@ postPredict(mibrrFit,
             newData,
             targetVars = NULL,
             nDraws     = 0,
-            scale      = TRUE)
+            scale      = FALSE)
 }
 \arguments{
   \item{mibrrFit}{
