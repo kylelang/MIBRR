@@ -8,7 +8,7 @@ Posterior Predictive Checks
   predictive distributions and the observed outcomes.
 }
 \usage{
-ppCheck(mibrrFit, targetVars = NULL)
+ppCheck(mibrrFit, targetVars = NULL, nSams = NULL)
 }
 \arguments{
   \item{mibrrFit}{
@@ -19,6 +19,16 @@ ppCheck(mibrrFit, targetVars = NULL)
     \code{targetVars = NULL}, all variables listed as \code{targetVars}
     in the object provided to \code{mibrrFit} will be checked.  
   }
+  \item{nSams}{
+    The number of posterior predictive samples to plot. When \code{nSams
+      = NULL}, all available samples are used.
+  }
+}
+\details{
+  The object provided for the \code{mibrrFit} argument must have the
+  control list option \code{savePpSams = TRUE} set (which is not the
+  default). Running \code{ppCheck} on an object wherein \code{savePpSams
+    = FALSE} will result in an error.
 }
 \value{
   Used for its side-effects.

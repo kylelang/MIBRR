@@ -1,7 +1,7 @@
 ### Title:    Testing Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2015-JAN-01
-### Modified: 2019-JAN-24
+### Modified: 2019-FEB-26
 
 ###--------------------------------------------------------------------------###
 
@@ -148,3 +148,36 @@ madOutliers <- function(x, cut = 2.5, na.rm = TRUE) {
     ## Return row indices of observations for which |T_MAD| > cut:
     which(abs(x - mX) / madX > cut)
 } 
+
+###--------------------------------------------------------------------------###
+
+## Define a simple Bayesian regression function:
+bReg <- function(data, y, X, nSams, scale = "none") {
+    ## Define the model formula:
+    f1    <- paste(y, paste(X, collapse = " + "), sep = " ~ ")
+    
+    if(scale == "X")
+        data[ , X] <- scale(data[ , X])
+    else if(scale == "y")
+        data[ , y] <- scale(data[ , y])
+    else if(scale == "all")
+        data <- scale(data)
+    
+    ## Get the expected betas via least squares:
+    fit   <- lm(f1, data = data)
+    beta0 <- coef(fit)
+    
+    ## Sample sigma:
+    sigma2 <- rinvchisq(nSams, df = fit$df, scale = summary(fit)$sigma^2)
+    
+    ## Sample beta:
+    beta           <- matrix(NA, nSams, length(X) + 1)
+    colnames(beta) <- paste0("b", 0 : length(X))
+    for(n in 1 : nSams) {
+        betaVar   <- sigma2[n] * solve(crossprod(qr.X(fit$qr)))
+        beta[n, ] <- rmvnorm(1, mean = beta0, sigma = betaVar)
+    }
+    
+    ## Return the posterior samples:
+    list(beta = beta, sigma2 = sigma2)
+}

@@ -32,7 +32,9 @@ mibrrW <- function() {
     
     writeLines(lic[start : end])
 }
-                    
+
+###--------------------------------------------------------------------------###
+
 ## Print license:
 mibrrL <- function()
     writeLines(readLines(system.file("LICENSE", package = "MIBRR")))

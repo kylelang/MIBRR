@@ -86,6 +86,7 @@ init <- function(penalty,
     mibrrFit
 }# END init()
 
+###--------------------------------------------------------------------------###
 
 ## Estimate a model using MCEM:
 mcem <- function(mibrrFit) {
@@ -132,6 +133,7 @@ mcem <- function(mibrrFit) {
     mibrrFit
 }# END mcem()
 
+###--------------------------------------------------------------------------###
 
 postProcess <- function(mibrrFit, ...) {
     ## Extract extra arguments:

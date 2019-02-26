@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-DEC-09
-### Modified: 2019-JAN-31
+### Modified: 2019-FEB-26
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -21,8 +21,6 @@
 ##  You should have received a copy of the GNU General Public License along   ##
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
-
-###--------------------------------------------------------------------------###
 
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
@@ -99,27 +97,43 @@ postPredict <- function(mibrrFit,
 
 ## Plot the posterior predictive density of targetVars vs. their observed
 ## densities:
-ppCheck <- function(mibrrFit, targetVars = NULL) {
+ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
     
     if(!mibrrFit$savePpSams)
         stop("The object provided for 'mibrrFit' does not contain posterior predictive samples.")
     
     if(is.null(targetVars)) targetVars <- mibrrFit$targetVars
     
+    index <- 1 : nrow(mibrrFit$gibbsOut[[1]]$ppSams)
+    if(!is.null(nSams)) {
+        check <- nSams > length(index)
+        if(check) {
+            warning(
+                paste0("You have requested too many samples, so I will use all of the ",
+                       length(index),
+                       " samples stored in the provided 'mibrrFit' object.")
+            )
+            nSams <- length(index)
+        }
+        index <- sample(index, nSams)
+    }
+    
     for(v in targetVars) {
-        ppSams <- mibrrFit$gibbsOut[[v]]$ppSams
+        ppSams <- mibrrFit$gibbsOut[[v]]$ppSams[index, ]
         
         d0 <- density(mibrrFit$data[ , v], na.rm = TRUE)
-        d1 <- density(colMeans(ppSams))
+        d1 <- apply(ppSams, 1, density)
         
-        plot(d0,
-             ylim = range(d0$y, d1$y),
-             xlim = range(d0$x, d1$x),
+        plot(NULL,
+             ylim = range(d0$y, lapply(d1, "[[", x = "y")),
+             xlim = range(d0$x, lapply(d1, "[[", x = "x")),
              main = paste0("Variable = ",
                            v,
-                           "\nPP Density (Red) vs. Obs. Density (Black)")
+                           "\nPP Densities (Red) vs. Obs. Density (Black)")
              )
-        lines(d1, col = "red")
+        
+        lapply(d1, lines, col = "red")
+        lines(d0, col = "black", lwd = 2.5)
     }
 }
 

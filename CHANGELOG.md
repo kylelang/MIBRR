@@ -14,7 +14,7 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.3.1.9000 - 2019-02-06 - ACTIVE
+## 0.3.1.9000 - 2019-02-26 - ACTIVE
 
 ### Fixed
 - A bug with the implementation of the `vanilla` imputation method.
@@ -25,7 +25,9 @@ NOTE:
 ### Added
 - A control list option *useBetaMeans* that will tell the Gibbs sampler to use 
   the OLS estimates of *Beta* when updating *sigma* (as opposed to the default 
-  option of using *Beta*s most recent sampled values.
+  option of using *Beta*s most recent sampled values).
+- A function, `ppCheck`, to generate overlaid density plots of the observed and 
+  posterior predicted samples in a *MibrrFit* object.
   
 ## 0.3.0.9000 - 2019-01-25
 
