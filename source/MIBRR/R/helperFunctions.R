@@ -24,25 +24,37 @@
 
 ## Print startup message:
 .onAttach <- function(libname, pkgname) {
-    version <- read.dcf(file   = system.file("DESCRIPTION", package = pkgname),
-                        fields = "Version")
+    tmp <- read.dcf(file = system.file("DESCRIPTION", package = pkgname))
+    
+    bDate <- gsub(".*(\\d{4}-\\d{2}-\\d{2}\\s\\d{1,2}:\\d{2}:\\d{2}\\sUTC).*",
+                  "\\1",
+                  tmp[ , "Built"])
+    
+    author <- gsub("\\s\\[.*\\]", "", tmp[ , "Author"])
+
+    greet0 <- c(paste0("Package:   ", pkgname),
+                paste0("Version:   ", tmp[ , "Version"]),
+                paste0("Built:     ", bDate),
+                paste0("Copyright: ",
+                       format(Sys.time(), "%Y"),
+                       " (",
+                       author,
+                       ")\n")
+                )
     
     greet <-
-        strwrap(
-            paste0("Loading: ",
-                   pkgname,
-                   " ",
-                   version,
-                   ", Copyright (C) ",
-                   format(Sys.time(), "%Y"),
-                   " Kyle M. Lang. ",
-                   pkgname,
-                   " is distributed under Version 3 of the GNU General Public License (GPL-3); execute 'mibrrL()' for details. ",
-                   pkgname,
-                   " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for details. ",
-                   pkgname,
-                   " is beta software. Please report any bugs."),
-            width = 81)
+        c(greet0,
+          strwrap(
+              paste0(pkgname,
+                     " is distributed under Version 3 of the GNU General Public License (GPL-3); execute 'mibrrL()' for details. ",
+                     pkgname,
+                     " comes with ABSOLUTELY NO WARRANTY; execute 'mibrrW()' for details. ",
+                     pkgname,
+                     " is beta software. Please report any bugs to ",
+                     tmp[ , "BugReports"],
+                     "."),
+              width = 81)
+          )
     
     for(i in greet) packageStartupMessage(i)
 }

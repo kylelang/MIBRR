@@ -24,7 +24,7 @@ rstan_options(auto_write = TRUE)
 ###--------------------------------------------------------------------------###
 
 ## Generate some data:
-dat0 <- simRegData(nObs  = 5000,
+dat0 <- simRegData(nObs  = 500,
                    nVars = 10,
                    r2    = 0.5,
                    sigma = 0.2,
@@ -56,7 +56,7 @@ MIBRR:::testSamplers()
 
 xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
-sams   <- list(c(25, 25), c(100, 100), c(10000, 10000))
+sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
 
 ### MCEM Estimation:
 
