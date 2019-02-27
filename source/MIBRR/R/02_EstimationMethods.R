@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2019-FEB-04
+### Modified: 2019-FEB-27
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -127,26 +127,69 @@ MibrrFit$methods(
                       
              optWrap = function(index, method, lowBounds) {
                  "Wrapper to allow optimx to run within lapply()"
-                 optOut <- optimx(par     = lambdaMat[index, ],
-                                  fn      = .self$eNetLL,
-                                  gr      = .self$eNetGrad,
-                                  method  = method,
-                                  lower   = lowBounds,
-                                  control = list(
-                                      trace     = optTraceLevel,
-                                      maximize  = TRUE,
-                                      kkt       = optCheckKkt,
-                                      follow.on = length(method) > 1
-                                  ),
-                                  index   = index)
+
+                 ## Store the current value of Lambda:
+                 lam0 <- lambdaMat[index, ]
                  
-                 if(length(method) > 1) optOut <- optOut[nrow(optOut), ]
+                 rep    <- 0
+                 tryOpt <- TRUE
+                 while(tryOpt) {
+                     ## Optimize Lambda:
+                     optOut <- optimx(par     = lam0,
+                                      fn      = .self$eNetLL,
+                                      gr      = .self$eNetGrad,
+                                      method  = method,
+                                      lower   = lowBounds,
+                                      control = list(
+                                          trace     = optTraceLevel,
+                                          maximize  = TRUE,
+                                          kkt       = optCheckKkt,
+                                          follow.on = length(method) > 1
+                                      ),
+                                      index   = index)
+                     
+                     if(length(method) > 1) optOut <- optOut[nrow(optOut), ]
+                     
+                     ## Check convergence and KKT optimality:
+                     conv  <- optOut[c("convcode", "kkt1", "kkt2")]
+                     check <- conv[1] == 0 & conv[2] & conv[3]
+                     
+                     if(check) { 
+                         ## Store the optimized lambdas:
+                         lambdaMat[index, ] <<- coef(optOut)
+                         tryOpt             <-  FALSE
+                     }
+                     else {
+                         ## Add some noise to the starting values:
+                         lam0 <- lambdaMat[index, ] +
+                             rnorm(2, 0, 0.1 * lambdaMat[index, ])
+                         rep  <- rep + 1
+
+                         ## Print a warning about the failure:
+                         warning(paste0("I failed to optimize lambda for ",
+                                        targetVars[index],
+                                        ". So, I'll try restart number ",
+                                        rep,
+                                        " of ",
+                                        optMaxRestarts,
+                                        ". New value = ", lam0, "."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE
+                                 )
+                     }
+                     
+                     ## Throw an error if we hit the maximum number of restarts
+                     if(rep == optMaxRestarts)
+                         stop(paste0("Lambda for ",
+                                     targetVars[index],
+                                     " could not be optimized after ",
+                                     rep,
+                                     " restarts.")
+                              )
+                 }# CLOSE while(tryOpt)
                  
-                 ## Store the optimized lambdas:
-                 lambdaMat[index, ] <<- coef(optOut)
-                 
-                 ## Return convergence code and KKT optimality checks
-                 optOut[c("convcode", "kkt1", "kkt2")]
+                 ## Return convergence info:
+                 conv
              },
              
              updateBlLambda = function(index) {
@@ -168,7 +211,7 @@ MibrrFit$methods(
                      if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)
                      else               lowBounds <- -Inf
                      
-                     options(warn = ifelse(verbose, 0, -1))
+                                        #options(warn = ifelse(verbose, 0, -1))
                      
                      ## Define a location in which to sink unwanted output:
                      if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
