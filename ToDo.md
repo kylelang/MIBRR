@@ -1,6 +1,10 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2018-FEB-13
+## Last Update: 2019-FEB-28
+
+## Document new control list options
+
+## Create a function to standardize aesthetics of warnings and errors
 
 ## Add a check for completely empty rows
 - Check for fully missing rows, remove them, and add back after model fitting

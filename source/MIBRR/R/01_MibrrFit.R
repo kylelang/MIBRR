@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-NOV-28
-### Modified: 2019-FEB-27
+### Modified: 2019-FEB-28
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -79,7 +79,9 @@ MibrrFit <- setRefClass("MibrrFit",
                             penalty           = "integer",
                             savePpSams        = "logical",
                             useBetaMeans      = "logical",
-                            optMaxRestarts    = "integer"
+                            optMaxRestarts    = "integer",
+                            optRestartRatio   = "numeric",
+                            optStrict         = "logical"
                         )
                         )
 
@@ -134,6 +136,8 @@ MibrrFit$methods(
                      savePpSams        <<- FALSE
                      useBetaMeans      <<- FALSE
                      optMaxRestarts    <<- 5L
+                     optRestartRatio   <<- 0.1
+                     optStrict         <<- TRUE
                  },
              
 ################################### MUTATORS ###################################

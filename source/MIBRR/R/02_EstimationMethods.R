@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-SEP-30
-### Modified: 2019-FEB-27
+### Modified: 2019-FEB-28
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -160,11 +160,14 @@ MibrrFit$methods(
                          tryOpt             <-  FALSE
                      }
                      else {
+                         ## Freeze the first set of estimates:
+                         if(rep == 0) lamHat0 <- coef(optOut)
+                         
                          ## Add some noise to the starting values:
                          lam0 <- lambdaMat[index, ] +
-                             rnorm(2, 0, 0.1 * lambdaMat[index, ])
+                             rnorm(2, 0, optRestartRatio * lambdaMat[index, ])
                          rep  <- rep + 1
-
+                         
                          ## Print a warning about the failure:
                          warning(paste0("I failed to optimize lambda for ",
                                         targetVars[index],
@@ -178,14 +181,25 @@ MibrrFit$methods(
                                  )
                      }
                      
-                     ## Throw an error if we hit the maximum number of restarts
-                     if(rep == optMaxRestarts)
-                         stop(paste0("Lambda for ",
-                                     targetVars[index],
-                                     " could not be optimized after ",
-                                     rep,
-                                     " restarts.")
-                              )
+                     ## Signal a condition if we reach the maximum number of
+                     ## restarts
+                     if(rep == optMaxRestarts) {
+                         msg <- paste0("Lambda for ",
+                                       targetVars[index],
+                                       " could not be optimized after ",
+                                       rep,
+                                       " restarts.")
+                         if(optStrict) {
+                             sink() # Stop sinking output before throwing error
+                             stop(msg, call. = FALSE)
+                         }
+                         else {
+                             ## Use the first set of estimates when proceeding:
+                             lambdaMat[index, ] <<- lamHat0
+                             tryOpt             <-  FALSE
+                             warning(msg, call. = FALSE, immediate. = TRUE)
+                         }
+                     }
                  }# CLOSE while(tryOpt)
                  
                  ## Return convergence info:
