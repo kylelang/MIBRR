@@ -44,8 +44,20 @@ s2 <- seq(0.1, 0.001, length.out = 5)
 for(i in s1)
     for(j in s2)
         visPriors(i, j, "l2")
+v <- 0.1
+par(mfrow = c(4, 4))
+for(m in seq(0, 2, length.out = 16)[-1])
+    visPriors(m^2/v, m/v, "l1")
 
-par(mfrow = c(1, 1))
+visPriors(1, 1, "l1")
+visPriors(0.5, 5.0, "l2")
 
-visPriors(1.5, 0.05, "l1")
-visPriors(10.0, 0.1, "l2")
+(1 : 16)^2 / (1 : 16)
+
+1 / 1.5
+1 / 1.78
+sqrt(.237)
+
+library(MIBRR)
+
+?miben
