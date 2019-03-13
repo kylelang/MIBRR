@@ -20,6 +20,10 @@ NOTE:
 - Improved the start-up message.
 
 ### Added
+- A new testing script *visPriors.R* to generate plots visualizing the penalty 
+  parameters' prior distributions. This functionality will be incorporated into 
+  an exported function in the future.
+  
 - The option to restart failed optimizations of the penalty parameters in 
   `miben` with randomly perturbed starting values.
 	  
@@ -29,7 +33,7 @@ NOTE:
 - A new control list option, *optStrict*, that dictates whether *optMaxRestarts* 
   failed optimizations of the penalty parameters results in a fatal error or in 
   a warning.
-  
+    
 ## 0.3.1.9000 - 2019-02-26
 
 ### Fixed
