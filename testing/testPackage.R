@@ -1,12 +1,16 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
-### Created:  2014-DEC-07
-### Modified: 2019-FEB-26
+### Created:  2014-12-07
+### Modified: 2019-11-12
 
 rm(list = ls(all = TRUE))
 
+                                        #install.packages(c("HyperbolicDist", "LaplacesDemon"),
+                                        #                 repos = "http://cloud.r-project.org")
+
                                         #library(devtools)
-                                        #install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
+                                        #install_github("kylelang/MIBRR/source/MIBRR", ref = "multithread")
+
                                         #install_github("kylelang/SURF/source/SURF")
 
 source("subroutines.R")
