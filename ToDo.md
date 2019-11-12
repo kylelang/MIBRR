@@ -1,6 +1,10 @@
 # MIBRR Development ToDo List
 ## Kyle M. Lang
-## Last Update: 2019-FEB-28
+## Last Update: 2019-11-12
+
+## Fix MCEM
+- The MCEM objective seems to be underidentified
+  - Seperate chains converge to stable, but different, equilibria
 
 ## Document new control list options
 

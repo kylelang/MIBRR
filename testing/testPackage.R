@@ -5,12 +5,8 @@
 
 rm(list = ls(all = TRUE))
 
-                                        #install.packages(c("HyperbolicDist", "LaplacesDemon"),
-                                        #                 repos = "http://cloud.r-project.org")
-
                                         #library(devtools)
                                         #install_github("kylelang/MIBRR/source/MIBRR", ref = "multithread")
-
                                         #install_github("kylelang/SURF/source/SURF")
 
 source("subroutines.R")
