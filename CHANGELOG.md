@@ -16,6 +16,11 @@ NOTE:
 
 ## 0.3.2.9000 - 2019-03-13 - ACTIVE
 
+### Fixed
+- Disabled multithreading in Eigen. We don't want Eigen to autonomously spawn
+  its own threads. Doing so leads to unexpected overcommitting of CPU resources
+  (especially when running in a cluster environment).
+  
 ### Changed
 - Improved the start-up message.
 
