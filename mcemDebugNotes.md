@@ -9,8 +9,13 @@
 ## ToDo:
 - Isolate where this problem occurs:
   - MIBEN
+	- dissRerun simulation: pm = 10, exp1, n = 100, dense
+	- dissRerun simulation: pm = 10, exp1, n = 100, sparse
   - MIBL
+	- dissRerun simulation: pm = 10, exp1, n = 100, dense
+	- dissRerun simulation: pm = 10, exp1, n = 100, sparse
   - BEN
   - BL
   
 - See if using different optimization algorithms helps
+  - Unlikely since both MIBEN and MIBL are affected

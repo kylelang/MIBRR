@@ -1,183 +1,559 @@
-### Title:    Testing Subroutines
+### Title:    Simulation Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2015-JAN-01
-### Modified: 2019-FEB-26
+### Modified: 2019-MAR-06
+### Purpose:  This file contains the subroutines underlying the Monte Carlo
+###           simulation to replicate/correct my 2018 ISBA analysis.
 
 ###--------------------------------------------------------------------------###
 
-mcem0 <- function(y,
-                  X,
-                  l2,
-                  s2,
-                  beta,
-                  nIter,
-                  sams,
-                  intercept = TRUE,
-                  norm      = TRUE)
-{
-    ## Initialize lambda's history:
-    l2 <- c(l2, rep(NA, (nIter - 1)))
+## Simulate complete data:
+simData <- function(parms, control) {
+    nAux <- control$nAux    # Number of auxiliary variables
+    nX   <- length(parms$X) # Number of focal predictors
+        
+    ## Generate auxiliary variables and their regression slopes:
+    Z    <- rmvnorm(parms$nObs, rep(0, nAux), diag(nAux))
+    zeta <- matrix(parms$zeta, nAux, nX)
+
+    ## Impose sparsity:
+    if(control$sparse) zeta[((nAux / 2) + 1) : nAux, ] <- 0.0
+
+    ## Generate focal predictors as X = f(Z):
+    s0 <- crossprod(zeta)
+    sX <- s0 + diag(((1 / parms$r2$X) - 2) * diag(s0))
+    X  <- Z %*% zeta + rmvnorm(parms$nObs, parms$muX, sX)
     
-    for(i in 1 : nIter) {
-        ## Updated Gibbs samples:
-        out0 <- blasso(y         = y,
-                       X         = X,
-                       T         = sams[2],
-                       thin      = sams[1],
-                       lambda2   = l2[i],
-                       s2        = s2,
-                       beta      = beta,
-                       rd        = FALSE,
-                       RJ        = FALSE,
-                       rao.s2    = FALSE,
-                       icept     = intercept,
-                       normalize = norm)
+    ## Generate focal outcome as y = f(X, Z):
+    beta <- matrix(c(parms$beta, zeta[ , 1]))
+    eta  <- cbind(1, X, Z) %*% beta
+    sY   <- var(eta) / parms$r2$y - var(eta)
+    y    <- eta + rnorm(parms$nObs, 0, sqrt(sY))
+
+    ## Combine data blocks:
+    data           <- data.frame(y, X, Z)
+    colnames(data) <- c(parms$y, parms$X, paste0("z", 1 : nAux))
+    
+    data
+}
+
+###--------------------------------------------------------------------------###
+                                        #data <- missData$data
+
+## Estimate the imputation models:
+fitMiModels <- function(data, parms, control, doMice = TRUE) {
+
+    ## Define imputation targets:
+    targets <- with(parms, c(y, X))
+
+    if(doMice) {
+        ## Run vanilla MICE:
+        if(control$expNum < 3)
+            naiveMiceOut <- try(
+                mice(data      = data,
+                     m         = parms$nImps,
+                     method    = parms$miceMeth,
+                     maxit     = control$miceIters,
+                     printFlag = parms$verbose,
+                     ridge     = control$miceRidge)
+            )
+
+        ## Run MICE using quickpred for variable selection:
+        qpPreds <- quickpred(data    = data,
+                             mincor  = parms$minPredCor,
+                             include = targets)
         
-        ## Update parameter starting values:
-        s2   <- calcMode(out0$s2, discrete = FALSE)
-        beta <- apply(out0$beta, 2, calcMode, discrete = FALSE)
+        qpMiceOut <- try(
+            mice(data            = data,
+                 m               = parms$nImps,
+                 method          = parms$miceMeth,
+                 predictorMatrix = qpPreds,
+                 maxit           = control$miceIters,
+                 printFlag       = parms$verbose)
+        )
+
+        ## Run MICE using the true imputation model:
+        truePreds <- matrix(0,
+                            ncol(data),
+                            ncol(data),
+                            dimnames = list(colnames(data), colnames(data))
+                            )
+
+        truePreds[targets, c(targets, control$marPreds)] <- 1
+        diag(truePreds)                                  <- 0
         
-        ## Optimize lambda:
-        if(i < nIter)
-            l2[i + 1] <-
-                2 * ncol(X) / sum(colMeans(1 / out0$tau2i, na.rm = TRUE))
+        trueMiceOut <- try(
+            mice(data            = data,
+                 m               = parms$nImps,
+                 method          = parms$miceMeth,
+                 predictorMatrix = truePreds,
+                 maxit           = control$miceIters,
+                 printFlag       = parms$verbose)
+        )
+
+        if(control$expNum < 3) {
+            ## Advance the RNG stream:
+            .lec.ResetNextSubstream(control$rngStream)
+            
+            ## Run MIBRR's vanilla MI:
+            vanOut <- try(
+                vanilla(data        = data,
+                        targetVars  = targets,
+                        sampleSizes =
+                            as.numeric(control$iters[c("finalBurn", "finalGibbs")]),
+                        seed        = control$rngStream,
+                        userRng     = control$rngStream,
+                        verbose     = parms$verbose,
+                        ridge       = control$vanRidge)
+            )
+        }
+    }# CLOSE if(doMice)
+    
+    ## Advance the RNG stream:
+    .lec.ResetNextSubstream(control$rngStream)
+    
+    ## Run MIBEN:
+    if(parms$mcem)
+        mibenOut <- try(
+            miben(data        = data,
+                  targetVars  = targets,
+                  iterations  = as.numeric(
+                      control$iters[c("nMibenEmApprox", "nEmTune")]
+                  ),
+                  sampleSizes = list(
+                      as.numeric(control$iters[c("approxBurn", "approxGibbs")]),
+                      as.numeric(control$iters[c("tuneBurn", "tuneGibbs")]),
+                      as.numeric(control$iters[c("finalBurn", "finalGibbs")])
+                  ),
+                  seed        = control$rngStream,
+                  userRng     = control$rngStream,
+                  verbose     = parms$verbose,
+                  control     = list(optCheckKkt    = parms$checkKkt,
+                                     optMethod      = parms$optMeth,
+                                     optBoundLambda = parms$optBound,
+                                     optStrict      = parms$optStrict,
+                                     lambda1Starts  = control$lamStarts$miben[[1]],
+                                     lambda2Starts  = control$lamStarts$miben[[2]])
+                  )
+        )
+    else
+        mibenOut <- try(
+            miben(data         = data,
+                  targetVars   = targets,
+                  sampleSizes  = as.numeric(
+                      control$iters[c("finalBurn", "finalGibbs")]
+                  ),
+                  doMcem       = FALSE,
+                  lam1PriorPar = control$l1Par,
+                  lam2PriorPar = control$l2Par,
+                  seed         = control$rngStream,
+                  userRng      = control$rngStream,
+                  verbose      = parms$verbose)
+        )
+    
+    ## Advance the RNG stream:
+    .lec.ResetNextSubstream(control$rngStream)
+
+    ## Run MIBL:
+    if(parms$mcem)
+        miblOut <- try(
+            mibl(data        = data,
+                 targetVars  = targets,
+                 iterations  = as.numeric(
+                     control$iters[c("nMiblEmApprox", "nEmTune")]
+                 ),
+                 sampleSizes = list(
+                     as.numeric(control$iters[c("approxBurn", "approxGibbs")]),
+                     as.numeric(control$iters[c("tuneBurn", "tuneGibbs")]),
+                     as.numeric(control$iters[c("finalBurn", "finalGibbs")])
+                 ),
+                 seed        = control$rngStream,
+                 userRng     = control$rngStream,
+                 verbose     = parms$verbose,
+                 control     = list(lambda1Starts = control$lamStarts$mibl)
+                 )
+        )
+    else
+        miblOut <- try(
+            mibl(data         = data,
+                 targetVars   = targets,
+                 sampleSizes  = as.numeric(
+                     control$iters[c("finalBurn", "finalGibbs")]
+                 ),
+                 doMcem       = FALSE,
+                 lam1PriorPar = control$l1Par,
+                 seed         = control$rngStream,
+                 userRng      = control$rngStream,
+                 verbose      = parms$verbose)
+        )
+    
+    ## Build and return a combined output object:
+    out <- list(miben = mibenOut, mibl = miblOut)
+    
+    if(doMice) {
+        out$quickMice <- qpMiceOut
+        out$trueMice  <- trueMiceOut
+        
+        if(control$expNum < 3) {
+            out$naiveMice <- naiveMiceOut
+            out$vanilla   <- vanOut
+        }
     }
-    
-    list(lambda = l2, s2 = s2, beta = beta)
+    out
 }
 
 ###--------------------------------------------------------------------------###
 
-bl0Mcem <- function(data,
-                    yName,
-                    xNames,
-                    iters,
-                    sams,
-                    l2        = 1.0,
-                    intercept = TRUE,
-                    norm      = TRUE)
-{
-    ## Partition data:
-    y <- data[ , yName]
-    X <- data[ , xNames]
-    
-    ## Initialize parameter starting values:
-    s2     <- var(y - mean(y))
-    beta   <- rnorm(ncol(X))
-    lambda <- c()
-    
-    ## Run approximation and tuning iterations:
-    for(s in 1 : 2) {
-        ## Run MCEM with a given specification of {nIter, sams}:
-        out <- mcem0(y         = y,
-                     X         = X,
-                     l2        = l2,
-                     s2        = s2,
-                     beta      = beta,
-                     nIter     = iters[s],
-                     sams      = sams[[s]],
-                     intercept = intercept,
-                     norm      = norm)
-        
-        ## Update parameter starting values:
-        l2   <- out$lambda[iters[s]]
-        s2   <- out$s2
-        beta <- out$beta
-        
-        ## Extend lambda's history:
-        lambda <- c(lambda, out$lambda)
+## Extract the multiply imputed datasets:
+getImputedData <- function(miOut, parms) {
+    if(class(miOut) == "mids") {
+        imps <- list()
+        for(i in 1 : parms$nImps) imps[[i]] <- complete(miOut, i)
     }
-
-    ## Run final model with optimized lambda:
-    out <- blasso(y       = y,
-                  X       = X,
-                  T       = sams[[3]][2],
-                  thin    = sams[[3]][1],
-                  lambda2 = l2,
-                  s2      = s2,
-                  beta    = beta,
-                  rd      = FALSE,
-                  RJ      = FALSE,
-                  rao.s2  = FALSE,
-                  icept   = intercept)
-
-    list(out = out, lambda = lambda)
+    else {
+        imps <- getImpData(miOut, parms$nImps)
+    }
+    imps
 }
 
 ###--------------------------------------------------------------------------###
 
-predBl0 <- function(obj, X, type = "raw") {
-    xb <- X %*% t(obj$beta)
-    e  <- rnorm(n = length(obj$s2), sd = sqrt(obj$s2))
+## Fit the analysis models:
+fitAnalysisModels <- function(data, y, X) {
+    ## Define model formula:
+    f <- paste(y, paste0(X, collapse = " + "), sep = " ~ ")
+
+    ## Fit models:
+    if(is.data.frame(data)) # Complete data
+        out <- lm(f, data = data)
+    else {                  # MI data
+        tmp <- lapply(data, FUN = function(x) lm(f, data = as.data.frame(x)))
+        out <- MIcombine(tmp)
+    }
+    out
+}
+
+###--------------------------------------------------------------------------###
+
+## 'Smart' colMeans function that won't break with vectors:
+colMean2 <- function(x, na.rm = FALSE) {
+    if(is.vector(x)) mean(x, na.rm = na.rm)
+    else             colMeans(x, na.rm = na.rm)
+}
+
+###--------------------------------------------------------------------------###
+
+## 'Smart' rowMeans function that won't break with vectors:
+rowMean2 <- function(x, na.rm = FALSE) {
+    if(is.vector(x)) mean(x, na.rm = na.rm)
+    else             rowMeans(x, na.rm = na.rm)
+}
+
+###--------------------------------------------------------------------------###
+
+## Compute sufficient statistics:
+getStats <- function(data, vars) {
+    if(is.data.frame(data)) { # Complete data
+        mean <- colMeans(data[ , vars])
+        cov  <- cov(data[ , vars])
+    }
+    else {                    # MI data
+        mean <- colMeans(do.call(rbind, data)[ , vars])
+        tmp  <- do.call(rbind,
+                        lapply(data, function(x, v) cov(x[ , v]), v = vars)
+                        )
+        tmp  <- aggregate(tmp, by = list(rownames(tmp)), FUN = mean)
+
+        rownames(tmp) <- tmp[ , 1]
+        cov           <- tmp[vars, -1]
+    }
+    rownames(cov) <- vars
+    list(mean = mean, cov = cov)
+}
+
+###--------------------------------------------------------------------------###
+
+## Check convergence:
+converged <- function(obj) class(obj) != "try-error"
+
+###--------------------------------------------------------------------------###
+
+## Get extra info for MIBRR-based models:
+getExtras <- function(mibrrOut, parms) {
+    out <- list()
+    if(converged(mibrrOut)) {
+        out$rHats   <- mibrrOut$rHats
+        if(parms$mcem) out$lambdas <- mibrrOut$lambdaHistory
+        
+        check <- parms$mcem && parms$checkKkt & mibrrOut$penalty == 2
+        if(check) out$kkt <- mibrrOut$lambdaConv
+        
+        if(parms$saveParams) {
+            out$params <- list()
+            for(v in mibrrOut$targetVars)
+                out$params[[v]] <- getParams(mibrrOut, v)
+        }
+    }
+    out
+}
+
+###--------------------------------------------------------------------------###
+
+## Do the MI analysis phase:
+doMiAnalysis <- function(data, parms) {
+    if(converged(data)) {# MI converged
+        imps  <- getImputedData(miOut = data, parms = parms)
+        fit   <- try(fitAnalysisModels(data = imps, y = parms$y, X = parms$X))
+        conv  <- c(mi = TRUE, lm = converged(fit))
+        stats <- getStats(data = imps, vars = with(parms, c(y, X)))
+    }
+    else {               # MI crashed
+        fit   <- list()
+        conv  <- c(mi = FALSE, lm = NA)
+        stats <- list(mean = NA, cov = NA)
+    }
+    list(fit = fit, mean = stats$mean, cov = stats$cov, conv = conv)
+}
+
+###--------------------------------------------------------------------------###
+                                        #pm <- 0.3
+
+## Execute a single condition of the simulation:
+runCondition <- function(pm, compData, control, parms, ...) {
+    ## Extract optional parameters:
+    args   <- list(...)
+    miOnly <- !is.null(args$miOnly) && args$miOnly
+    doMice <- !is.null(args$doMice) && args$doMice
     
-    out <- t(t(xb) + obj$mu + e)
+    ## Incomplete auxiliaries?
+    if(parms$pmAux > 0.0) mcarTargets <- paste0("z", 1 : control$nAux)
+    else                  mcarTargets <- NA
+
+    ## Impose missingness on the complete data:
+    missData <- imposeMissData(data    = compData,
+                               targets = list(mar  = with(parms, c(y, X)),
+                                              mcar = mcarTargets,
+                                              mnar = NA),
+                               preds   = control$marPreds,
+                               pm      = list(mar  = pm,
+                                              mcar = parms$pmAux),
+                               snr     = list(mar = parms$marSnr),
+                               pattern = parms$marPattern)
     
-    if(type == "eap") out <- rowMeans(out) 
-    if(type == "map") out <- apply(out, 1, calcMode, discrete = FALSE)
+    ## Impute missing data:
+    miList <- fitMiModels(data    = missData$data,
+                          parms   = parms,
+                          control = control,
+                          doMice  = doMice)
+    
+    ## Return early when doing only MI:
+    if(miOnly) return(miList)
+    
+    ## Run MI analysis models:
+    resList <- lapply(miList, doMiAnalysis, parms = parms)
+    
+    ## Extract extra bits:
+    extras <- lapply(miList[c("miben", "mibl")], getExtras, parms = parms)
+    
+    ## Augment the results object:
+    resList$miben <- c(resList$miben, extras$miben)
+    resList$mibl  <- c(resList$mibl, extras$mibl)
+
+    if(control$expNum < 3) {
+        extras          <- getExtras(miList$vanilla, parms)
+        resList$vanilla <- c(resList$vanilla, extras)
+    }
+    
+    ## Run complete-data comparison model:
+    tmp <- try(fitAnalysisModels(data = compData, y = parms$y, X = parms$X))
+    tmp <- list(fit = tmp, conv = converged(tmp))
+    
+    resList$comp <- c(tmp,
+                      getStats(data = compData, vars = with(parms, c(y, X)))
+                      )
+    
+    ## Save the results:
+    saveRDS(resList,
+            file =
+                paste0(parms$outDir,
+                       "simRes_", ifelse(control$sparse, "sparse", "dense"),
+                       "_v",      control$nAux,
+                       "_pm",     100 * pm,
+                       "_rep",    control$rp,
+                       ".rds")
+            )
+}# END runCondition()
+
+###--------------------------------------------------------------------------###
+                                        #rp <- 1
+
+goBabyGo <- function(rp, control, parms) {
+    ## Store the current rep index:
+    control$rp <- rp
+
+    ## Initialize the L'Ecuyer random number streams:
+    .lec.SetPackageSeed(rep(parms$mySeed, 6))
+    .lec.CreateStream(paste0(parms$streamStem, c(1 : parms$nReps)))
+
+    ## Associate this replication with it's own stream:
+    control$rngStream <- paste0(parms$streamStem, rp)
+    .lec.CurrentStream(control$rngStream)
+
+    ## Simulate the complete data:
+    compData <- simData(parms = parms, control = control)
+    
+    ## Apply over percents missing:
+    sapply(X        = parms$pmVec,
+           FUN      = runCondition,
+           compData = compData,
+           control  = control,
+           parms    = parms,
+           doMice   = TRUE)
+
+    ## Clean up the RNG state:
+    .lec.CurrentStreamEnd()
+    .lec.DeleteStream(paste0(parms$streamStem, 1 : parms$nReps))
+
+    rp # Return the replication number
+}# END goBabyGo()
+
+###--------------------------------------------------------------------------###
+
+## Only do MI for a simple level of PM. Used for iteration planning.
+iterPlan <- function(rp, pm, parms, control, doMice = TRUE, nChains = 2) {
+    ## Store the current rep index:
+    control$rp <- rp
+    
+    ## Initialize the L'Ecuyer random number streams:
+    .lec.SetPackageSeed(rep(parms$mySeed, 6))
+    .lec.CreateStream(paste0(parms$streamStem, c(1 : parms$nReps)))
+    
+    ## Associate this replication with it's own stream:
+    control$rngStream <- paste0(parms$streamStem, rp)
+    .lec.CurrentStream(control$rngStream)
+    
+    ## Simulate the complete data:
+    compData <- simData(parms = parms, control = control)
+    
+    out <- list()
+    for(i in 1 : nChains) {
+        ## Perturb starting values:
+        control$lamStarts <- lapply(control$lamStarts0,
+                                    function(x) x + rnorm(length(x), 0, 0.5 * x)
+                                    )
+        
+        ## Apply over percents missing:
+        out[[i]] <- runCondition(pm       = pm,
+                                 compData = compData,
+                                 control  = control,
+                                 parms    = parms,
+                                 miOnly   = TRUE,
+                                 doMice   = doMice)
+    }
+    
+    ## Clean up the RNG state:
+    .lec.CurrentStreamEnd()
+    .lec.DeleteStream(paste0(parms$streamStem, 1 : parms$nReps))
     
     out
 }
 
 ###--------------------------------------------------------------------------###
 
-predBen0 <- function(obj, X, type = "raw") {
-    ## Extract parameter samples:
-    tmp <- extract(obj, pars = c("mu", "beta", "sigma2"))
-    
-    xb <- X %*% t(tmp[["beta"]])
-    b0 <- as.numeric(tmp[["mu"]])
-    
-    s2 <- tmp[["sigma2"]]
-    e  <- rnorm(n = length(s2), sd = sqrt(s2))
-    
-    out <- t(t(xb) + b0 + e)
-    
-    if(type == "eap") out <- rowMeans(out) 
-    if(type == "map") out <- apply(out, 1, calcMode, discrete = FALSE)
-    
-    out
+getRunTime <- function(repTime, nReps, nCores) {
+minutes <- ((nReps * repTime) / 60) / nCores
+hours   <- minutes / 60
+days    <- hours / 24
+years   <- days / 365
+
+outMat <- matrix(c(nReps, nCores, minutes, hours, days, years), nrow = 1)
+colnames(outMat) <- c("Reps", "Cores", "Minutes", "Hours", "Days", "Years")
+outMat
 }
 
 ###--------------------------------------------------------------------------###
 
-madOutliers <- function(x, cut = 2.5, na.rm = TRUE) {
-    ## Compute the median and MAD of x:
-    mX   <- median(x, na.rm = na.rm)
-    madX <- mad(x, na.rm = na.rm)
-    
-    ## Return row indices of observations for which |T_MAD| > cut:
-    which(abs(x - mX) / madX > cut)
-} 
+## Broadcast the library function of a list of packages:
+applyLib <- function(pkgList)
+    lapply(pkgList, library, character.only = TRUE, logical = TRUE)
 
 ###--------------------------------------------------------------------------###
 
-## Define a simple Bayesian regression function:
-bReg <- function(data, y, X, nSams, scale = "none") {
-    ## Define the model formula:
-    f1    <- paste(y, paste(X, collapse = " + "), sep = " ~ ")
+justVanilla <- function(rp, pm, parms, control) {
+    ## Store the current rep index:
+    control$rp <- rp
     
-    if(scale == "X")
-        data[ , X] <- scale(data[ , X])
-    else if(scale == "y")
-        data[ , y] <- scale(data[ , y])
-    else if(scale == "all")
-        data <- scale(data)
+    ## Initialize the L'Ecuyer random number streams:
+    .lec.SetPackageSeed(rep(parms$mySeed, 6))
+    .lec.CreateStream(paste0(parms$streamStem, c(1 : parms$nReps)))
     
-    ## Get the expected betas via least squares:
-    fit   <- lm(f1, data = data)
-    beta0 <- coef(fit)
+    ## Associate this replication with it's own stream:
+    control$rngStream <- paste0(parms$streamStem, rp)
+    .lec.CurrentStream(control$rngStream)
+
+    ## Simulate some complete data:
+    compData <- simData(parms, control)
     
-    ## Sample sigma:
-    sigma2 <- rinvchisq(nSams, df = fit$df, scale = summary(fit)$sigma^2)
+    ## Impose missingness on the complete data:
+    missData <- imposeMissData(data    = compData,
+                               targets = list(mar  = with(parms, c(y, X)),
+                                              mcar = NA,
+                                              mnar = NA),
+                               preds   = control$marPreds,
+                               pm      = list(mar  = pm,
+                                              mcar = parms$pmAux),
+                               snr     = list(mar = parms$marSnr),
+                               pattern = parms$marPattern)$data
     
-    ## Sample beta:
-    beta           <- matrix(NA, nSams, length(X) + 1)
-    colnames(beta) <- paste0("b", 0 : length(X))
-    for(n in 1 : nSams) {
-        betaVar   <- sigma2[n] * solve(crossprod(qr.X(fit$qr)))
-        beta[n, ] <- rmvnorm(1, mean = beta0, sigma = betaVar)
+    ## Run vanilla MI:
+    vanOut <- try(
+        vanilla(data        = missData,
+                targetVars  = with(parms, c(y, X)),
+                sampleSizes =
+                    as.numeric(control$iters[c("finalBurn", "finalGibbs")]),
+                seed        = control$rngStream,
+                userRng     = control$rngStream,
+                verbose     = parms$verbose,
+                ridge       = control$vanRidge)
+    )
+}
+
+###--------------------------------------------------------------------------###
+
+plotTrace <- function(x, y, what) {
+    x <- x[[tolower(what)]]
+    y <- y[[tolower(what)]]
+    
+    if(tolower(what) == "sigma") {
+        yLim <- range(x, y)
+        plot(x    = x,
+             ylim = yLim,
+             type = "l",
+             col  = "red",
+             ylab = i,
+             main = paste0("Trace of ", what)
+             )
+        lines(y, col = "blue")
     }
-    
-    ## Return the posterior samples:
-    list(beta = beta, sigma2 = sigma2)
+    else {
+        for(v in 1 : ncol(x)) {
+            yLim <- range(x[ , v], y[ , v])
+            plot(x    = x[ , v],
+                 ylim = yLim,
+                 type = "l",
+                 col  = "red",
+                 ylab = what,
+                 main = switch(tolower(what),
+                               lambda = paste0("Trace of ", what, v),
+                               paste0("Trace of ",
+                                      what,
+                                      " for ",
+                                      colnames(x)[v])
+                               )
+                 )
+            lines(y[ , v], col = "blue")
+            
+            readline("Press any key to continue. ")
+        }
+    }
 }
