@@ -1,6 +1,6 @@
 ### Title:    Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
-### Created:  2015-01-01
+### Created:  2019-01-01
 ### Modified: 2019-11-13
 
 rm(list = ls(all = TRUE))
@@ -13,46 +13,31 @@ rm(list = ls(all = TRUE))
 
 library(parallel)
 
-expNum      <- 1
+nObs    <- 100
+nReps   <- 6
+verbose <- TRUE
+resDir  <- "output"
 
-sparse      <- TRUE
-nImps       <- 100
-nObs        <- 100
-startRep    <- 1
-stopRep     <- 6
-clusterSize <- 2
-outDir      <- NULL
-verbose     <- FALSE
-
-resDir <- "output"
-
-source("initScript-mcem.R")
+source("initScript-simple.R")
 
 ## Run in serial:
-                                        #miOut <- iterPlan(rp      = 1,
-                                        #                  pm      = 0.3,
-                                        #                  parms   = parms,
-                                        #                  control = control,
-                                        #                  doMice  = FALSE,
-                                        #                  nChains = 2)
+miOut <- testMcem(rp = 1, pm = 0.1, parms = parms, nChains = 2)
 
 ## Create the cluster:
 cl <- makeCluster(clusterSize)
 
-clusterCall(cl = cl, fun = source, file = "testingSubroutines.R")
+clusterCall(cl = cl, fun = source, file = "simpleSubroutines.R")
 clusterCall(cl      = cl,
             fun     = applyLib,
-            pkgList = c("rlecuyer", "mice", "mitools", "MIBRR", "SURF")
+            pkgList = c("rlecuyer", "MIBRR", "SURF")
             )
 
 ### Apply iterPlan() in parallel:
 miOut <- parLapply(cl      = cl,
-                   X       = startRep : stopRep,
-                   fun     = iterPlan,
+                   X       = 1 : nReps,
+                   fun     = testMcem,
                    pm      = 0.1,
-                   control = control,
-                   parms   = parms,
-                   doMice  = FALSE)
+                   parms   = parms)
 
 ### Close myCluster:
 stopCluster(cl)
