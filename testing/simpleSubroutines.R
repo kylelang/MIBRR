@@ -27,6 +27,7 @@ genSimpleData <- function(n, cov, pm) {
 }
 
 ###--------------------------------------------------------------------------###
+                                        #data <- dat0
 
 ## Estimate the imputation models:
 runMibrr <- function(data, parms) {
@@ -44,20 +45,25 @@ runMibrr <- function(data, parms) {
               iterations  = as.numeric(
                   parms$iters[c("nMibenEmApprox", "nEmTune")]
               ),
-              sampleSizes = list(
-                  as.numeric(parms$iters[c("approxBurn", "approxGibbs")]),
-                  as.numeric(parms$iters[c("tuneBurn", "tuneGibbs")]),
-                  as.numeric(parms$iters[c("finalBurn", "finalGibbs")])
+              sampleSizes = with(
+                  parms,
+                  list(as.numeric(iters[c("approxBurn", "approxGibbs")]),
+                       as.numeric(iters[c("tuneBurn", "tuneGibbs")]),
+                       as.numeric(iters[c("finalBurn", "finalGibbs")])
+                       )
               ),
               seed        = parms$rngStream,
               userRng     = parms$rngStream,
               verbose     = parms$verbose,
-              control     = list(optCheckKkt    = parms$checkKkt,
-                                 optMethod      = parms$optMeth,
-                                 optBoundLambda = parms$optBound,
-                                 optStrict      = parms$optStrict,
-                                 lambda1Starts  = parms$lamStarts$miben[[1]],
-                                 lambda2Starts  = parms$lamStarts$miben[[2]])
+              control     = with(parms,
+                                 list(optCheckKkt    = checkKkt,
+                                      optMethod      = optMeth,
+                                      optBoundLambda = optBound,
+                                      optStrict      = optStrict,
+                                      lambda1Starts  = lamStarts$miben[[1]],
+                                      lambda2Starts  = lamStarts$miben[[2]]
+                                      )
+                                 )
               )
     )
     
@@ -71,10 +77,12 @@ runMibrr <- function(data, parms) {
              iterations  = as.numeric(
                  parms$iters[c("nMiblEmApprox", "nEmTune")]
              ),
-             sampleSizes = list(
-                 as.numeric(parms$iters[c("approxBurn", "approxGibbs")]),
-                 as.numeric(parms$iters[c("tuneBurn", "tuneGibbs")]),
-                 as.numeric(parms$iters[c("finalBurn", "finalGibbs")])
+             sampleSizes = with(
+                 parms,
+                 list(as.numeric(iters[c("approxBurn", "approxGibbs")]),
+                      as.numeric(iters[c("tuneBurn", "tuneGibbs")]),
+                      as.numeric(iters[c("finalBurn", "finalGibbs")])
+                      )
              ),
              seed        = parms$rngStream,
              userRng     = parms$rngStream,
@@ -89,8 +97,13 @@ runMibrr <- function(data, parms) {
 
 ###--------------------------------------------------------------------------###
 
+                                        #rp      <- 1
+                                        #pm      <- 0.1
+                                        #nChains <- 2
+                                        #i       <- 1
+
 ## Only do MI for a simple level of PM. Used for iteration planning.
-testMcem <- function(rp, pm, parms, nChains = 2) {
+testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE) {
     ## Store the current rep index:
     parms$rp <- rp
     
@@ -108,9 +121,11 @@ testMcem <- function(rp, pm, parms, nChains = 2) {
     out <- list()
     for(i in 1 : nChains) {
         ## Perturb starting values:
-        parms$lamStarts <- lapply(parms$lamStarts0,
-                                  function(x) x + rnorm(length(x), 0, 0.5 * x)
-                                  )
+        if(jitterStarts)
+            parms$lamStarts <- lapply(parms$lamStarts0,
+                                      function(x)
+                                          abs(x + rnorm(length(x), 0, 0.5 * x))
+                                      )
         
         ## Apply over percents missing:
         out[[i]] <- runMibrr(data = dat0, parms = parms)
@@ -121,6 +136,52 @@ testMcem <- function(rp, pm, parms, nChains = 2) {
     .lec.DeleteStream(paste0(parms$streamStem, 1 : parms$nReps))
     
     out
+}
+
+###--------------------------------------------------------------------------###
+
+## Broadcast the library function of a list of packages:
+applyLib <- function(pkgList)
+    lapply(pkgList, library, character.only = TRUE, logical = TRUE)
+
+###--------------------------------------------------------------------------###
+
+plotTrace <- function(x, y, what) {
+    x <- x[[tolower(what)]]
+    y <- y[[tolower(what)]]
+    
+    if(tolower(what) == "sigma") {
+        yLim <- range(x, y)
+        plot(x    = x,
+             ylim = yLim,
+             type = "l",
+             col  = "red",
+             ylab = i,
+             main = paste0("Trace of ", what)
+             )
+        lines(y, col = "blue")
+    }
+    else {
+        for(v in 1 : ncol(x)) {
+            yLim <- range(x[ , v], y[ , v])
+            plot(x    = x[ , v],
+                 ylim = yLim,
+                 type = "l",
+                 col  = "red",
+                 ylab = what,
+                 main = switch(tolower(what),
+                               lambda = paste0("Trace of ", what, v),
+                               paste0("Trace of ",
+                                      what,
+                                      " for ",
+                                      colnames(x)[v])
+                               )
+                 )
+            lines(y[ , v], col = "blue")
+            
+            readline("Press any key to continue. ")
+        }
+    }
 }
 
 ###--------------------------------------------------------------------------###

@@ -13,15 +13,17 @@ rm(list = ls(all = TRUE))
 
 library(parallel)
 
-nObs    <- 100
-nReps   <- 6
-verbose <- TRUE
-resDir  <- "output"
+nObs        <- 100
+nReps       <- 16
+verbose     <- FALSE
+resDir      <- "output"
+clusterSize <- 2
+pm          <- 0.5
 
 source("initScript-simple.R")
 
 ## Run in serial:
-miOut <- testMcem(rp = 1, pm = 0.1, parms = parms, nChains = 2)
+                                        #miOut <- testMcem(rp = 6, pm = 0.1, parms = parms, nChains = 2)
 
 ## Create the cluster:
 cl <- makeCluster(clusterSize)
@@ -33,29 +35,19 @@ clusterCall(cl      = cl,
             )
 
 ### Apply iterPlan() in parallel:
-miOut <- parLapply(cl      = cl,
-                   X       = 1 : nReps,
-                   fun     = testMcem,
-                   pm      = 0.1,
-                   parms   = parms)
+miOut <- parLapply(cl           = cl,
+                   X            = 1 : nReps,
+                   fun          = testMcem,
+                   pm           = pm,
+                   parms        = parms,
+                   jitterStarts = FALSE)
 
 ### Close myCluster:
 stopCluster(cl)
 
-saveRDS(list(control = control, parms = parms, out = miOut),
-        paste0(resDir,
-               "exploreMcemOut_", ifelse(control$sparse, "sparse", "dense"),
-               "_exp",            expNum,
-               ".rds")
+saveRDS(list(parms = parms, out = miOut),
+        paste0(resDir, "exploreMcemOut_simple_pm50_16reps_50burnInN_noJitter.rds")
         )
-
-tmp <- readRDS(paste0(resDir,
-                      "iterPlanningOut_", ifelse(control$sparse, "sparse", "dense"),
-                      "_exp",             expNum,
-                      ".rds")
-               )
-
-miOut <- tmp$out
 
 ## Find failed reps:
 check <- c()
@@ -64,16 +56,18 @@ for(i in 1 : length(miOut))
         class(miOut[[i]][[2]]$miben) == "try-error"
 
 which(check)
-goodReps <- setdiff(1 : ((stopRep - startRep) + 1), which(check))
+goodReps <- setdiff(1 : nReps, which(check))
 
 ### Print Stuff ###
 
 ## MCEM Chains ##
 
+targets <- miOut[[goodReps[1]]][[1]]$miben$targetVars
+
 ## MIBEN:
-par(mfcol = c(2, 3))
+par(mfcol = c(2, 2))
 for(i in goodReps) {
-    for(v in with(parms, c(y, X))) {
+    for(v in targets) {
         l1 <- miOut[[i]][[1]]$miben$lambdaHistory[[v]][ , 1]
         l2 <- miOut[[i]][[2]]$miben$lambdaHistory[[v]][ , 1]
         
@@ -98,9 +92,9 @@ for(i in goodReps) {
 }
 
 ## MIBL:
-par(mfcol = c(1, 3))
-for(i in 1 : ((stopRep - startRep) + 1)) {
-    for(v in with(parms, c(y, X))) {
+par(mfcol = c(1, 2))
+for(i in 1 : nReps) {
+    for(v in targets) {
         l1 <- miOut[[i]][[1]]$mibl$lambdaHistory[[v]][ , 1]
         l2 <- miOut[[i]][[2]]$mibl$lambdaHistory[[v]][ , 1]
         
