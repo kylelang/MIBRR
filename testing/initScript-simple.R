@@ -13,7 +13,9 @@ source("simpleSubroutines.R")
 parms <- list()
 
 parms$nObs       <- nObs
-parms$cx         <- 0.3
+parms$nVars      <- nVars
+parms$nTargets   <- nTargets
+parms$xCor       <- xCor
 parms$nReps      <- nReps
 parms$streamStem <- "myStream"
 parms$verbose    <- verbose

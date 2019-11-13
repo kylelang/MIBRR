@@ -12,17 +12,24 @@
                                         #?imposeMissData
 
 ## Simulate some very simple data:
-genSimpleData <- function(n, cov, pm) {
+genSimpleData <- function(parms, pm) {
     ## Generate complete data:
-    dat0 <- SURF::simCovData(nObs = n, sigma = cov, nVars = 3)
-
-    ## Impose missing:
-    r1 <- dat0$x3 < quantile(dat0$x3, pm)
-    r2 <- dat0$x3 > quantile(dat0$x3, (1 - pm))
+    dat0 <- with(parms,
+                 SURF::simCovData(nObs = nObs, sigma = xCor, nVars = nVars)
+                 )
     
-    dat0[r1, "x1"] <- NA
-    dat0[r2, "x2"] <- NA
+    ## Compile some meta data:
+    nAux    <- with(parms, nVars - nTargets)
+    targets <- colnames(dat0)[1 : parms$nTargets]
+    eta     <- with(parms, rowMeans(dat0[ , (nTargets + 1) : nVars]))
+    
+    ## Define two missingness vectors:
+    r <- list(eta < quantile(eta, pm), eta > quantile(eta, (1 - pm)))
 
+    ## Impose MAR missing on targets:
+    for(v in targets)
+        dat0[r[[sample(1 : 2, 1)]], v] <- NA
+    
     dat0
 }
 
@@ -116,7 +123,7 @@ testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE) {
     .lec.CurrentStream(parms$rngStream)
     
     ## Simulate the complete data:
-    dat0 <- genSimpleData(n = parms$nObs, cov = parms$cx, pm = pm)
+    dat0 <- genSimpleData(parms = parms, pm = pm)
     
     out <- list()
     for(i in 1 : nChains) {

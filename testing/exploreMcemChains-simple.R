@@ -13,17 +13,20 @@ rm(list = ls(all = TRUE))
 
 library(parallel)
 
-nObs        <- 100
 nReps       <- 16
 verbose     <- FALSE
 resDir      <- "output"
-clusterSize <- 2
-pm          <- 0.5
+clusterSize <- 8
+nObs        <- 100
+nVars       <- 14
+nTargets    <- 4
+pm          <- 0.3
+xCor        <- 0.0
 
 source("initScript-simple.R")
 
 ## Run in serial:
-                                        #miOut <- testMcem(rp = 6, pm = 0.1, parms = parms, nChains = 2)
+                                        #miOut <- testMcem(rp = 1, pm = 0.1, parms = parms, nChains = 2)
 
 ## Create the cluster:
 cl <- makeCluster(clusterSize)
@@ -40,13 +43,13 @@ miOut <- parLapply(cl           = cl,
                    fun          = testMcem,
                    pm           = pm,
                    parms        = parms,
-                   jitterStarts = FALSE)
+                   jitterStarts = TRUE)
 
 ### Close myCluster:
 stopCluster(cl)
 
 saveRDS(list(parms = parms, out = miOut),
-        paste0(resDir, "exploreMcemOut_simple_pm50_16reps_50burnInN_noJitter.rds")
+        paste0(resDir, "exploreMcemOut_simple_pm30_p14_xCor0_50burnInN.rds")
         )
 
 ## Find failed reps:

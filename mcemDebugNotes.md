@@ -13,11 +13,15 @@
 	- MIBEN
 	  - dissRerun simulation: pm = 10, exp1, n = 100, dense
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0, nTargets = 4 (just a little)
 	- MIBL
 	  - dissRerun simulation: pm = 10, exp1, n = 100, dense
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse
 	  - simple mvn data: n = 100, p = 3, pm = 30, cor = 0.3, nTargets = 2
 	  - simple mvn data: n = 100, p = 3, pm = 50, cor = 0.3, nTargets = 2
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.3, nTargets
+        = 4 (but not as bad as the p = 3 version)
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.0, nTargets = 4
 	- BEN
 	- BL
   - NO:
@@ -25,8 +29,11 @@
 	  - simple mvn data: n = 100, p = 3, pm = 10, cor = 0.3, nTargets = 2
 	  - simple mvn data: n = 100, p = 3, pm = 30, cor = 0.3, nTargets = 2
 	  - simple mvn data: n = 100, p = 3, pm = 50, cor = 0.3, nTargets = 2
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.3, nTargets = 4
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.5, nTargets = 4
 	- MIBL
 	  - simple mvn data: n = 100, p = 3, pm = 10, cor = 0.3, nTargets = 2
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.5, nTargets = 4
 	- BEN
 	- BL
   
@@ -42,3 +49,4 @@
   order of magnitude larger than the well-behaved chains).
 - Increasing the size of the burn-in Gibbs samples (i.e., n = 25, 50, 250),
   doesn't help the MIBL chains in the simple mvn data case.
+- Low correlations seem to cause problems
