@@ -1,6 +1,6 @@
 # MCEM Debugging Notes
 
-## Last Updated: 2019-11-13
+## Last Updated: 2019-11-18
 
 ## Problem:
 - The MCEM implementation seems to be underidentified
@@ -14,6 +14,8 @@
 	  - dissRerun simulation: pm = 10, exp1, n = 100, dense
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse
 	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0, nTargets = 4 (just a little)
+	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.3
+	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.5
 	- MIBL
 	  - dissRerun simulation: pm = 10, exp1, n = 100, dense
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse
@@ -22,6 +24,8 @@
 	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.3, nTargets
         = 4 (but not as bad as the p = 3 version)
 	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0.0, nTargets = 4
+	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.3
+	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.5
 	- BEN
 	- BL
   - NO:

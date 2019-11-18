@@ -1,7 +1,7 @@
 ### Title:    Initialize Dependencies and Parameters
 ### Author:   Kyle M. Lang
 ### Created:  2018-06-07
-### Modified: 2019-11-13
+### Modified: 2019-11-15
 
 library(mice)
 library(rlecuyer)
@@ -39,6 +39,7 @@ parms$optBound   <- TRUE
 parms$miceMeth   <- "norm"
 parms$optStrict  <- TRUE
 parms$mcem       <- TRUE
+parms$zCor       <- zCor
 
 ## Variable design parameters:
 control <- list()

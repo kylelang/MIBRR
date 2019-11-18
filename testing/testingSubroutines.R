@@ -1,7 +1,7 @@
 ### Title:    Simulation Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2015-01-01
-### Modified: 2019-11-13
+### Modified: 2019-11-15
 ### Purpose:  This file contains the subroutines underlying the Monte Carlo
 ###           simulation to replicate/correct my 2018 ISBA analysis.
 
@@ -11,9 +11,13 @@
 simData <- function(parms, control) {
     nAux <- control$nAux    # Number of auxiliary variables
     nX   <- length(parms$X) # Number of focal predictors
-        
+
+    ## Generate predictor's covariance matrix:
+    sigmaZ       <- matrix(parms$zCor, nAux, nAux)
+    diag(sigmaZ) <- 1.0
+    
     ## Generate auxiliary variables and their regression slopes:
-    Z    <- rmvnorm(parms$nObs, rep(0, nAux), diag(nAux))
+    Z    <- rmvnorm(parms$nObs, rep(0, nAux), sigmaZ)
     zeta <- matrix(parms$zeta, nAux, nX)
 
     ## Impose sparsity:
@@ -316,7 +320,7 @@ doMiAnalysis <- function(data, parms) {
 }
 
 ###--------------------------------------------------------------------------###
-                                        #pm <- 0.3
+                                        #pm <- 0.1
 
 ## Execute a single condition of the simulation:
 runCondition <- function(pm, compData, control, parms, ...) {
@@ -339,6 +343,9 @@ runCondition <- function(pm, compData, control, parms, ...) {
                                               mcar = parms$pmAux),
                                snr     = list(mar = parms$marSnr),
                                pattern = parms$marPattern)
+
+                                        #cor(missData$data, use = "pairwise")
+                                        #md.pairs(missData$data)$rr / nrow(missData$data)
     
     ## Impute missing data:
     miList <- fitMiModels(data    = missData$data,
@@ -385,7 +392,7 @@ runCondition <- function(pm, compData, control, parms, ...) {
 }# END runCondition()
 
 ###--------------------------------------------------------------------------###
-                                        #rp <- 1
+rp <- 1
 
 goBabyGo <- function(rp, control, parms) {
     ## Store the current rep index:
@@ -401,6 +408,9 @@ goBabyGo <- function(rp, control, parms) {
 
     ## Simulate the complete data:
     compData <- simData(parms = parms, control = control)
+
+    cor(compData)
+    colMeans(compData)
     
     ## Apply over percents missing:
     sapply(X        = parms$pmVec,

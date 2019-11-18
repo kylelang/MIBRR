@@ -1,7 +1,7 @@
 ### Title:    Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
 ### Created:  2015-01-01
-### Modified: 2019-11-13
+### Modified: 2019-11-15
 
 rm(list = ls(all = TRUE))
 
@@ -19,10 +19,11 @@ sparse      <- TRUE
 nImps       <- 100
 nObs        <- 100
 startRep    <- 1
-stopRep     <- 6
-clusterSize <- 2
+stopRep     <- 16
+clusterSize <- 8
 outDir      <- NULL
 verbose     <- FALSE
+zCor        <- 0.5
 
 resDir <- "output"
 
@@ -61,6 +62,7 @@ saveRDS(list(control = control, parms = parms, out = miOut),
         paste0(resDir,
                "exploreMcemOut_", ifelse(control$sparse, "sparse", "dense"),
                "_exp",            expNum,
+               "_zCor",           zCor,
                ".rds")
         )
 
