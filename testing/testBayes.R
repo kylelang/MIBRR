@@ -354,6 +354,8 @@ simOut <- mclapply(X        = c(1 : nReps),
 
 tmp  <- do.call(rbind, lapply(simOut, unlist))
 
+tmp
+
 mcemFrame  <- tmp[ , grep("mcem", colnames(tmp))]
 bayesFrame <- tmp[ , grep("bayes", colnames(tmp))]
 
