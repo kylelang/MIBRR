@@ -1,7 +1,7 @@
 ### Title:    Initialize Dependencies and Parameters
 ### Author:   Kyle M. Lang
 ### Created:  2018-06-07
-### Modified: 2019-11-13
+### Modified: 2019-11-20
 
 library(rlecuyer)
 library(MIBRR)
@@ -24,7 +24,7 @@ parms$checkKkt   <- TRUE
 parms$optMeth    <- "L-BFGS-B"
 parms$optBound   <- TRUE
 parms$optStrict  <- TRUE
-parms$iters      <- c(200, 200, 50, 50, 50, 100, 100, 1000, 1000)
+parms$iters      <- c(5000, 5000, 1000, 50, 50, 100, 100, 1000, 1000)
 
 names(parms$iters) <- c("nMibenEmApprox",
                         "nMiblEmApprox",
