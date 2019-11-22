@@ -23,7 +23,7 @@ parms$checkKkt   <- TRUE
 parms$optMeth    <- "L-BFGS-B"
 parms$optBound   <- TRUE
 parms$optStrict  <- TRUE
-parms$iters      <- c(100, 100, 50, 200, 200, 500, 500, 1000, 1000)
+parms$iters      <- c(100, 100, 50, 250, 250, 500, 500, 1000, 1000)
 
 names(parms$iters) <- c("nMibenEmApprox",
                         "nMiblEmApprox",

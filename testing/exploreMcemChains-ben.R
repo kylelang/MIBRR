@@ -21,7 +21,7 @@ nObs        <- 100
 nVars       <- 10
 nTargets    <- 4
 pm          <- 0.0
-xCor        <- 0.0
+xCor        <- 0.5
 
 source("initScript-simple.R")
 
@@ -50,7 +50,7 @@ miOut <- parLapply(cl           = cl,
 stopCluster(cl)
 
 saveRDS(list(parms = parms, out = miOut),
-        paste0(resDir, "exploreMcemOut_simple_ben_p10_xCor0_1000tuningIters.rds")
+        paste0(resDir, "exploreMcemOut_simple_ben_p10_xCor0_500gibbsN.rds")
         )
 
                                         #miOut <- readRDS(paste0(resDir, "exploreMcemOut_simple_ben_p10_xCor0.rds"))$out
@@ -67,8 +67,6 @@ goodReps <- setdiff(1 : nReps, which(check))
 ### Print Stuff ###
 
 ## MCEM Chains ##
-
-targets <- miOut[[goodReps[1]]][[1]]$miben$targetVars
 
 ## MIBEN:
 par(mfcol = c(1, 2))
@@ -114,29 +112,29 @@ for(i in 1 : nReps) {
 
 ## Markov Chains ##
 
+length(miOut)
+
 ## MIBEN:
 par(mfrow = c(1, 1))
-for(v in with(parms, c(y, X))) {
-    tmp1 <- getParams(miOut[[i]][[1]]$miben, v)
-    tmp2 <- getParams(miOut[[i]][[2]]$miben, v)
-
-    cat(paste0("\nThese are the parameters for ", v, ".\n"))
-   
-    plotTrace(tmp1, tmp2, "Beta")
-    plotTrace(tmp1, tmp2, "Tau")
-    plotTrace(tmp1, tmp2, "Sigma")
-    plotTrace(tmp1, tmp2, "Lambda")
-}
-
-## MIBL:
-for(v in with(parms, c(y, X))) {
-    tmp1 <- getParams(miOut[[i]][[1]]$mibl, v)
-    tmp2 <- getParams(miOut[[i]][[2]]$mibl, v)
-
-    cat(paste0("\nThese are the parameters for ", v, ".\n"))
+for(i in goodReps) {
+    tmp1 <- getParams(miOut[[i]][[1]]$ben, 1)
+    tmp2 <- getParams(miOut[[i]][[2]]$ben, 1)
     
     plotTrace(tmp1, tmp2, "Beta")
     plotTrace(tmp1, tmp2, "Tau")
     plotTrace(tmp1, tmp2, "Sigma")
-    plotTrace(tmp1, tmp2, "Lambda")
+    
+    readline("Hit any key to continue. ")
+}
+
+## MIBL:
+for(i in 1 : nReps) {
+    tmp1 <- getParams(miOut[[i]][[1]]$bl, 1)
+    tmp2 <- getParams(miOut[[i]][[2]]$bl, 1)
+    
+    plotTrace(tmp1, tmp2, "Beta")
+    plotTrace(tmp1, tmp2, "Tau")
+    plotTrace(tmp1, tmp2, "Sigma")
+
+    readline("Hit any key to continue. ")
 }
