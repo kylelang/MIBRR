@@ -1,7 +1,7 @@
 ### Title:    Run Tests to Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
 ### Created:  2019-01-01
-### Modified: 2019-11-22
+### Modified: 2019-11-25
 
 rm(list = ls(all = TRUE))
     
@@ -23,12 +23,14 @@ source("initScript-simple.R")
 time <- system.time(
     out <- mclapply(X        = 1 : nReps,
                     FUN      = testMcem,
-                    pm       = 0.0,
+                    pm       = pm,
                     parms    = parms,
                     nChains  = 2,
                     mi       = mi,
                     mc.cores = nCores)
 )
+
+time / 60
 
 saveRDS(list(mi = mi, parms = parms, out = out),
         paste0(resDir,
@@ -36,5 +38,3 @@ saveRDS(list(mi = mi, parms = parms, out = out),
                format(Sys.time(), "%Y-%m-%d_%H:%M:%S"),
                ".rds")
         )
-
-time / 60
