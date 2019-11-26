@@ -6,19 +6,23 @@
 rm(list = ls(all = TRUE))
 
 outDir    <- "../output/"
-timeStamp <- "2019-11-25_17:24:26"
+timeStamp <- "2019-11-26_15:09:54"
 
-tmp <- readRDS(paste0(outDir, "testMcemOut_", timeStamp, ".rds"))
-out <- tmp$out
+tmp   <- readRDS(paste0(outDir, "testMcemOut_", timeStamp, ".rds"))
+out   <- tmp$out
+parms <- tmp$parms
+
+parms
 
 ## Find failed reps:
 check <- c()
 for(i in 1 : length(out))
-    check[i] <- class(out[[i]][[1]]$miben) == "try-error" |
-        class(out[[i]][[2]]$miben) == "try-error"
+    check[i] <- class(out[[i]][[1]]$ben) == "try-error" |
+        class(out[[i]][[2]]$ben) == "try-error"
 
 which(check)
 goodReps <- setdiff(1 : length(out), which(check))
+goodReps
 
 ### Print Stuff ###
 
@@ -48,9 +52,19 @@ for(i in goodReps) {
     readline("Hit any key to continue. ")
 }
 
+
+check <- c()
+for(i in 1 : length(out))
+    check[i] <- class(out[[i]][[1]]$bl) == "try-error" |
+        class(out[[i]][[2]]$bl) == "try-error"
+
+which(check)
+goodReps <- setdiff(1 : length(out), which(check))
+goodReps
+
 ## MIBL:
 par(mfcol = c(1, 1))
-for(i in 1 : length(out)) {
+for(i in goodReps) {
     l1 <- out[[i]][[1]]$bl$lambdaHistory[[1]][ , 1]
     l2 <- out[[i]][[2]]$bl$lambdaHistory[[1]][ , 1]
     
@@ -62,6 +76,11 @@ for(i in 1 : length(out)) {
     lines(l2, col = "blue")
 
     readline("Hit any key to continue. ")
+}
+
+for(i in which(check)) {
+    tmp <- out[[i]][[1]]$bl
+    print(tmp)
 }
 
 ## Markov Chains ##

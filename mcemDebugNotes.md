@@ -54,3 +54,6 @@
 - Increasing the size of the burn-in Gibbs samples (i.e., n = 25, 50, 250),
   doesn't help the MIBL chains in the simple mvn data case.
 - Low correlations seem to cause problems
+  - Lambdas cannot be optimized in BEN
+  - Lambdas explode and/or are not identified in BL
+  - With BEN/BL, in the simple MVN case, r = 0.2 seems to be sufficient

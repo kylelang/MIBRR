@@ -1,7 +1,7 @@
 ### Title:    Initialize Dependencies and Parameters
 ### Author:   Kyle M. Lang
 ### Created:  2018-06-07
-### Modified: 2019-11-22
+### Modified: 2019-11-26
 
 library(rlecuyer)
 library(MIBRR)
@@ -14,8 +14,10 @@ parms <- list()
 
 parms$nObs       <- nObs
 parms$nVars      <- nVars
+parms$nPreds     <- nPreds
 parms$xCor       <- xCor
 parms$nReps      <- nReps
+parms$sparse     <- sparse
 parms$streamStem <- "myStream"
 parms$verbose    <- verbose
 parms$mySeed     <- 235711

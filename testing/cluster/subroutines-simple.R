@@ -1,7 +1,7 @@
 ### Title:    Simple Testing Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2019-11-13
-### Modified: 2019-11-22
+### Modified: 2019-11-26
 ### Purpose:  This file contains the subroutines to help debug the MCEM
 ###           estimation in MIBRR
 
@@ -9,9 +9,17 @@
 
 ## Simulate some very simple data:
 genSimpleData <- function(parms, pm) {
+    if(parms$sparse) {
+        sigma                                     <- matrix(0.0, nVars, nVars)
+        sigma[1 : parms$nPreds, 1 : parms$nPreds] <- xCor
+        diag(sigma)                               <- 1.0
+    }
+    else
+        sigma <- xCor
+    
     ## Generate complete data:
     dat0 <- with(parms,
-                 SURF::simCovData(nObs = nObs, sigma = xCor, nVars = nVars)
+                 SURF::simCovData(nObs = nObs, sigma = sigma, nVars = nVars)
                  )
 
     if(pm == 0) return(dat0)
