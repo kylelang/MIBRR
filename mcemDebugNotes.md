@@ -66,4 +66,16 @@
     (performance doesn't seem much better than N = 250).
   - With N = 1000 for approximation iterations, performance is pretty much the 
 	same as N = 250 and N = 500.
+  - Large differences between the trivial and non-trivial effect sizes seem to
+    cause problems.
+	- Setting trivial effects to r = 0 and non-trivial to r = 0.5 leads to poor
+      convergence rates
+	- Setting trivial effects to r = 0 and non-trivial to r = 0.25 produces
+      perfect convergence and no identification issues
+	- Setting trivial effects to r = 0 and non-trivial to r = 0.15 is too
+      much. We get moderate convergence problems and and identification issues
+  - When most effects are trivial (i.e., p < 3 non-trivial predictors out of
+    10), things work well
+  - When all all effects are non-trivial, things work well.
+  - When 3 to 9 effects (out of 10) are non-trivial, problems occur
   

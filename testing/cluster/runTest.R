@@ -7,25 +7,30 @@ rm(list = ls(all = TRUE))
     
 library(parallel)
 
-verbose <- FALSE
+verbose <- TRUE
 resDir  <- "output/"
 nCores  <- 2
-nObs    <- 1000
+nObs    <- 100
 nVars   <- 10
 pm      <- 0.0
 xCor    <- 0.5
-nReps   <- 2
+nReps   <- 8
 mi      <- FALSE
 sparse  <- TRUE
-nPreds  <- 5
+nPreds  <- 7
 
 source("initScript-simple.R")
 
-out <- testMcem(rp = 1, pm = pm, parms = parms, mi = mi)
+                                        #out <- testMcem(rp = 1, pm = pm, parms = parms, mi = mi)
+
+                                        #class(out[[1]]$bl)
+                                        #class(out[[2]]$bl)
+                                        #class(out[[1]]$ben)
+                                        #class(out[[2]]$ben)
 
 ## Run test in parallel:
 time <- system.time(
-    out <- mclapply(X        = 1 : nReps,
+    out <- mclapply(X        = 5 : nReps,
                     FUN      = testMcem,
                     pm       = pm,
                     parms    = parms,
@@ -33,6 +38,22 @@ time <- system.time(
                     mi       = mi,
                     mc.cores = nCores)
 )
+
+out
+
+lapply(out,
+       function(y)
+           lapply(y, function(x) {
+               print(class(x$bl))
+               print(class(x$ben))
+           }
+           )
+       )
+
+class(out[[1]]$bl)
+class(out[[2]]$bl)
+class(out[[1]]$ben)
+class(out[[2]]$ben)
 
 time / 60
 

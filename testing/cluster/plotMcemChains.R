@@ -6,9 +6,12 @@
 rm(list = ls(all = TRUE))
 
 outDir    <- "../output/"
-timeStamp <- "2019-11-27_00:26:26"
 
-tmp   <- readRDS(paste0(outDir, "testMcemOut_", timeStamp, ".rds"))
+files <- system(paste0("ls ", outDir), intern = TRUE)
+files <- files[grep("^testMcemOut", files)]
+
+tmp <- readRDS(paste0(outDir, files[length(files)]))
+
 out   <- tmp$out
 parms <- tmp$parms
 
