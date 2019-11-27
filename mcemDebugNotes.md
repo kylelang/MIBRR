@@ -1,6 +1,6 @@
 # MCEM Debugging Notes
 
-## Last Updated: 2019-11-18
+## Last Updated: 2019-11-27
 
 ## Problem:
 - The MCEM implementation seems to be underidentified
@@ -13,7 +13,8 @@
 	- MIBEN
 	  - dissRerun simulation: pm = 10, exp1, n = 100, dense
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse
-	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0, nTargets = 4 (just a little)
+	  - simple mvn data: n = 100, p = 14, pm = 30, cor = 0, nTargets = 4 (just a 
+		little)
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.3
 	  - dissRerun simulation: pm = 10, exp1, n = 100, sparse, zCor = 0.5
 	- MIBL
@@ -53,7 +54,16 @@
   order of magnitude larger than the well-behaved chains).
 - Increasing the size of the burn-in Gibbs samples (i.e., n = 25, 50, 250),
   doesn't help the MIBL chains in the simple mvn data case.
-- Low correlations seem to cause problems
+- **Low correlations seem to cause problems**
   - Lambdas cannot be optimized in BEN
   - Lambdas explode and/or are not identified in BL
   - With BEN/BL, in the simple MVN case, r = 0.2 seems to be sufficient
+- The following apply to a sparse version of the simple MVN case
+  - Setup: 5 independent variables, 5 correlated at r = 0.5
+  - With N = 25 for approximation iterations, 13 out of 15 reps fail
+  - With N = 250 for approximation iterations, 9 out of 15 reps fail
+  - With N = 500 for approximation iterations, 9 out of 15 reps fail
+    (performance doesn't seem much better than N = 250).
+  - With N = 1000 for approximation iterations, performance is pretty much the 
+	same as N = 250 and N = 500.
+  

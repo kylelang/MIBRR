@@ -6,7 +6,7 @@
 rm(list = ls(all = TRUE))
 
 outDir    <- "../output/"
-timeStamp <- "2019-11-26_15:09:54"
+timeStamp <- "2019-11-27_00:26:26"
 
 tmp   <- readRDS(paste0(outDir, "testMcemOut_", timeStamp, ".rds"))
 out   <- tmp$out
@@ -52,7 +52,7 @@ for(i in goodReps) {
     readline("Hit any key to continue. ")
 }
 
-
+## Find failed reps:
 check <- c()
 for(i in 1 : length(out))
     check[i] <- class(out[[i]][[1]]$bl) == "try-error" |
@@ -78,6 +78,7 @@ for(i in goodReps) {
     readline("Hit any key to continue. ")
 }
 
+## Check error messages:
 for(i in which(check)) {
     tmp <- out[[i]][[1]]$bl
     print(tmp)
