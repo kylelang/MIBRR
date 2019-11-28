@@ -1,7 +1,7 @@
 ### Title:    Simple Testing Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2019-11-13
-### Modified: 2019-11-26
+### Modified: 2019-11-28
 ### Purpose:  This file contains the subroutines to help debug the MCEM
 ###           estimation in MIBRR
 
@@ -190,6 +190,13 @@ testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE, mi = TRUE)
     
     ## Simulate the complete data:
     dat0 <- genSimpleData(parms = parms, pm = pm)
+
+    ## Compute the BL starting values suggested by Park and Casella (2008):
+    if(parms$usePcStart) {
+        fit <- lm(dat0[ , 1] ~ as.matrix(dat0[ , -1]))
+        parms$lamStarts0$mibl <-
+            (ncol(dat0) - 1) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
+    }
     
     out <- list()
     for(i in 1 : nChains) {

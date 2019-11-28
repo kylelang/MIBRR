@@ -1,7 +1,7 @@
 ### Title:    Run Tests to Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
 ### Created:  2019-01-01
-### Modified: 2019-11-26
+### Modified: 2019-11-28
 
 rm(list = ls(all = TRUE))
     
@@ -18,10 +18,11 @@ nReps   <- 8
 mi      <- FALSE
 sparse  <- TRUE
 nPreds  <- 7
+pcStart <- TRUE
 
 source("initScript-simple.R")
 
-                                        #out <- testMcem(rp = 1, pm = pm, parms = parms, mi = mi)
+out <- testMcem(rp = 1, pm = pm, parms = parms, mi = mi)
 
                                         #class(out[[1]]$bl)
                                         #class(out[[2]]$bl)
