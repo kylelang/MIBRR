@@ -1,6 +1,6 @@
 # MCEM Debugging Notes
 
-## Last Updated: 2019-11-27
+## Last Updated: 2019-12-03
 
 ## Problem:
 - The MCEM implementation seems to be underidentified
@@ -49,6 +49,9 @@
   - Doesn't look like it. If we start the simple mvn case at the same values, 
 	the chains will track identical trajectories.
 	
+- Check if the mismatch between the Park and Casella (2008) lambda estimate and
+  mine is due to my intercept.
+  
 ## Observations:
 - When the MIBL chains don't mix, the sampled lambdas tend to be huge (about an
   order of magnitude larger than the well-behaved chains).
@@ -78,4 +81,20 @@
     10), things work well
   - When all all effects are non-trivial, things work well.
   - When 3 to 9 effects (out of 10) are non-trivial, problems occur
-  
+- I can mostly replicate the analysis of the *diabetes* data from Park & Casella 
+  (2008).
+  - The MCEM chains converge and mix nicely
+  - I get the same posterior medians of beta
+  - I get the same credible intervals for beta
+  - I get the same L1 norm of beta relative to the least squares estimates
+  - **BUT** my estimate of lambda is approximately 20 times larger than theirs
+	- I get lambda ~ 5, they get lambda ~ 0.237
+  - Using the Park & Casella (2008) prior parameterization, I get very different
+    results
+	- If I set the prior to exponential with mean of 10 times the ML estimate
+      (as done in Park and Casella, 2008), I see the following relative to my ML
+      results:
+	  - About the same posterior medians of beta
+	  - About the same credible intervals for beta
+	  - About the same (relative) L1 norm for beta
+	  - Different (much smaller) posterior median of lambda

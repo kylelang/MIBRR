@@ -19,24 +19,17 @@ X <- diabetes$x
 dat1 <- data.frame(cbind(y, X))
 
 ## Get the least squares fit:
-fit      <- lm(y ~ X)
+fit <- lm(y ~ X)
 
-## Derive starting values from the least squares fit:
-lamStart <- ncol(X) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
-
-## Run the BL models:
+## Run the BEN models:
 out1 <- list()
 for(rp in 1 : 4) 
-    out1[[rp]] <- bl(data        = dat1,
-                     y           = "y",
-                     X           = colnames(X),
-                     iterations  = c(500, 100),
-                     sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
-                     control     = list(
-                         lambda1Starts =
-                             lamStart + abs(rnorm(1, 0, sqrt(lamStart)))
-                     )
-                     )
+    out1[[rp]] <- ben(data        = dat1,
+                      y           = "y",
+                      X           = colnames(X),
+                      iterations  = c(500, 100),
+                      sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
+                      )
 
 ## Choose rep:
 rp <- 1
