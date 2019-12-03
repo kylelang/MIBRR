@@ -17,28 +17,45 @@ y <- diabetes$y
 X <- diabetes$x
 
 dat1 <- data.frame(cbind(y, X))
+dat1 <- as.data.frame(scale(dat1))
 
 ## Get the least squares fit:
-fit <- lm(y ~ X)
+fit <- lm(y ~ ., data = dat1)
 
 ## Run the BEN models:
 out1 <- list()
 for(rp in 1 : 4) 
-    out1[[rp]] <- ben(data        = dat1,
-                      y           = "y",
-                      X           = colnames(X),
-                      iterations  = c(500, 100),
-                      sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
-                      )
+    out1[[rp]] <- try(
+        ben(data        = dat1,
+            y           = "y",
+            X           = colnames(X),
+            iterations  = c(500, 100),
+            sampleSizes = list(rep(500, 2), rep(1000, 2), rep(2000, 2)),
+            control = list(lambda1Starts = 1.0 + runif(1, -0.25, 0.25),
+                           lambda2Starts = 15.0 + runif(1, -5, 5)
+                           )
+            )
+    )
+
+out1
+
+length(out1)
 
 ## Choose rep:
 rp <- 1
 
 ## Plot MCEM chains:
+par(mfrow = c(1, 2))
+
 plot(out1[[rp]]$lambdaHistory$y[ , 1], type = "l")
 lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "red")
 lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "blue")
 lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "green")
+
+plot(out1[[rp]]$lambdaHistory$y[ , 2], type = "l")
+lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "red")
+lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "blue")
+lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "green")
 
 ## Extract parameters:
 pars <- getParams(out1[[rp]], "y")
