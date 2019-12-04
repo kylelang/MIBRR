@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
-// Created:  2014-AUG-24
-// Modified: 2019-FEB-04
+// Created:  2014-12-04
+// Modified: 2019-12-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -139,7 +139,10 @@ public:
   
   void setLambdaParms(VectorXd&);
   // @param: concatenated values for lambda1 & lambda2^2 prior parameters
-  
+
+  void setFinalRep(bool);
+  // @param: new value for the finalRep flag
+
   void setLambdas(VectorXd&);
   // @param: new value for Lambda
 
@@ -241,6 +244,7 @@ private:
   bool     _savePpSams;
   bool     _fullBayes;
   bool     _useBetaMeans;
+  bool     _finalRep;
 };
 
 #endif

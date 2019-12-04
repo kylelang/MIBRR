@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
-// Created:  2014-AUG-24
-// Modified: 2019-FEB-06
+// Created:  2014-08-24
+// Modified: 2019-12-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -102,6 +102,7 @@ void MibrrGibbs::setPenType    (int penType)       { _penType     = penType;   }
 void MibrrGibbs::setRidge      (double ridge)      { _ridge       = ridge;     }
 void MibrrGibbs::setLam1Parms  (VectorXd& l1Parms) { _l1Parms     = l1Parms;   }
 void MibrrGibbs::setLam2Parms  (VectorXd& l2Parms) { _l2Parms     = l2Parms;   }
+void MibrrGibbs::setFinalRep   (bool finalRep)     { _finalRep    = finalRep;  }
 void MibrrGibbs::setLambdas    (VectorXd& lambdas) { _lambdas     = lambdas;   }
 
 //----------------------------------------------------------------------------//
@@ -315,13 +316,15 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   _betas[0] = drawNorm(_betaMeans[0], sqrt(_sigma / double(nObs)));
   
   if(_storeGibbsSamples) {
-    VectorXd rawBetas = _betas;
-    
+    VectorXd betas = _betas;
+
     // Back-transform the standardized betas to their raw metric:
-    rawBetas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
-    rawBetas[0] -= mibrrData.getMeans(_targetIndex) * rawBetas.tail(nPreds);
+    if(_finalRep) {
+      betas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
+      betas[0] -= mibrrData.getMeans(_targetIndex) * betas.tail(nPreds);
+    }
     
-    _betaSam.row(_drawNum) = rawBetas.transpose();
+    _betaSam.row(_drawNum) = betas.transpose();
   }
 }// END updateBetas()
 

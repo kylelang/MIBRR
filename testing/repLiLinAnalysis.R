@@ -5,7 +5,6 @@
 
 rm(list = ls(all = TRUE))
     
-library(parallel)
 library(lars)
 library(MIBRR)
 library(ggplot2)
@@ -15,12 +14,14 @@ data(diabetes)
 
 y <- diabetes$y
 X <- diabetes$x
+                                        #X <- scale(diabetes$x)
 
 dat1 <- data.frame(cbind(y, X))
-dat1 <- as.data.frame(scale(dat1))
+                                        #dat1 <- as.data.frame(scale(dat1))
+                                        #head(dat1)
 
-## Get the least squares fit:
-fit <- lm(y ~ ., data = dat1)
+
+?ben
 
 ## Run the BEN models:
 out1 <- list()
@@ -30,32 +31,29 @@ for(rp in 1 : 4)
             y           = "y",
             X           = colnames(X),
             iterations  = c(500, 100),
-            sampleSizes = list(rep(500, 2), rep(1000, 2), rep(2000, 2)),
+            sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
             control = list(lambda1Starts = 1.0 + runif(1, -0.25, 0.25),
-                           lambda2Starts = 15.0 + runif(1, -5, 5)
+                           lambda2Starts = 15.0 + runif(1, -5, 5),
+                           optMethod     = "L-BFGS-B"
                            )
             )
     )
 
-out1
-
-length(out1)
-
-## Choose rep:
-rp <- 1
-
 ## Plot MCEM chains:
 par(mfrow = c(1, 2))
 
-plot(out1[[rp]]$lambdaHistory$y[ , 1], type = "l")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "red")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "blue")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "green")
+cols <- rainbow(length(out1))
 
-plot(out1[[rp]]$lambdaHistory$y[ , 2], type = "l")
-lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "red")
-lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "blue")
-lines(out1[[rp]]$lambdaHistory$y[ , 2], col = "green")
+plot(out1[[1]]$lambdaHistory$y[ , 1], type = "l", col = cols[1])
+for(i in 2 : length(out1))
+    lines(out1[[i]]$lambdaHistory$y[ , 1], col = cols[i])
+
+plot(out1[[1]]$lambdaHistory$y[ , 2], type = "l", col = cols[1])
+for(i in 2 : length(out1))
+    lines(out1[[i]]$lambdaHistory$y[ , 2], col = cols[i])
+
+## Choose rep:
+rp <- 1
 
 ## Extract parameters:
 pars <- getParams(out1[[rp]], "y")
@@ -64,6 +62,11 @@ ci   <- apply(pars$beta, 2, quantile, probs = c(0.025, 0.975))
 
 ## Extract lambda estimate:
 pars$lambda
+
+## Get the least squares fit:
+#dat2 <- data.frame(cbind(y, scale(X)))
+fit  <- lm(y ~ ., data = dat1)
+summary(fit)
 
 ## Create forest plot of estimates:
 dat2 <- data.frame(var = names(med),
@@ -83,12 +86,16 @@ p2 + geom_point(mapping = aes(x = lm, y = var), color = "red")
 
 ## Compute (relative) L1 norm of betas:
 lmL1 <- sum(abs(coef(fit)[-1]))
-blL1 <- sum(abs(med[-1]))
+benL1 <- sum(abs(med[-1]))
 
 lmL1
-blL1
+benL1
 
-blL1 / lmL1
+benL1 / lmL1
+
+
+###--------------------------------------------------------------------------###
+
 
 ## Run fully Bayesian BL models:
 out2 <- list()

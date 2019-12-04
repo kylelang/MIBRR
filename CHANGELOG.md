@@ -13,8 +13,13 @@ NOTE:
   undocumented.
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
+## 0.3.3.9000 - 2019-12-04 - ACTIVE
 
-## 0.3.2.9000 - 2019-11-12 - ACTIVE
+### Fixed
+- A bug whereby standardization of Beta was reverted before computing the
+  conditional loglikelihood of Lambda (this was causing optimization issues).
+  
+## 0.3.2.9000 - 2019-11-12
 
 ### Fixed
 - Disabled multithreading in Eigen. We don't want Eigen to autonomously spawn

@@ -5,7 +5,6 @@
 
 rm(list = ls(all = TRUE))
     
-library(parallel)
 library(lars)
 library(MIBRR)
 library(ggplot2)
@@ -19,7 +18,7 @@ X <- diabetes$x
 dat1 <- data.frame(cbind(y, X))
 
 ## Get the least squares fit:
-fit      <- lm(y ~ X)
+fit <- lm(y ~ ., data = dat1)
 
 ## Derive starting values from the least squares fit:
 lamStart <- ncol(X) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
@@ -34,18 +33,19 @@ for(rp in 1 : 4)
                      sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
                      control     = list(
                          lambda1Starts =
-                             lamStart + abs(rnorm(1, 0, sqrt(lamStart)))
+                             lamStart + runif(1, -lamStart / 4, lamStart / 4)
                      )
                      )
+
+## Plot MCEM chains:
+cols <- rainbow(length(out1))
+
+plot(out1[[1]]$lambdaHistory$y[ , 1], type = "l", col = cols[1])
+for(i in 2 : length(out1))
+    lines(out1[[i]]$lambdaHistory$y[ , 1], col = cols[i])
 
 ## Choose rep:
 rp <- 1
-
-## Plot MCEM chains:
-plot(out1[[rp]]$lambdaHistory$y[ , 1], type = "l")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "red")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "blue")
-lines(out1[[rp]]$lambdaHistory$y[ , 1], col = "green")
 
 ## Extract parameters:
 pars <- getParams(out1[[rp]], "y")
@@ -54,6 +54,10 @@ ci   <- apply(pars$beta, 2, quantile, probs = c(0.025, 0.975))
 
 ## Extract lambda estimate:
 pars$lambda
+
+## Get the least squares fit:
+                                        #dat2 <- data.frame(cbind(y, scale(X)))
+                                        #fit  <- lm(y ~ ., data = dat2)
 
 ## Create forest plot of estimates:
 dat2 <- data.frame(var = names(med),

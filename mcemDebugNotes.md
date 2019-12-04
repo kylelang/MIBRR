@@ -98,3 +98,7 @@
 	  - About the same credible intervals for beta
 	  - About the same (relative) L1 norm for beta
 	  - Different (much smaller) posterior median of lambda
+- I can replicate the BEN and BL results for the *diabetes* data from Li and Lin
+  (2010), if I scale the predictor data.
+  - If the predictor data is not scaled, the optimization fails.
+  - The predictors should be scaled internally, so this seems odd.
