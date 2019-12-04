@@ -102,3 +102,14 @@
   (2010), if I scale the predictor data.
   - If the predictor data is not scaled, the optimization fails.
   - The predictors should be scaled internally, so this seems odd.
+
+## Fixes
+- The standardization of the beta samples was being reverted before they were
+  stored.
+  - This was done to return the posterior samples on the same scale as the raw
+    data (since standardization is done on-the-fly).
+  - However, this reversion was done before computing the MC expectations used
+    to parameterize the loglikelihood function for lambda.
+  - It seems that undoing the standardization before optimizing lambda was
+    causing some serious issues, including:
+	1. Convergence failures in the optimization
