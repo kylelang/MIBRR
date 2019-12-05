@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2019-12-04
+// Modified: 2019-12-05
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -452,6 +452,9 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 
 void MibrrGibbs::tauError(int errorCode) const
 {
+  // Print the most recent values of each parameter:
+  dumpParameters();
+  
   if(errorCode == 1) {
     Rcpp::Rcout << "\n";
     Rcpp::stop("Ouch! My tau is broken :(\nSomething terrible has occured \
@@ -471,4 +474,21 @@ void MibrrGibbs::betaError(exception &e) const
   Rcpp::Rcerr << e.what() << endl;
   Rcpp::stop("Something terrible has occured while updating Beta.\nAbove this \
 message, I've printed the that exception I caught.\nBeta luck next time.");
+}
+
+//----------------------------------------------------------------------------//
+
+void MibrrGibbs::dumpParameters() const
+{
+  Rcpp::Rcout << "Sigma:" << endl;
+  Rcpp::Rcout << _sigma << endl;
+
+  Rcpp::Rcout << "Beta:" << endl;
+  Rcpp::Rcout << _betas << endl;
+  
+  Rcpp::Rcout << "Tau:" << endl;
+  Rcpp::Rcout << _taus << endl;
+
+  Rcpp::Rcout << "Lambda:" << endl;
+  Rcpp::Rcout << _lambdas << endl;
 }

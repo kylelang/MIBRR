@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-12-04
-// Modified: 2019-12-04
+// Modified: 2019-12-05
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -218,7 +218,10 @@ public:
   void betaError(exception&) const;
   // @param:  orignial exception object
   // @effect: dispatch an appropriate error message to stderr
- 
+
+  void dumpParameters() const;
+  // @effect: print the most recent values of the parameters to stdout
+  
 private:
   VectorXd _betas;
   ArrayXd  _taus;
