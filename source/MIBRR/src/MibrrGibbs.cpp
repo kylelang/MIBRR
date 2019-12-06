@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2019-12-05
+// Modified: 2019-12-06
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -178,9 +178,9 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   if(_fullBayes) _lambdaSam = MatrixXd(_nDraws, 2);
   else           _lambdaSam = MatrixXd::Zero(1, 1);
   
-  _betaSam  = MatrixXd(_nDraws, _betas.size());
-  _tauSam   = MatrixXd(_nDraws, _taus.size());
-  _sigmaSam = VectorXd(_nDraws);
+  _betaSam  = MatrixXd::Zero(_nDraws, _betas.size()); /////////////////////////////////////////////
+  _tauSam   = MatrixXd::Zero(_nDraws, _taus.size()); ///////////////////////////////////////////////
+  _sigmaSam = VectorXd::Zero(_nDraws); ////////////////////////////////////////////////////////////
   
   _storeGibbsSamples = true;
 }
@@ -226,7 +226,9 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
 //----------------------------------------------------------------------------//
 
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
-{  
+{
+  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
+  
   int     nPreds   = mibrrData.nPreds();
   double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
@@ -269,6 +271,8 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 {
+  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
+  
   int             nPreds = mibrrData.nPreds();
   int             nObs   = mibrrData.nResp(_targetIndex);
   LDLT <MatrixXd> aMatChol;
@@ -332,6 +336,8 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 
 void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
+  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
+  
   double par1, par2; // parameters of sigma's posterior distribution
   int    nObs   = mibrrData.nResp(_targetIndex);
   int    nPreds = mibrrData.nPreds();
@@ -362,6 +368,14 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     double testDraw;
     while(!validDraw) {// Rejection sampling to draw a Sigma variate
       testDraw = drawInvGamma(par1, par2);
+
+      ////////////////////////////////////////////////////////////////////////////////////////////////
+      //if(testDraw < 0.0) {
+      //dbg(par1);
+      //dbg(par2);
+      //dbg(testDraw);
+      //}
+      ////////////////////////////////////////////////////////////////////////////////////////////////
       
       double igShape = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
       double igVal   = calcIncGamma(0.5, igShape, false);
@@ -480,15 +494,9 @@ message, I've printed the that exception I caught.\nBeta luck next time.");
 
 void MibrrGibbs::dumpParameters() const
 {
-  Rcpp::Rcout << "Sigma:" << endl;
-  Rcpp::Rcout << _sigma << endl;
-
-  Rcpp::Rcout << "Beta:" << endl;
-  Rcpp::Rcout << _betas << endl;
-  
-  Rcpp::Rcout << "Tau:" << endl;
-  Rcpp::Rcout << _taus << endl;
-
-  Rcpp::Rcout << "Lambda:" << endl;
-  Rcpp::Rcout << _lambdas << endl;
+  dbg(_penType);
+  dbg(_sigma);
+  dbg(_betas);
+  dbg(_taus);
+  dbg(_lambdas);
 }
