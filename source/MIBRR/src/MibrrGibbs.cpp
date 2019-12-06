@@ -227,8 +227,6 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 {
-  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
-  
   int     nPreds   = mibrrData.nPreds();
   double  tauScale = -1.0; // -1 to ensure an exception if try() fails
   ArrayXd tauMeans;
@@ -271,8 +269,6 @@ void MibrrGibbs::updateTaus(const MibrrData &mibrrData)
 
 void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 {
-  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
-  
   int             nPreds = mibrrData.nPreds();
   int             nObs   = mibrrData.nResp(_targetIndex);
   LDLT <MatrixXd> aMatChol;
@@ -336,8 +332,6 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
 
 void MibrrGibbs::updateSigma(MibrrData &mibrrData)
 {
-  //dbg(_sigma); ///////////////////////////////////////////////////////////////////////////////
-  
   double par1, par2; // parameters of sigma's posterior distribution
   int    nObs   = mibrrData.nResp(_targetIndex);
   int    nPreds = mibrrData.nPreds();
@@ -368,14 +362,6 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
     double testDraw;
     while(!validDraw) {// Rejection sampling to draw a Sigma variate
       testDraw = drawInvGamma(par1, par2);
-
-      ////////////////////////////////////////////////////////////////////////////////////////////////
-      //if(testDraw < 0.0) {
-      //dbg(par1);
-      //dbg(par2);
-      //dbg(testDraw);
-      //}
-      ////////////////////////////////////////////////////////////////////////////////////////////////
       
       double igShape = pow(_lambdas[0], 2) / (8.0 * testDraw * _lambdas[1]);
       double igVal   = calcIncGamma(0.5, igShape, false);
@@ -494,6 +480,7 @@ message, I've printed the that exception I caught.\nBeta luck next time.");
 
 void MibrrGibbs::dumpParameters() const
 {
+  dbg(_targetIndex);
   dbg(_penType);
   dbg(_sigma);
   dbg(_betas);

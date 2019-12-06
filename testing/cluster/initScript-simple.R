@@ -25,8 +25,10 @@ parms$checkKkt   <- TRUE
 parms$optMeth    <- "L-BFGS-B"
 parms$optBound   <- TRUE
 parms$optStrict  <- TRUE
-parms$iters      <- c(500, 500, 100, 25, 25, 500, 500, 1000, 1000)
+parms$iters      <- c(50, 50, 10, 250, 250, 500, 500, 1000, 1000)
 parms$usePcStart <- pcStart
+parms$centerType <- cenType
+parms$dumpPH     <- dumpPH
 
 names(parms$iters) <- c("nMibenEmApprox",
                         "nMiblEmApprox",

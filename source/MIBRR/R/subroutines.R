@@ -92,6 +92,12 @@ init <- function(penalty,
 mcem <- function(mibrrFit) {
     iters      <- mibrrFit$iterations
     totalIters <- sum(iters)
+
+    ## Create container for rolling parameter history:
+    if(mibrrFit$dumpParamHistory) {
+        phMem <- mibrrFit$phHistoryLength
+        ph    <- vector("list", phMem)
+    }
     
     for(i in 1 : totalIters) {
         if(i == 1) {
@@ -110,7 +116,20 @@ mcem <- function(mibrrFit) {
         
         ## Estimate the BEN/BL model:
         mibrrFit$doGibbs(phase)
-               
+        
+        ## Update the rolling parameter sample histories:
+        if(mibrrFit$dumpParamHistory) 
+            for (j in mibrrFit$targetVars) {
+                k            <- ifelse(i %% phMem != 0, i %% phMem, phMem)
+                ph[[k]][[j]] <- with(mibrrFit$gibbsOut[[j]],
+                                     list(beta   = beta,
+                                          tau    = tau,
+                                          sigma  = sigma,
+                                          lambda = mibrrFit$lambdaMat[j, ])
+                                     )
+                saveRDS(ph, "parameterHistory.rds")
+            }
+        
         if(i < totalIters) {
             ## Print a nice message:
             if(mibrrFit$verbose) {

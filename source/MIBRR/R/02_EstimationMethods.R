@@ -68,6 +68,8 @@ MibrrFit$methods(
                  
                  ## Update the parameters' starting values:
                  if(doMcem) startParams(restart = TRUE)
+
+                 list()#####################################################################
              },
              
              eNetLL = function(lambdaVec, index) {

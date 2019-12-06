@@ -17,13 +17,42 @@ xCor    <- 0.5
 nReps   <- 8
 mi      <- FALSE
 sparse  <- TRUE
-nPreds  <- 7
-pcStart <- TRUE
+nPreds  <- 5
+pcStart <- FALSE
+cenType <- "mode"
+dumpPH  <- FALSE
 
 source("initScript-simple.R")
 
-out <- testMcem(rp = 1, pm = pm, parms = parms, mi = mi)
+out <- testMcem(rp = 1, pm = pm, parms = parms, nChains = 1, type = 3)
 
+tmp <- readRDS("parameterHistory.rds")
+
+length(tmp)
+
+tmp[[2]]
+
+md <- MIBRR:::numMode
+
+md(tmp[[1]]$x1$sigma)
+
+plot(density(tmp[[1]]$x1$sigma), xlim = c(-5, 1000))
+
+hist(tmp[[1]]$x1$sigma)
+
+s2 <- tmp[[1]]$x1$sigma
+
+sum(s2 < 0)
+
+length(out)
+out <- out[[1]]
+class(out)
+ls(out)
+length(out$history)
+tmp <- out$history
+str(tmp)
+
+tmp[[1]]
                                         #class(out[[1]]$bl)
                                         #class(out[[2]]$bl)
                                         #class(out[[1]]$ben)

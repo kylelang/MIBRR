@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
-### Created:  2017-NOV-28
-### Modified: 2019-FEB-28
+### Created:  2017-11-28
+### Modified: 2019-12-06
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -81,7 +81,10 @@ MibrrFit <- setRefClass("MibrrFit",
                             useBetaMeans      = "logical",
                             optMaxRestarts    = "integer",
                             optRestartRatio   = "numeric",
-                            optStrict         = "logical"
+                            optStrict         = "logical",
+                            centerType        = "character",
+                            dumpParamHistory  = "logical",
+                            phHistoryLength   = "integer"
                         )
                         )
 
@@ -138,6 +141,9 @@ MibrrFit$methods(
                      optMaxRestarts    <<- 5L
                      optRestartRatio   <<- 0.1
                      optStrict         <<- TRUE
+                     centerType        <<- "median"
+                     dumpParamHistory  <<- FALSE
+                     phHistoryLength   <<- 10L
                  },
              
 ################################### MUTATORS ###################################
@@ -153,7 +159,10 @@ MibrrFit$methods(
              
              setControl = function(x) {
                  "Assign the control parameters"
-                 ints <- c("smoothingWindow", "miceIters", "optTraceLevel")
+                 ints <- c("smoothingWindow",
+                           "miceIters",
+                           "optTraceLevel",
+                           "phHistoryLength")
                  
                  for(n in names(x)) {
                      if(n %in% ints) field(n, as.integer(x[[n]]))
@@ -220,6 +229,24 @@ MibrrFit$methods(
                  check <- length(userRng) > 0 & userRng != ""
                  if(check) .lec.CurrentStream(userRng)
              },
+
+###--------------------------------------------------------------------------###
+
+####################################################################################################
+                                        #updateHistory = function(target) {
+                                        #    "Update the parameter sample history"
+                                        #    history <<- c(
+                                        #        history,
+                                        #        with(gibbsOut[[target]],
+                                        #             list(beta   = beta,
+                                        #                  tau    = tau,
+                                        #                  sigma  = sigma,
+                                        #                  lambda = lambda)
+                                        #             )
+                                        #    )
+                                        #},
+######################################################################################################
+
              
 ################################# ACCESSORS ####################################
              
@@ -243,7 +270,10 @@ MibrrFit$methods(
                       optTraceLevel     = optTraceLevel,
                       optCheckKkt       = optCheckKkt,
                       optMethod         = optMethod,
-                      optBoundLambda    = optBoundLambda)
+                      optBoundLambda    = optBoundLambda,
+                      centerType        = centerType,
+                      dumpParamHistory  = dumpParamHistory,
+                      phHistoryLength   = phHistoryLength)
              },
              
 ###--------------------------------------------------------------------------###
@@ -581,12 +611,18 @@ MibrrFit$methods(
                  "Provide starting values for all parameters"
 
                  if(restart) {
+                     ## Choose the type of central tendency to use:
+                     cenTen <- switch(centerType,
+                                      mean   = mean,
+                                      median = median,
+                                      mode   = numMode)
+                     
                      for(j in 1 : nTargets) {
-                         sigmaStarts[j]   <<- numMode(gibbsOut[[j]]$sigma)
+                         sigmaStarts[j]   <<- cenTen(gibbsOut[[j]]$sigma)
                          tauStarts[ , j]  <<-
-                             apply(gibbsOut[[j]]$tau, 2, numMode)
+                             apply(gibbsOut[[j]]$tau, 2, cenTen)
                          betaStarts[ , j] <<-
-                             apply(gibbsOut[[j]]$beta, 2, numMode)
+                             apply(gibbsOut[[j]]$beta, 2, cenTen)
                      }
                      return()
                  }

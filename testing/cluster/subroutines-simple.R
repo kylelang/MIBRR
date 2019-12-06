@@ -1,7 +1,7 @@
 ### Title:    Simple Testing Subroutines
 ### Author:   Kyle M. Lang
 ### Created:  2019-11-13
-### Modified: 2019-11-28
+### Modified: 2019-12-06
 ### Purpose:  This file contains the subroutines to help debug the MCEM
 ###           estimation in MIBRR
 
@@ -173,9 +173,49 @@ runMibrr2 <- function(data, parms) {
 }
 
 ###--------------------------------------------------------------------------###
+
+## Estimate the BEN/BL models:
+runBen <- function(data, parms) {
+    ## Advance the RNG stream:
+    .lec.ResetNextSubstream(parms$rngStream)
+
+    ## Run BEN:
+    try(
+        ben(data        = data,
+            y           = colnames(data)[1],
+            X           = colnames(data)[-1],
+            iterations  = as.numeric(
+                parms$iters[c("nMibenEmApprox", "nEmTune")]
+            ),
+            sampleSizes = with(
+                parms,
+                list(as.numeric(iters[c("approxBurn", "approxGibbs")]),
+                     as.numeric(iters[c("tuneBurn", "tuneGibbs")]),
+                     as.numeric(iters[c("finalBurn", "finalGibbs")])
+                     )
+            ),
+            seed        = parms$rngStream,
+            userRng     = parms$rngStream,
+            verbose     = parms$verbose,
+            control     = with(parms,
+                               list(optCheckKkt      = checkKkt,
+                                    optMethod        = optMeth,
+                                    optBoundLambda   = optBound,
+                                    optStrict        = optStrict,
+                                    lambda1Starts    = lamStarts$miben[[1]],
+                                    lambda2Starts    = lamStarts$miben[[2]],
+                                    centerType       = centerType,
+                                    dumpParamHistory = dumpPH
+                                    )
+                               )
+            )
+    )
+}
+
+###--------------------------------------------------------------------------###
                                       
 ## Only do MI for a simple level of PM. Used for iteration planning.
-testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE, mi = TRUE)
+testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE, type = 1)
 {
     ## Store the current rep index:
     parms$rp <- rp
@@ -190,13 +230,6 @@ testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE, mi = TRUE)
     
     ## Simulate the complete data:
     dat0 <- genSimpleData(parms = parms, pm = pm)
-
-    ## Compute the BL starting values suggested by Park and Casella (2008):
-    if(parms$usePcStart) {
-        fit <- lm(dat0[ , 1] ~ as.matrix(dat0[ , -1]))
-        parms$lamStarts0$mibl <-
-            (ncol(dat0) - 1) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
-    }
     
     out <- list()
     for(i in 1 : nChains) {
@@ -208,10 +241,11 @@ testMcem <- function(rp, pm, parms, nChains = 2, jitterStarts = TRUE, mi = TRUE)
                                       )
         
         ## Run the models:
-        if(mi)
-            out[[i]] <- runMibrr(data = dat0, parms = parms)
-        else
-            out[[i]] <- runMibrr2(data = dat0, parms = parms)
+        out[[i]] <- switch(type,
+			   runMibrr(data = dat0, parms = parms),
+        		   runMibrr2(data = dat0, parms = parms),
+			   runBen(data = dat0, parms = parms)
+			   )
     }
     
     ## Clean up the RNG state:
