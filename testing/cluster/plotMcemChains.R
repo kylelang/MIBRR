@@ -55,6 +55,12 @@ for(i in goodReps) {
     readline("Hit any key to continue. ")
 }
 
+## Check error messages:
+for(i in which(check)) {
+    tmp <- out[[i]][[1]]$ben
+    print(tmp)
+}
+
 ## Find failed reps:
 check <- c()
 for(i in 1 : length(out))
