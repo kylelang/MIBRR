@@ -115,8 +115,11 @@
 	1. Convergence failures in the optimization
 
 ## Ideas
-- The MCEM algorithm produces a Markov chain of lambdas. Maybe we should use these chains in a more traditional way.
-  - Right now, we're taking the final estimate of lambda and using that to parameterize our posteriour samples
-  - Why don't we average over a stationary chunk of the chain to get our final estimate of lambda?
+- The MCEM algorithm produces a Markov chain of lambdas. Maybe we should use 
+  these chains in a more traditional way.
+  - Right now, we're taking the final estimate of lambda and using that to 
+	parameterize our posteriour samples
+  - Why don't we average over a stationary chunk of the chain to get our final 
+	estimate of lambda?
   - We'll need to check the chains for convergence, first.
 	- Maybe just use two split chains to compute and R-Hat?

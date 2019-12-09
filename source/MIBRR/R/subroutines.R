@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-02-28
+### Modified: 2019-12-09
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -195,16 +195,6 @@ postProcess <- function(mibrrFit, ...) {
     
     ## Clean the RNG state:
     cleanRng(mibrrFit)
-    
-    ## Clean the RNG state:
-                                        #mibrrFit$cleanRng()
-    
-    ## Fix rlecuyer's random seed table when we have only 1 remaining stream:
-                                        #check <- !is.null(.lec.Random.seed.table$name) &&
-                                        #    !is.matrix(.lec.Random.seed.table$Cg)
-    
-                                        #if(check) .lec.Random.seed.table[1 : 4] <<-
-                                        #              lapply(.lec.Random.seed.table[1 : 4], matrix, nrow = 1)
-    
+        
     mibrrFit
 }# END postProcess()

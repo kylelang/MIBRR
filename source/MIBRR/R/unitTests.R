@@ -1,7 +1,7 @@
 ### Title:    R-Based Unit Tests for MIBRR
 ### Author:   Kyle M. Lang
-### Created:  2010-JAN-23
-### Modified: 2019-FEB-04
+### Created:  2010-01-23
+### Modified: 2019-02-04
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##

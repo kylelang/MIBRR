@@ -1,7 +1,7 @@
 // Title:    Header file to hold my global parameter definitions
 // Author:   Kyle M. Lang
 // Created:  2014-08-25
-// Modified: 2019-12-06
+// Modified: 2019-12-09
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
@@ -29,7 +29,7 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-#include "dbg.h"
+//#include "dbg.h"
 
 #ifndef MACHINE_PRECISION
 #define MACHINE_PRECISION std::numeric_limits<double>::epsilon()

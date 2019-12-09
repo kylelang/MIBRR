@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-06
+### Modified: 2019-12-09
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -231,22 +231,6 @@ MibrrFit$methods(
              },
 
 ###--------------------------------------------------------------------------###
-
-####################################################################################################
-                                        #updateHistory = function(target) {
-                                        #    "Update the parameter sample history"
-                                        #    history <<- c(
-                                        #        history,
-                                        #        with(gibbsOut[[target]],
-                                        #             list(beta   = beta,
-                                        #                  tau    = tau,
-                                        #                  sigma  = sigma,
-                                        #                  lambda = lambda)
-                                        #             )
-                                        #    )
-                                        #},
-######################################################################################################
-
              
 ################################# ACCESSORS ####################################
              

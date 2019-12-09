@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2019-12-06
+// Modified: 2019-12-09
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -178,9 +178,9 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   if(_fullBayes) _lambdaSam = MatrixXd(_nDraws, 2);
   else           _lambdaSam = MatrixXd::Zero(1, 1);
   
-  _betaSam  = MatrixXd::Zero(_nDraws, _betas.size()); /////////////////////////////////////////////
-  _tauSam   = MatrixXd::Zero(_nDraws, _taus.size()); ///////////////////////////////////////////////
-  _sigmaSam = VectorXd::Zero(_nDraws); ////////////////////////////////////////////////////////////
+  _betaSam  = MatrixXd(_nDraws, _betas.size());
+  _tauSam   = MatrixXd(_nDraws, _taus.size());
+  _sigmaSam = VectorXd(_nDraws); 
   
   _storeGibbsSamples = true;
 }
@@ -451,10 +451,7 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 
 
 void MibrrGibbs::tauError(int errorCode) const
-{
-  // Print the most recent values of each parameter:
-  dumpParameters();
-  
+{ 
   if(errorCode == 1) {
     Rcpp::Rcout << "\n";
     Rcpp::stop("Ouch! My tau is broken :(\nSomething terrible has occured \
@@ -478,12 +475,12 @@ message, I've printed the that exception I caught.\nBeta luck next time.");
 
 //----------------------------------------------------------------------------//
 
-void MibrrGibbs::dumpParameters() const
-{
-  dbg(_targetIndex);
-  dbg(_penType);
-  dbg(_sigma);
-  dbg(_betas);
-  dbg(_taus);
-  dbg(_lambdas);
-}
+//void MibrrGibbs::dumpParameters() const
+//{
+//  dbg(_targetIndex);
+//  dbg(_penType);
+//  dbg(_sigma);
+//  dbg(_betas);
+//  dbg(_taus);
+//  dbg(_lambdas);
+//}

@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-08-20
-// Modified: 2019-12-06
+// Modified: 2019-12-09
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -56,15 +56,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 {
   // Disable multithreading for Eigen ops:
   Eigen::setNbThreads(1);
-
-  if(false) {
-    dbg(sigmaStarts); ////////////////////////////////////////////////////////////////////////
-    dbg(betaStarts); /////////////////////////////////////////////////////////////////////////
-    dbg(tauStarts); //////////////////////////////////////////////////////////////////////////
-    dbg(lambda1); ////////////////////////////////////////////////////////////////////////////
-    dbg(lambda2); ////////////////////////////////////////////////////////////////////////////
-  }
-  
+ 
   // Unpack the list of missing row indices:
   std::vector< std::vector<int> > missIndices;
   for(int v = 0; v < nTargets; v++) missIndices.push_back(missList[v]);
@@ -123,11 +115,6 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 	if(check0) {
 	  Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
 	  Rcpp::Rcout << " of " << burnSams << endl;
-
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //for(int j = 0; j < nTargets; j++) mibrrGibbs[j].dumpParameters();
-	  ////////////////////////////////////////////////////////////////////////////////////
-
 	}
       }
       else {
@@ -138,15 +125,10 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 	  Rcpp::Rcout <<
 	    "Doing Gibbs sampling iteration " << (i + 1) - burnSams;
 	  Rcpp::Rcout << " of " << totalSams - burnSams << endl;
-
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //for(int j = 0; j < nTargets; j++) mibrrGibbs[j].dumpParameters();
-	  ////////////////////////////////////////////////////////////////////////////////////
-
 	}
       }
     }
-   
+    
     // Improve the output's aesthetics:
     bool check1 = verbose & ((i == burnSams - 1) || (i == totalSams - 1)); 
     if(check1) Rcpp::Rcout << "\n";

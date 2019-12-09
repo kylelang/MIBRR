@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-09-30
-### Modified: 2019-12-04
+### Modified: 2019-12-06
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -68,10 +68,10 @@ MibrrFit$methods(
                  
                  ## Update the parameters' starting values:
                  if(doMcem) startParams(restart = TRUE)
-
-                 list()#####################################################################
              },
-             
+
+###--------------------------------------------------------------------------###
+
              eNetLL = function(lambdaVec, index) {
                  "Conditional loglikelihood function of Lambda (used for MCEM)"
                  
@@ -99,7 +99,9 @@ MibrrFit$methods(
                  ## Return the LL:
                  p * log(l1) - p * e1 - (l2 / 2) * e2 - (l1^2 / (8 * l2)) * e3
              },
-             
+
+###--------------------------------------------------------------------------###
+
              eNetGrad = function(lambdaVec, index) {
                  "Gradient function for the conditional LL of Lambda"
                  l1 <- lambdaVec[1]
@@ -127,7 +129,9 @@ MibrrFit$methods(
                  c((p / l1) + (p * w1 * e1) - (w1 * e3),  # dLL / dl1
                  (-p * w2 * e1) - (0.5 * e2) + (w2 * e3)) # dLL / dl2
              },             
-                      
+
+###--------------------------------------------------------------------------###
+
              optWrap = function(index, method, lowBounds) {
                  "Wrapper to allow optimx to run within lapply()"
 
@@ -208,7 +212,9 @@ MibrrFit$methods(
                  ## Return convergence info:
                  conv
              },
-             
+
+###--------------------------------------------------------------------------###
+
              updateBlLambda = function(index) {
                  "Optimize lambda for the BL using the rule given in Park & Casella (2008)"
                  taus <- gibbsOut[[index]]$tau
@@ -216,6 +222,8 @@ MibrrFit$methods(
                  
                  lambdaMat[index, 1] <<- sqrt((2 * p) / sum(colMeans(taus)))
              },
+
+###--------------------------------------------------------------------------###
 
              optimizeLambda = function(iter) {
                  "Optimize the BEN or BL penalty parameters"

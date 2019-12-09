@@ -13,11 +13,21 @@ NOTE:
   undocumented.
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
-## 0.3.3.9000 - 2019-12-04 - ACTIVE
+
+## 0.3.3.9000 - 2019-12-09 - ACTIVE
 
 ### Fixed
 - A bug whereby standardization of Beta was reverted before computing the
   conditional loglikelihood of Lambda (this was causing optimization issues).
+
+### Added
+- A control list option, `dumpParamHistory`, to save an RDS file containing the 
+  last several iterations of parameter samples. Defaults to `FALSE`.
+- A control list option, `phHistoryLength`, that defines how many samples are 
+  stored when `dumpParamHistory = TRUE`. Defaults to `10L`.
+- A control list option, `centerType`, that defines the central tendency used to
+  restart the Gibbs sampler after each MCEM iteration. Possible values are 
+  *mode* (the default), *mean*, and *median*.
   
 ## 0.3.2.9000 - 2019-11-12
 

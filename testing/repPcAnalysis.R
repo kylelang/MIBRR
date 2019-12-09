@@ -1,7 +1,7 @@
 ### Title:    Run Tests to Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
 ### Created:  2019-01-01
-### Modified: 2019-11-28
+### Modified: 2019-12-09
 
 rm(list = ls(all = TRUE))
     
@@ -54,10 +54,6 @@ ci   <- apply(pars$beta, 2, quantile, probs = c(0.025, 0.975))
 
 ## Extract lambda estimate:
 pars$lambda
-
-## Get the least squares fit:
-                                        #dat2 <- data.frame(cbind(y, scale(X)))
-                                        #fit  <- lm(y ~ ., data = dat2)
 
 ## Create forest plot of estimates:
 dat2 <- data.frame(var = names(med),

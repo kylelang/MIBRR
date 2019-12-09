@@ -1,7 +1,7 @@
 // Title:    C++ Testing Function to Export in MIBRR
 // Author:   Kyle M. Lang
-// Created:  2014-AUG-20
-// Modified: 2019-FEB-01
+// Created:  2014-08-20
+// Modified: 2019-02-01
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
 //  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //

@@ -1,8 +1,8 @@
 // Title:    Function definitions for the MibrrSamplers class
 // Author:   Kyle M. Lang (with some routines adapted from Josef Leydold's and
 //           Robert E. Wheeler's C code)
-// Created:  2017-NOV-23
-// Modified: 2019-FEB-01
+// Created:  2017-11-23
+// Modified: 2019-02-01
 // Purpose:  These routines will generate pseudo-random variates for use in the
 //           MIBRR routines.
 // Note:     Some of these routines were adapted from the C code from other

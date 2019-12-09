@@ -1,7 +1,7 @@
 ### Title:    Run Tests to Explore the Behavior of MCEM Chains
 ### Author:   Kyle M. Lang
 ### Created:  2019-01-01
-### Modified: 2019-11-28
+### Modified: 2019-12-09
 
 rm(list = ls(all = TRUE))
     
@@ -12,16 +12,9 @@ library(ggplot2)
 ## Prep the data:
 data(diabetes)
 
-y <- diabetes$y
-X <- diabetes$x
-                                        #X <- scale(diabetes$x)
-
+y    <- diabetes$y
+X    <- diabetes$x
 dat1 <- data.frame(cbind(y, X))
-                                        #dat1 <- as.data.frame(scale(dat1))
-                                        #head(dat1)
-
-
-?ben
 
 ## Run the BEN models:
 out1 <- list()
