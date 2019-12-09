@@ -43,7 +43,6 @@ MibrrFit <- setRefClass("MibrrFit",
                             l2Pars            = "numeric",
                             usePcStarts       = "logical",
                             smoothingWindow   = "integer",
-                                        #scale             = "logical",
                             minPredCor        = "numeric",
                             miceIters         = "integer",
                             miceRidge         = "numeric",
@@ -106,7 +105,8 @@ MibrrFit$methods(
                           seed        = NULL,
                           userRng     = "",
                           ridge       = 0.0,
-                          penalty     = 2L)
+                          penalty     = 2L,
+                          nChains     = 1L)
                  {
                      "Initialize an object of class MibrrFit"
                      data              <<- data
@@ -121,7 +121,6 @@ MibrrFit$methods(
                      verbose           <<- verbose
                      convThresh        <<- 1.1
                      usePcStarts       <<- FALSE
-                                        #scale             <<- TRUE
                      minPredCor        <<- 0.3
                      miceIters         <<- 10L
                      miceRidge         <<- 1e-4
@@ -131,7 +130,7 @@ MibrrFit$methods(
                      optCheckKkt       <<- TRUE
                      optMethod         <<- "L-BFGS-B"
                      optBoundLambda    <<- TRUE
-                     nChains           <<- 1L
+                     nChains           <<- nChains
                      seed              <<- seed
                      userRng           <<- userRng
                      ridge             <<- ridge
@@ -244,7 +243,6 @@ MibrrFit$methods(
                  "Return the 'control' list"
                  list(convThresh        = convThresh,
                       usePcStarts       = usePcStarts,
-                                        #scale             = scale,
                       minPredCor        = minPredCor,
                       miceIters         = miceIters,
                       miceRidge         = miceRidge,
@@ -397,12 +395,12 @@ MibrrFit$methods(
                  
                  ## Re-order non-ignored data columns and store as data:
                  data <<- data.frame(
-                     data[ , targetVars],
-                     data[ , setdiff(colnames(data), targetVars)]
+                     data[targetVars],
+                     data[setdiff(colnames(data), targetVars)]
                  )
                  
                  ## Hack to deal with 1D matrix conversion to vector:
-                 if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
+                                        #if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
                                 
                  ## Store nonresponse counts:
                  missCounts <<- sapply(colSums(is.na(data)), as.integer)
