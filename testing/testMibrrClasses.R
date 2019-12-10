@@ -3,11 +3,13 @@
 ### Created:  2019-10-09
 ### Modified: 2019-12-10
 
+rm(list = ls(all = TRUE))
+
 source("../source/MIBRR/R/00_MibrrSamples.R")
 source("../source/MIBRR/R/01_MibrrChain.R")
 source("../source/MIBRR/R/02_MibrrFit.R")
 
-source("../source/MIBRR/R/control0.R")
+source("../source/MIBRR/R/initControl.R")
 
 library(mvtnorm)
 library(MIBRR)
@@ -37,37 +39,38 @@ setControl <- function(x, where = .self) {
             where$field(n, cast(x[n], fields[n]))
 }
 
-fit <- MibrrFit(data        = mibrrExampleData,
-                targetVars  = c("y", paste0("x", c(1 : 3))),
-                ignoreVars  = "idNum",
-                iterations  = c(30L, 10L),
-                sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
-                doImp       = TRUE,
-                doMcem      = TRUE,
-                verbose     = TRUE,
-                seed        = 235711,
-                penalty     = 2L,
-                nChains     = 2L)
+mibrrFit <- MibrrFit(data        = mibrrExampleData,
+                     targetVars  = c("y", paste0("x", c(1 : 3))),
+                     ignoreVars  = "idNum",
+                     iterations  = c(30L, 10L),
+                     sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+                     doImp       = TRUE,
+                     doMcem      = TRUE,
+                     verbose     = TRUE,
+                     seed        = 235711,
+                     penalty     = 2L,
+                     nChains     = 2L)
 
-fit$processInputs()
-setControl(control0, fit)
-fit$setupRng()
-fit$simpleImpute()
-fit$initChains()
+## Process and check the user inputs:
+mibrrFit$processInputs()
 
-fit$getRefClass()
+## Setup the PRNG (each target variable gets an independent RNG stream):
+mibrrFit$setupRng()
 
-nChains <- 2
+mibrrFit$control <- MIBRR_CONTROL
 
-for(k in 1 : nChains) {
-    setControl(control0, fit$chains[[k]])
-    for(j in targetVars)
-        setControl(control0, fit$chains[[k]]$parameters[[j]])
-}
+## Do we have any missing data:
+haveMiss <- any(mibrrFit$missCounts > 0)
 
-fit$chains[[1]]$doGibbs()
-fit$chains[[1]]$optimizeLambda()
-fit$chains[[1]]$parameters[["y"]]
+## Temporarily fill missing with single imputations:
+if(haveMiss) mibrrFit$simpleImpute()
+
+## Initialize the 'MibrrChain' objects:
+mibrrFit$initChains()
+
+mibrrFit$chains[[1]]$doGibbs()
+mibrrFit$chains[[1]]$optimizeLambda()
+mibrrFit$chains[[1]]$parameters[["y"]]
 
 fit$fields
 fit$methods()

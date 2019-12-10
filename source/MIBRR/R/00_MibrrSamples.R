@@ -101,20 +101,6 @@ MibrrSamples$methods(
                  
 ################################### MUTATORS ###################################
                  
-                                        #setControl = function(x) {
-                                        #    "Assign the control parameters"
-                                        #    
-                                        #    ## Get the fields for each class:
-                                        #    fields <- getRefClass(class(.self))$fields()
-                                        #    
-                                        #    ## Assign the control list entries to the correct classes:
-                                        #    for(n in names(x))
-                                        #        if(n %in% names(fields))
-                                        #            field(n, cast(x[n], fields[n]))
-                                        #},
-                 
-###--------------------------------------------------------------------------###
-                 
                  incIter = function() iter <<- iter + 1L,
                  
 ###--------------------------------------------------------------------------###

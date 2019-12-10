@@ -27,30 +27,28 @@
 
 MibrrChain <- setRefClass("MibrrChain",
                           fields = list(
-                              chain             = "integer",
-                              data              = "data.frame",
-                              targetVars        = "character",
-                                        #iterations        = "integer",
-                              sampleSizes       = "list",
-                              doMcem            = "logical",
-                              verbose           = "logical",
-                              l1Pars            = "numeric",
-                              l2Pars            = "numeric",
-                              missList          = "list",
-                              nTargets          = "integer",
-                                        #totalIters        = "integer",
-                              ridge             = "numeric",
-                              penalty           = "integer",
-                              savePpSams        = "logical",
-                              useBetaMeans      = "logical",
-                              optTraceLevel     = "integer",
-                              optCheckKkt       = "logical",
-                              optMethod         = "character",
-                              optBoundLambda    = "logical",
-                              optMaxRestarts    = "integer",
-                              optRestartRatio   = "numeric",
-                              optStrict         = "logical",
-                              parameters        = "list"
+                              chain           = "integer",
+                              data            = "data.frame",
+                              targetVars      = "character",
+                              sampleSizes     = "list",
+                              doMcem          = "logical",
+                              verbose         = "logical",
+                              l1Pars          = "numeric",
+                              l2Pars          = "numeric",
+                              missList        = "list",
+                              nTargets        = "integer",
+                              ridge           = "numeric",
+                              penalty         = "integer",
+                              savePpSams      = "logical",
+                              useBetaMeans    = "logical",
+                              optTraceLevel   = "integer",
+                              optCheckKkt     = "logical",
+                              optMethod       = "character",
+                              optBoundLambda  = "logical",
+                              optMaxRestarts  = "integer",
+                              optRestartRatio = "numeric",
+                              optStrict       = "logical",
+                              parameters      = "list"
                           )
                           )
 
@@ -152,8 +150,6 @@ MibrrChain$methods(
                    
                    ## Extract starting values from the 'parameters' field:
                    starts <- prepStarts()
-
-                   print(data)
                    
                    gibbsOut <-
                        MIBRR:::runGibbs(data         = as.matrix(data),

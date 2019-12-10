@@ -25,68 +25,38 @@
 
 MibrrFit <- setRefClass("MibrrFit",
                         fields = list(
-                            data              = "data.frame",
-                            targetVars        = "character",
-                            ignoreVars        = "character",
-                            iterations        = "integer",
-                            sampleSizes       = "list",
-                            missCode          = "integer",
-                            seed              = "ANY",
-                            doImp             = "logical",
-                            doMcem            = "logical",
-                                        #checkConv         = "logical",
-                            verbose           = "logical",
-                                        #convThresh        = "numeric",
-                                        #lambda1Starts     = "numeric",
-                                        #lambda2Starts     = "numeric",
-                            l1Pars            = "numeric",
-                            l2Pars            = "numeric",
-                                        #usePcStarts       = "logical",
-                                        #smoothingWindow   = "integer",
-                                        #minPredCor        = "numeric",
-                                        #miceIters         = "integer",
-                                        #miceRidge         = "numeric",
-                                        #miceMethod        = "character",
-                                        #preserveStructure = "logical",
-                                        #optTraceLevel     = "integer",
-                                        #optCheckKkt       = "logical",
-                                        #optMethod         = "character",
-                                        #optBoundLambda    = "logical",
-                                        #gibbsOut          = "list",
-                            ignoreCols    = "data.frame",
-                            rawNames          = "character",
-                            impRowsPool       = "integer",
-                            missList          = "list",
-                            nChains           = "integer",
-                            rHats             = "list",
-                                        #lambdaMat         = "matrix",
-                                        #lambdaHistory     = "list",
-                                        #lambdaConv        = "list",
-                                        #betaStarts        = "matrix",
-                                        #tauStarts         = "matrix",
-                                        #sigmaStarts       = "numeric",
-                            userMissCode      = "logical",
-                            missCounts        = "integer",
-                            nTargets          = "integer",
-                            nVar              = "integer",
-                            nPreds            = "integer",
-                            nObs              = "integer",
-                            totalIters        = "integer",
-                            rng0              = "character",
-                            userRng           = "character",
-                            streams           = "character",
-                            ridge             = "numeric",
-                            penalty           = "integer",
-                                        #savePpSams        = "logical",
-                                        #useBetaMeans      = "logical",
-                                        #optMaxRestarts    = "integer",
-                                        #optRestartRatio   = "numeric",
-                                        #optStrict         = "logical",
-                                        #centerType        = "character",
-                                        #dumpParamHistory  = "logical",
-                                        #phHistoryLength   = "integer",
-                            chains            = "list",
-                            control           = "list"
+                            data         = "data.frame",
+                            targetVars   = "character",
+                            ignoreVars   = "character",
+                            iterations   = "integer",
+                            sampleSizes  = "list",
+                            missCode     = "integer",
+                            seed         = "ANY",
+                            doImp        = "logical",
+                            doMcem       = "logical",
+                            verbose      = "logical",
+                            l1Pars       = "numeric",
+                            l2Pars       = "numeric",
+                            ignoreCols   = "data.frame",
+                            rawNames     = "character",
+                            impRowsPool  = "integer",
+                            missList     = "list",
+                            nChains      = "integer",
+                            rHats        = "list",
+                            userMissCode = "logical",
+                            missCounts   = "integer",
+                            nTargets     = "integer",
+                            nVar         = "integer",
+                            nPreds       = "integer",
+                            nObs         = "integer",
+                            totalIters   = "integer",
+                            rng0         = "character",
+                            userRng      = "character",
+                            streams      = "character",
+                            ridge        = "numeric",
+                            penalty      = "integer",
+                            chains       = "list",
+                            control      = "list"
                         )
                         )
 
@@ -112,40 +82,20 @@ MibrrFit$methods(
                           nChains     = 1L)
                  {
                      "Initialize an object of class MibrrFit"
-                     data              <<- data
-                     targetVars        <<- targetVars
-                     ignoreVars        <<- ignoreVars
-                     iterations        <<- iterations
-                     sampleSizes       <<- sampleSizes
-                     missCode          <<- missCode
-                     doImp             <<- doImp
-                     doMcem            <<- doMcem
-                                        #checkConv         <<- TRUE
-                     verbose           <<- verbose
-                                        #convThresh        <<- 1.1
-                                        #usePcStarts       <<- FALSE
-                                        #minPredCor        <<- 0.3
-                                        #miceIters         <<- 10L
-                                        #miceRidge         <<- 1e-4
-                                        #miceMethod        <<- "pmm"
-                                        #preserveStructure <<- TRUE
-                                        #optTraceLevel     <<- 0L
-                                        #optCheckKkt       <<- TRUE
-                                        #optMethod         <<- "L-BFGS-B"
-                                        #optBoundLambda    <<- TRUE
-                     nChains           <<- nChains
-                     seed              <<- seed
-                     userRng           <<- userRng
-                     ridge             <<- ridge
-                     penalty           <<- penalty
-                                        #savePpSams        <<- FALSE
-                                        #useBetaMeans      <<- FALSE
-                                        #optMaxRestarts    <<- 5L
-                                        #optRestartRatio   <<- 0.1
-                                        #optStrict         <<- TRUE
-                                        #centerType        <<- "median"
-                                        #dumpParamHistory  <<- FALSE
-                                        #phHistoryLength   <<- 10L
+                     data        <<- data
+                     targetVars  <<- targetVars
+                     ignoreVars  <<- ignoreVars
+                     iterations  <<- iterations
+                     sampleSizes <<- sampleSizes
+                     missCode    <<- missCode
+                     doImp       <<- doImp
+                     doMcem      <<- doMcem
+                     verbose     <<- verbose
+                     nChains     <<- nChains
+                     seed        <<- seed
+                     userRng     <<- userRng
+                     ridge       <<- ridge
+                     penalty     <<- penalty
                  },
              
 ################################### MUTATORS ###################################
@@ -156,44 +106,6 @@ MibrrFit$methods(
                  else
                      data[ , vars] <<- dat1[ , vars]
              },
-             
-###--------------------------------------------------------------------------###
-             
-                                        #setControl = function(x = NULL, where = "MibrrFit") {
-                                        #    "Assign the control parameters"
-                                        #    
-                                        #    ## Load the default control list:
-                                        #    load("control0.RData")
-                                        #    
-                                        #    ## Add user-defined control parameters:
-                                        #    if(!is.null(x)) control0[names(x)] <- x
-                                        #    
-                                        #    ## Get the fields for each class:
-                                        #    if(where == "MibrrData") {
-                                        #    fields <- getRefClass(where)$fields()
-                                        #    for(n in names(control0)) {
-                                        #        if(n %in% names(fields)) {
-                                        #            field(n, castObj(control0[n], fields[n]))
-                                        #        }
-                                        #    }
-                                        #    ## Assign the control list entries to the correct classes:
-                                        #    for(n in names(control0)) {
-                                        #        if(n %in% names(fields)) {
-                                        #            if(what == "MibrrFit")
-                                        #                field(n, castObj(control0[n], fields[n]))
-                                        #            else if(what == "MibrrChain")
-                                        #                for(k in 1 : nChains)
-                                        #                    chains[[k]]$field(n, cast(control0[n], fields[n]))
-                                        #            else if(what == "MibrrSamples")
-                                        #                for(k in 1 : nChains)
-                                        #                    for(v in targetVars)
-                                        #                        chains[[k]]$parameters[[v]]$field(n, cast(control0[n], fields[n]))
-                                        #        }
-                                        #        else
-                                        #            warning(paste0(n, " is not a valid control list parameter. It will be ignored."))
-                                        #    }
-                                        #    }
-                                        #},
              
 ###--------------------------------------------------------------------------###
              
@@ -262,12 +174,6 @@ MibrrFit$methods(
 ###--------------------------------------------------------------------------###
              
 ################################# ACCESSORS ####################################
-             
-                                        #dataNames    = function() { colnames(data)                       },
-                                        #targets      = function() { targetVars                           },
-                                        #countMissing = function() { missCounts                           },
-             
-###--------------------------------------------------------------------------###
              
              getControl = function () {
                  "Return the 'control' list"
