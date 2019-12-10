@@ -1,7 +1,7 @@
 ### Title:    Optimization and Gibbs Sampling Methods for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2017-09-30
-### Modified: 2019-12-06
+### Modified: 2019-12-10
 ### Notes:    This file will add optimization and Gibbs sampling methods to the
 ###           MibrrFit class.
 
@@ -26,10 +26,33 @@
 
 
 MibrrFit$methods(
-
-             doGibbs = function(phase = 1) {
+             
+             prepStarts = function(chain = 1) {
+                 "Prepare the Gibbs sampler's starting values"
+                 
+                 lambda1 <- lambda2 <- rep(NA, nTargets)
+                 beta    <- matrix(NA, nPreds + 1, nTargets)
+                 tau     <- matrix(NA, nPreds, nTargets)
+                 sigma   <- rep(NA, nTargets)
+                 
+                 for(i in 1 : nChains)
+                     for(j in targetVars)
+                         with(parameters[[i]][[j]],
+                         {
+                             lambda1[j] <- getLambda1()
+                             lambda2[j] <- getLambda2()
+                             beta[ , j] <- starts$beta
+                             tau[ , j]  <- starts$tau
+                             sigma[j]   <- starts$sigma
+                         }
+                         )
+             },
+             
+###--------------------------------------------------------------------------###
+             
+             doGibbs = function(phase = 1, chain = 1) {
                  "Run the Gibbs sampler to update the imputation model parameters"
-
+                 
                  respCounts <- nObs - missCounts
 
                  ## Get a new vector of seeds for the C++ samplers:
@@ -39,19 +62,22 @@ MibrrFit$methods(
                      .lec.ResetNextSubstream(sName)
                      seedVec[v] <- .lec.GetState(sName)[1]
                  }
-                
+
+                 ## Extract starting values from the 'parameters' field:
+                 starts <- prepStarts(chain = chain)
+                 
                  gibbsOut <<-
                      runGibbs(data         = as.matrix(data),
                               nTargets     = nTargets,
                               missList     = missList[targetVars],
                               respCounts   = respCounts[targetVars],
-                              lambda1      = lambdaMat[ , 1], 
-                              lambda2      = lambdaMat[ , 2], # Ignored for BL
+                              lambda1      = starts$lambda1,               #lambdaMat[ , 1], 
+                              lambda2      = starts$lambda2,               #lambdaMat[ , 2], # Ignored for BL
                               l1Parms      = l1Pars, # Ignored when
                               l2Parms      = l2Pars, # doMcem = TRUE
-                              sigmaStarts  = sigmaStarts,
-                              tauStarts    = tauStarts,
-                              betaStarts   = betaStarts,
+                              sigmaStarts  = starts$sigma,                  #sigmaStarts,
+                              tauStarts    = starts$tau,                    #tauStarts,
+                              betaStarts   = starts$beta,                   #betaStarts,
                               burnSams     = sampleSizes[[phase]][1],
                               totalSams    = sum(sampleSizes[[phase]]),
                               penType      = penalty,
@@ -65,11 +91,17 @@ MibrrFit$methods(
                               seeds        = seedVec)
                  
                  names(gibbsOut) <<- targetVars
-                 
-                 ## Update the parameters' starting values:
-                 if(doMcem) startParams(restart = TRUE)
-             },
 
+                 for(j in targetVars) {
+                     ## Update the 'parameters' field:
+                     parameters[[chain]]$setSamples(gibbsOut)
+                     
+                     ## Update the parameters' starting values:
+                     if(doMcem)
+                         parameters[[chain]][[j]]$startParams(restart = TRUE)
+                 }
+             },
+             
 ###--------------------------------------------------------------------------###
 
              eNetLL = function(lambdaVec, index) {

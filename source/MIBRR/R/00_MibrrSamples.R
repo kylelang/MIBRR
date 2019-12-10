@@ -3,7 +3,7 @@
 ### Created:  2017-12-09
 ### Modified: 2019-12-09
 ### Note:     The MibrrSamples class holds the parameter samples for one target
-###           variable and chain
+###           variable and one Markov chain
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -86,7 +86,18 @@ MibrrSamples$methods(
                      ## Provide starting values for the parameters:
                      .self$startParams()
                  },
+################################### MUTATORS ###################################
+
+                 getLambda1 = function() lambda1[iter],
                  
+###--------------------------------------------------------------------------###
+
+                 getLambda2 = function() lambda2[iter],
+
+###--------------------------------------------------------------------------###
+
+                 getLambdas = function() c(lambda1[iter], lambda2[iter]),
+                     
 ################################### MUTATORS ###################################
                  
                  incIter = function() iter <<- iter + 1L,
@@ -125,6 +136,10 @@ MibrrSamples$methods(
                      lambda1[iter] <<- lams[1]
                      lambda2[iter] <<- lams[2]
                  },
+
+###--------------------------------------------------------------------------###
+                 
+                 setLambdaConv = function(x) lambdaConv[iter, ] <<- x,
                  
 ###--------------------------------------------------------------------------###
                  

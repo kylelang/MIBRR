@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-09
+### Modified: 2019-12-10
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -81,7 +81,7 @@ init <- function(penalty,
     
     ## Initialize starting values for the Gibbs sampled parameters.
     ## Important to call this before the NAs are replaced with missCode.
-    mibrrFit$startParams()
+                                        #mibrrFit$startParams()
     
     mibrrFit
 }# END init()
