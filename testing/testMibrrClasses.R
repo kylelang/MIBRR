@@ -7,6 +7,8 @@ source("../source/MIBRR/R/00_MibrrSamples.R")
 source("../source/MIBRR/R/01_MibrrChain.R")
 source("../source/MIBRR/R/02_MibrrFit.R")
 
+source("../source/MIBRR/R/control0.R")
+
 library(mvtnorm)
 library(MIBRR)
 library(rlecuyer)
@@ -46,10 +48,6 @@ fit <- MibrrFit(data        = mibrrExampleData,
                 seed        = 235711,
                 penalty     = 2L,
                 nChains     = 2L)
-
-fit
-
-fit$.objectParent
 
 fit$processInputs()
 setControl(control0, fit)

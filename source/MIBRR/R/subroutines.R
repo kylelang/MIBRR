@@ -71,13 +71,11 @@ init <- function(penalty,
                                  )
     
     ## Populate the control parameters:
-    load("control0.RData")
-
     if(length(control) > 0)
-        control0[names(control)] <- control
-    
-    setControl(x = control0, where = mibrrFit)
-    
+        MIBRR_CONTROL[names(control)] <- control
+
+    mibrrFit$control <<- MIBRR_CONTROL
+        
     ## Do we have any missing data:
     haveMiss <- any(mibrrFit$missCounts > 0)
 

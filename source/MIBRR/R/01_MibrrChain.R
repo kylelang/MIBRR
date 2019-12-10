@@ -104,24 +104,7 @@ MibrrChain$methods(
                            ## objects:
                            setControl(x = control, where = parameters[[j]])
                        }
-
-                       print(.objectParent) #########################################
-                       
                    },
-               
-################################### MUTATORS ###################################
-
-                                        #setControl = function(x) {
-                                        #    "Assign the control parameters"
-                                        #    
-                                        #    ## Get the fields for each class:
-                                        #    fields <- getRefClass("MibrrChain")$fields()
-                                        #    
-                                        #    ## Assign the control list entries to the correct classes:
-                                        #    for(n in names(x))
-                                        #        if(n %in% names(fields))
-                                        #            field(n, cast(x[n], fields[n]))
-                                        #},
                           
 ########################### ESTIMATION ROUTINES ################################
                
@@ -143,7 +126,7 @@ MibrrChain$methods(
                        tau[ , j]  <- parameters[[j]]$starts$tau
                        sigma[j]   <- parameters[[j]]$starts$sigma
                    }
-
+                   
                    list(lambda1 = lambda1,
                         lambda2 = lambda2,
                         beta    = beta,

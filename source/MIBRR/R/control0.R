@@ -3,7 +3,7 @@
 ### Created:  2019-12-10
 ### Modified: 2019-12-10
 
-control0 <- list(
+MIBRR_CONTROL <- list(
     checkConv         = TRUE,
     convThresh        = 1.1,
     usePcStarts       = FALSE,

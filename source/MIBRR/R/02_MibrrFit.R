@@ -34,26 +34,26 @@ MibrrFit <- setRefClass("MibrrFit",
                             seed              = "ANY",
                             doImp             = "logical",
                             doMcem            = "logical",
-                            checkConv         = "logical",
+                                        #checkConv         = "logical",
                             verbose           = "logical",
-                            convThresh        = "numeric",
+                                        #convThresh        = "numeric",
                                         #lambda1Starts     = "numeric",
                                         #lambda2Starts     = "numeric",
                             l1Pars            = "numeric",
                             l2Pars            = "numeric",
-                            usePcStarts       = "logical",
-                            smoothingWindow   = "integer",
-                            minPredCor        = "numeric",
-                            miceIters         = "integer",
-                            miceRidge         = "numeric",
-                            miceMethod        = "character",
-                            preserveStructure = "logical",
+                                        #usePcStarts       = "logical",
+                                        #smoothingWindow   = "integer",
+                                        #minPredCor        = "numeric",
+                                        #miceIters         = "integer",
+                                        #miceRidge         = "numeric",
+                                        #miceMethod        = "character",
+                                        #preserveStructure = "logical",
                                         #optTraceLevel     = "integer",
                                         #optCheckKkt       = "logical",
                                         #optMethod         = "character",
                                         #optBoundLambda    = "logical",
                                         #gibbsOut          = "list",
-                            ignoredColumns    = "data.frame",
+                            ignoreCols    = "data.frame",
                             rawNames          = "character",
                             impRowsPool       = "integer",
                             missList          = "list",
@@ -83,9 +83,10 @@ MibrrFit <- setRefClass("MibrrFit",
                                         #optRestartRatio   = "numeric",
                                         #optStrict         = "logical",
                                         #centerType        = "character",
-                            dumpParamHistory  = "logical",
-                            phHistoryLength   = "integer",
-                            chains            = "list"
+                                        #dumpParamHistory  = "logical",
+                                        #phHistoryLength   = "integer",
+                            chains            = "list",
+                            control           = "list"
                         )
                         )
 
@@ -145,8 +146,6 @@ MibrrFit$methods(
                                         #centerType        <<- "median"
                                         #dumpParamHistory  <<- FALSE
                                         #phHistoryLength   <<- 10L
-
-                     print(class(.self))
                  },
              
 ################################### MUTATORS ###################################
@@ -309,7 +308,7 @@ MibrrFit$methods(
                  
                  ## Restructure imputed data to match the raw data layout:
                  if(preserveStructure & length(ignoreVars) > 0)
-                     data.frame(tmp, ignoredColumns)[ , rawNames]
+                     data.frame(tmp, ignoreCols)[ , rawNames]
                  else if(preserveStructure)
                      tmp[ , rawNames]
                  else
@@ -339,10 +338,8 @@ MibrrFit$methods(
                  
                  ## Set aside the 'ignored' columns:
                  if(length(ignoreVars) > 0) {
-                     ignoredColumns <<- data[ignoreVars]
-                                        #if(length(ignoreVars) == 1)
-                                        #    colnames(ignoredColumns) <<- ignoreVars
-                     data <<- data[setdiff(colnames(data), ignoreVars)]
+                     ignoredCols <<- data[ignoreVars]
+                     data        <<- data[setdiff(colnames(data), ignoreVars)]
                  }
                  
                  ## Store some useful metadata:
@@ -430,9 +427,6 @@ MibrrFit$methods(
                      data[setdiff(colnames(data), targetVars)]
                  )
                  
-                 ## Hack to deal with 1D matrix conversion to vector:
-                                        #if(length(targetVars) == 1) colnames(data)[1] <<- targetVars
-                 
                  ## Store nonresponse counts:
                  missCounts <<- sapply(colSums(is.na(data)), as.integer)
                  
@@ -443,50 +437,10 @@ MibrrFit$methods(
                  
                  ## How many targets?
                  nTargets <<- as.integer(length(targetVars))
-                 
-                 ## Initialize the 'MibrrChain' objects:
-                                        #for(k in 1 : nChains)
-                                        #    chains[[k]] <<- MibrrChain(chain       = k,
-                                        #                               targetVars  = targetVars,
-                                        #                               iterations  = totalIters,
-                                        #                               sampleSizes = sampleSizes,
-                                        #                               missList    = missList,
-                                        #                               doMcem      = doMcem,
-                                        #                               verbose     = verbose,
-                                        #                               ridge       = ridge,
-                                        #                               penalty     = penalty)
-                 
-                 ## Make some starting value containers:
-                                        #betaStarts <<- matrix(NA, nPreds + 1, nTargets)
-                                        #tauStarts  <<- matrix(NA,  nPreds, nTargets)
-                 
-                 ## Initialize penalty parameter-related stuff:
-                                        #lambda1Starts <<- rep(0.5, nTargets)
-                                        #lambda2Starts <<- rep(nPreds / 10, nTargets)
-                 
-                                        #if(doMcem) {
-                                        #    nLam <- totalIters - 1
-                                        #    lambdaHistory <<-
-                                        #        lapply(targetVars,
-                                        #               function(x) {
-                                        #                   tmp <- matrix(NA, nLam, 2)
-                                        #                   colnames(tmp) <- c("lambda1", "lambda2")
-                                        #                   tmp
-                                        #               })
-                                        #    lambdaConv <<-
-                                        #        lapply(targetVars,
-                                        #               function(x)
-                                        #                   data.frame(code = vector("integer", nLam),
-                                        #                              kkt1 = vector("logical", nLam),
-                                        #                              kkt2 = vector("logical", nLam)
-                                        #                              )
-                                        #               )
-                                        #    names(lambdaHistory) <<- names(lambdaConv) <<- targetVars
-                                        #}
              },
-
+             
 ###--------------------------------------------------------------------------###
-
+             
              initChains = function() {
                  "Initialize the 'MibrrChain' objects"
                  for(k in 1 : nChains) {
@@ -500,10 +454,10 @@ MibrrFit$methods(
                                                 verbose     = verbose,
                                                 ridge       = ridge,
                                                 penalty     = penalty,
-                                                control     = control0)
+                                                control     = control)
 
                      ## Set control parameters for the 'MibrrChain' objects:
-                     setControl(x = control0, where = chains[[k]])
+                     setControl(x = control, where = chains[[k]])
                  }
              },
              
@@ -654,90 +608,6 @@ MibrrFit$methods(
              },
              
 ###--------------------------------------------------------------------------###
-
-                                        #startParams = function(restart = FALSE) {    
-                                        #    "Provide starting values for all parameters"
-                                        #
-                                        #    if(restart) {
-                                        #        ## Choose the type of central tendency to use:
-                                        #        cenTen <- switch(centerType,
-                                        #                         mean   = mean,
-                                        #                         median = median,
-                                        #                         mode   = numMode)
-                                        #        
-                                        #        for(j in 1 : nTargets) {
-                                        #            sigmaStarts[j]   <<- cenTen(gibbsOut[[j]]$sigma)
-                                        #            tauStarts[ , j]  <<-
-                                        #                apply(gibbsOut[[j]]$tau, 2, cenTen)
-                                        #            betaStarts[ , j] <<-
-                                        #                apply(gibbsOut[[j]]$beta, 2, cenTen)
-                                        #        }
-                                        #        return()
-                                        #    }
-                                        #    
-                                        #    ## NOTE: We don't need real starting values for the intercepts.
-                                        #    ##       Their initial values will be sampled in the first
-                                        #    ##       iteration of the Gibbs sampler.
-                                        #    
-                                        #    ## Populate the starting values for Lambda:
-                                        #    if(penalty == 2) {
-                                        #        lambdaMat <<- cbind(
-                                        #            matrix(lambda1Starts, nTargets, 1),
-                                        #            matrix(lambda2Starts, nTargets, 1)
-                                        #        )
-                                        #    }
-                                        #    else if(penalty == 1) {
-                                        #        if(usePcStarts) getLambdaStarts()
-                                        #        lambdaMat <<-
-                                        #            cbind(matrix(lambda1Starts, nTargets, 1), 0)
-                                        #    }
-                                        #    else
-                                        #        lambdaMat <<- matrix(NA, nTargets, 2)
-                                        #    
-                                        #    rownames(lambdaMat) <<- targetVars
-                                        #    colnames(lambdaMat) <<- c("lambda1", "lambda2")
-                                        #    
-                                        #    ## Populate starting values for betas, taus, and sigma:
-                                        #    sigmaStarts <<- apply(data, 2, sd)[targetVars]
-                                        #    
-                                        #    for(j in 1 : nTargets) {
-                                        #        if(penalty == 2) {     # We're doing BEN
-                                        #            lam1 <- lambdaMat[j, 1]
-                                        #            lam2 <- lambdaMat[j, 2]
-                                        #            
-                                        #            tauPriorScale <- (8 * lam2 * sigmaStarts[j]) / lam1^2
-                                        #         
-                                        #            for(k in 1 : nPreds) {
-                                        #                tauDraw <- 0.0
-                                        #                while(tauDraw < 1.0)
-                                        #                    tauDraw <- rgamma(n     = 1,
-                                        #                                      shape = 0.5,
-                                        #                                      scale = tauPriorScale)
-                                        #                tauStarts[k, j] <<- tauDraw
-                                        #            }
-                                        #            
-                                        #            betaPriorCov <- diag(
-                                        #                1 / ((lam2 / sigmaStarts[j]) *
-                                        #                     (tauStarts[ , j] / (tauStarts[ , j] - 1.0))
-                                        #                )
-                                        #            )
-                                        #        }
-                                        #        else if(penalty == 1) {# We're doing BL
-                                        #            lam <- lambdaMat[j, 1]
-                                        #            
-                                        #            tauStarts[ , j] <<- rexp(nPreds, rate = (0.5 * lam^2))
-                                        #            
-                                        #            betaPriorCov <- sigmaStarts[j] * diag(tauStarts[ , j])
-                                        #        }
-                                        #        else                   # We're doing basic ridge 
-                                        #            betaPriorCov <- diag(rep(sigmaStarts[j], nPreds)) 
-                                        #        
-                                        #        betaStarts[ , j] <<-
-                                        #            c(0, rmvnorm(1, rep(0, nPreds), betaPriorCov))
-                                        #    }# CLOSE for(j in 1 : nTargets)
-                                        #},
-             
-###--------------------------------------------------------------------------###
              
              simpleImpute = function(intern = TRUE) { 
                  "Initially fill the missing values via single imputation"
@@ -748,21 +618,24 @@ MibrrFit$methods(
                  if(!any(rFlags)) return()
                  
                  ## Construct a predictor matrix for mice() to use:
-                 predMat <-
-                     quickpred(data, mincor = minPredCor, include = targetVars)
+                 predMat <- mice::quickpred(data,
+                                            mincor  = control$minPredCor,
+                                            include = targetVars)
                  
                  ## Construct a vector of elementary imputation methods:
                  methVec         <- rep("", ncol(data))
-                 methVec[rFlags] <- miceMethod
+                 methVec[rFlags] <- control$miceMethod
                  
                  ## Singly impute the missing values:
-                 miceOut <- mice(data            = data,
-                                 m               = 1,
-                                 maxit           = miceIters,
-                                 method          = methVec,
-                                 predictorMatrix = predMat,
-                                 printFlag       = FALSE,
-                                 ridge           = miceRidge)
+                 miceOut <- with(control,
+                                 mice(data            = data,
+                                      m               = 1,
+                                      maxit           = miceIters,
+                                      method          = methVec,
+                                      predictorMatrix = predMat,
+                                      printFlag       = FALSE,
+                                      ridge           = miceRidge)
+                                 )
                  
                  ## Replace missing values with their imputations:
                  if(intern)
@@ -770,7 +643,7 @@ MibrrFit$methods(
                              vars = cn[rFlags])
                  else
                      mice::complete(miceOut, 1) 
-             }#,
+             }
              
 ###--------------------------------------------------------------------------###
              
