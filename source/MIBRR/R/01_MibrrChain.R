@@ -27,163 +27,128 @@
 
 MibrrChain <- setRefClass("MibrrChain",
                           fields = list(
-                              chain  = "integer",
+                              chain             = "integer",
                               data              = "data.frame",
                               targetVars        = "character",
-                                        #ignoreVars        = "character",
-                              iterations        = "integer",
+                                        #iterations        = "integer",
                               sampleSizes       = "list",
-                                        #missCode          = "integer",
-                              seed              = "ANY",
-                              doImp             = "logical",
                               doMcem            = "logical",
-                                        #checkConv         = "logical",
-                                        #verbose           = "logical",
-                                        #convThresh        = "numeric",
-                                        #lambda1Starts     = "numeric",
-                                        #lambda2Starts     = "numeric",
+                              verbose           = "logical",
                               l1Pars            = "numeric",
                               l2Pars            = "numeric",
-                                        #usePcStarts       = "logical",
-                              smoothingWindow   = "integer",
-                                        #minPredCor        = "numeric",
-                                        #miceIters         = "integer",
-                                        #miceRidge         = "numeric",
-                                        #miceMethod        = "character",
-                                        #preserveStructure = "logical",
-                              optTraceLevel     = "integer",
-                              optCheckKkt       = "logical",
-                              optMethod         = "character",
-                              optBoundLambda    = "logical",
-                                        #gibbsOut          = "list",
-                                        #ignoredColumns    = "data.frame",
-                                        #rawNames          = "character",
-                                        #impRowsPool       = "integer",
                               missList          = "list",
-                                        #nChains           = "integer",
-                                        #rHats             = "list",
-                                        #lambdaMat         = "matrix",
-                                        #lambdaHistory     = "list",
-                                        #lambdaConv        = "list",
-                                        #betaStarts        = "matrix",
-                                        #tauStarts         = "matrix",
-                                        #sigmaStarts       = "numeric",
-                                        #userMissCode      = "logical",
-                                        #missCounts        = "integer",
-                                        #nTargets          = "integer",
-                                        #nVar              = "integer",
-                                        #nPreds            = "integer",
-                                        #nObs              = "integer",
-                              totalIters        = "integer",
-                              rng0              = "character",
-                              userRng           = "character",
+                              nTargets          = "integer",
+                                        #totalIters        = "integer",
                               ridge             = "numeric",
                               penalty           = "integer",
                               savePpSams        = "logical",
                               useBetaMeans      = "logical",
+                              optTraceLevel     = "integer",
+                              optCheckKkt       = "logical",
+                              optMethod         = "character",
+                              optBoundLambda    = "logical",
                               optMaxRestarts    = "integer",
                               optRestartRatio   = "numeric",
                               optStrict         = "logical",
-                              centerType        = "character",
-                              dumpParamHistory  = "logical",
-                              phHistoryLength   = "integer",
                               parameters        = "list"
                           )
                           )
 
 ###--------------------------------------------------------------------------###
 
+data.frame(NULL)
+
 MibrrChain$methods(
                
 ################################ CONSTRUCTOR ###################################
                
                initialize =
-                   function(data        = data.frame(NULL),
+                   function(chain       = as.integer(NA),
+                            data        = data.frame(),
                             targetVars  = "",
-                                        #ignoreVars  = "",
                             iterations  = as.integer(NA),
                             sampleSizes = list(),
-                            missCode    = as.integer(NA),
-                                        #doImp       = as.logical(NA),
+                            missList    = list(),
                             doMcem      = as.logical(NA),
                             verbose     = as.logical(NA),
-                            seed        = NULL,
-                            userRng     = "",
                             ridge       = 0.0,
                             penalty     = 2L,
-                                        #nChains     = 1L
+                            control     = list()
                             )
                    {
                        "Initialize an object of class MibrrFit"
-                       data              <<- data
-                       targetVars        <<- targetVars
-                                        #ignoreVars        <<- ignoreVars
-                       iterations        <<- iterations
-                       sampleSizes       <<- sampleSizes
-                       missCode          <<- missCode
-                                        #doImp             <<- doImp
-                       doMcem            <<- doMcem
-                                        #checkConv         <<- TRUE
-                       verbose           <<- verbose
-                                        #convThresh        <<- 1.1
-                                        #usePcStarts       <<- FALSE
-                                        #minPredCor        <<- 0.3
-                                        #miceIters         <<- 10L
-                                        #miceRidge         <<- 1e-4
-                                        #miceMethod        <<- "pmm"
-                                        #preserveStructure <<- TRUE
-                       optTraceLevel     <<- 0L
-                       optCheckKkt       <<- TRUE
-                       optMethod         <<- "L-BFGS-B"
-                       optBoundLambda    <<- TRUE
-                                        #nChains           <<- nChains
-                       seed              <<- seed
-                       userRng           <<- userRng
-                       ridge             <<- ridge
-                       penalty           <<- penalty
-                       savePpSams        <<- FALSE
-                       useBetaMeans      <<- FALSE
-                       optMaxRestarts    <<- 5L
-                       optRestartRatio   <<- 0.1
-                       optStrict         <<- TRUE
-                       centerType        <<- "median"
-                       dumpParamHistory  <<- FALSE
-                       phHistoryLength   <<- 10L
-
+                       chain       <<- chain
+                       data        <<- data
+                       targetVars  <<- targetVars
+                       nTargets    <<- length(targetVars)
+                       sampleSizes <<- sampleSizes
+                       missList    <<- missList
+                       doMcem      <<- doMcem
+                       verbose     <<- verbose
+                       ridge       <<- ridge
+                       penalty     <<- penalty
+                       
                        ## Initialize the parameter samples:
-                       for(j in targetVars) 
+                       for(j in targetVars) {
                            parameters[[j]] <<-
-                               MibrrSamples(target      = j,
-                                            iterations  = sum(iterations),
-                                            doMcem      = doMcem,
-                                            penalty     = penalty,
-                                            predVars    =
-                                                setdiff(colnames(data), j),
-                                            targetScale =
-                                                sd(data[[j]], na.rm = TRUE)
+                               MibrrSamples(target   = j,
+                                            nIters   = iterations,
+                                            doMcem   = doMcem,
+                                            penalty  = penalty,
+                                            targetSd = sd(data[[j]]),
+                                            predVars =
+                                                setdiff(colnames(data), j)
                                             )
+
+                           ## Set control parameters for the 'MibrrSamples'
+                           ## objects:
+                           setControl(x = control, where = parameters[[j]])
+                       }
+
+                       print(.objectParent) #########################################
+                       
                    },
                
-###--------------------------------------------------------------------------###
+################################### MUTATORS ###################################
+
+                                        #setControl = function(x) {
+                                        #    "Assign the control parameters"
+                                        #    
+                                        #    ## Get the fields for each class:
+                                        #    fields <- getRefClass("MibrrChain")$fields()
+                                        #    
+                                        #    ## Assign the control list entries to the correct classes:
+                                        #    for(n in names(x))
+                                        #        if(n %in% names(fields))
+                                        #            field(n, cast(x[n], fields[n]))
+                                        #},
+                          
+########################### ESTIMATION ROUTINES ################################
                
                prepStarts = function() {
                    "Prepare the Gibbs sampler's starting values"
                    
                    lambda1 <- lambda2 <- rep(NA, nTargets)
-                   beta    <- matrix(NA, nPreds + 1, nTargets)
-                   tau     <- matrix(NA, nPreds, nTargets)
+                   beta    <- matrix(NA, ncol(data), nTargets)
+                   tau     <- matrix(NA, ncol(data) - 1, nTargets)
                    sigma   <- rep(NA, nTargets)
                    
-                   for(j in targetVars)
-                       with(parameters[[j]],
-                       {
-                           lambda1[j] <- getLambda1()
-                           lambda2[j] <- getLambda2()
-                           beta[ , j] <- starts$beta
-                           tau[ , j]  <- starts$tau
-                           sigma[j]   <- starts$sigma
-                       }
-                       )
+                   colnames(beta) <- colnames(tau) <- names(sigma) <-
+                       names(lambda1) <- names(lambda2) <- targetVars
+                   
+                   for(j in targetVars) {
+                       lambda1[j] <- parameters[[j]]$starts$lambda1
+                       lambda2[j] <- parameters[[j]]$starts$lambda2
+                       beta[ , j] <- parameters[[j]]$starts$beta
+                       tau[ , j]  <- parameters[[j]]$starts$tau
+                       sigma[j]   <- parameters[[j]]$starts$sigma
+                   }
+
+                   list(lambda1 = lambda1,
+                        lambda2 = lambda2,
+                        beta    = beta,
+                        tau     = tau,
+                        sigma   = sigma)
                },
                
 ###--------------------------------------------------------------------------###
@@ -191,53 +156,51 @@ MibrrChain$methods(
                doGibbs = function(phase = 1) {
                    "Run the Gibbs sampler to update the imputation model parameters"
                    
-                   respCounts <- nObs - missCounts
+                   respCounts <- nrow(data) - sapply(missList, length)
 
                    ## Get a new vector of seeds for the C++ samplers:
-                   seedVec <- rep(NA, nTargets)
-                   for(v in 1 : nTargets) {
-                       sName <- paste0("mibrrStream", v)
+                   seedVec        <- rep(NA, nTargets)
+                   names(seedVec) <- targetVars
+                   for(v in targetVars) {
+                       sName <- paste0("c", chain, v)
                        .lec.ResetNextSubstream(sName)
                        seedVec[v] <- .lec.GetState(sName)[1]
                    }
-
+                   
                    ## Extract starting values from the 'parameters' field:
                    starts <- prepStarts()
+
+                   print(data)
                    
-                   gibbsOut <<-
-                       runGibbs(data         = as.matrix(data),
+                   gibbsOut <-
+                       MIBRR:::runGibbs(data         = as.matrix(data),
                                 nTargets     = nTargets,
                                 missList     = missList[targetVars],
                                 respCounts   = respCounts[targetVars],
-                                lambda1      = starts$lambda1,               #lambdaMat[ , 1], 
-                                lambda2      = starts$lambda2,               #lambdaMat[ , 2], # Ignored for BL
+                                lambda1      = starts$lambda1, 
+                                lambda2      = starts$lambda2, # Ignored for BL
                                 l1Parms      = l1Pars, # Ignored when
                                 l2Parms      = l2Pars, # doMcem = TRUE
-                                sigmaStarts  = starts$sigma,                  #sigmaStarts,
-                                tauStarts    = starts$tau,                    #tauStarts,
-                                betaStarts   = starts$beta,                   #betaStarts,
+                                sigmaStarts  = starts$sigma,
+                                tauStarts    = starts$tau,
+                                betaStarts   = starts$beta,
                                 burnSams     = sampleSizes[[phase]][1],
                                 totalSams    = sum(sampleSizes[[phase]]),
                                 penType      = penalty,
                                 ridge        = ridge,
                                 verbose      = verbose,
                                 fullBayes    = !doMcem,
-                                noMiss       = all(missCounts == 0),
+                                noMiss       = all(respCounts == nrow(data)),
                                 savePpSams   = savePpSams,
                                 useBetaMeans = useBetaMeans,
                                 finalRep     = phase == 3,
                                 seeds        = seedVec)
                    
-                   names(gibbsOut) <<- targetVars
+                   names(gibbsOut) <- targetVars
 
-                   for(j in targetVars) {
-                       ## Update the 'parameters' field:
-                       parameters$setSamples(gibbsOut)
-                       
-                       ## Update the parameters' starting values:
-                       if(doMcem)
-                           parameters[[j]]$startParams(restart = TRUE)
-                   }
+                   ## Update the 'parameters' field:
+                   for(j in targetVars)
+                       parameters[[j]]$setSamples(gibbsOut)
                },
                
 ###--------------------------------------------------------------------------###
@@ -332,6 +295,9 @@ MibrrChain$methods(
                        check <- conv[1] == 0 & conv[2] & conv[3]
                        
                        if(check) { 
+                           ## Increment the MCEM iteration counter:
+                           parameters[[target]]$incIter()
+                           
                            ## Store the optimized lambdas:
                            parameters[[target]]$setLambdas(coef(optOut))
                            tryOpt <-  FALSE
@@ -371,7 +337,10 @@ MibrrChain$methods(
                                stop(msg, call. = FALSE)
                            }
                            else {
-                               ## Use the first set of estimates when proceeding:
+                               ## Increment the MCEM iteration counter:
+                               parameters[[target]]$incIter()
+                               
+                               ## Use the first estimates when proceeding:
                                parameters[[target]]$setLambdas(lamHat0)
                                tryOpt <-  FALSE
                                warning(msg, call. = FALSE, immediate. = TRUE)
@@ -379,8 +348,8 @@ MibrrChain$methods(
                        }
                    }# CLOSE while(tryOpt)
                    
-                   ## Return convergence info:
-                   conv
+                   ## Save convergence info:
+                   parameters[[target]]$setLambdaConv(conv)
                },
 
 ###--------------------------------------------------------------------------###
@@ -390,6 +359,10 @@ MibrrChain$methods(
                    taus <- parameters[[target]]$tau
                    p    <- ncol(taus)
                    
+                   ## Increment the MCEM iteration counter:
+                   parameters[[target]]$incIter()
+
+                   ## Save the updated lambda1 value:
                    parameters[[target]]$setLambda1(
                                             sqrt((2 * p) / sum(colMeans(taus)))
                                         )
@@ -397,7 +370,7 @@ MibrrChain$methods(
 
 ###--------------------------------------------------------------------------###
 
-               optimizeLambda = function(iter) {
+               optimizeLambda = function() {
                    "Optimize the BEN or BL penalty parameters"
                    
                    ## Use simple update rule and return early when doing BL:
@@ -408,8 +381,6 @@ MibrrChain$methods(
                        if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)
                        else               lowBounds <- -Inf
                        
-                                        #options(warn = ifelse(verbose, 0, -1))
-                       
                        ## Define a location in which to sink unwanted output:
                        if(.Platform$OS.type == "unix") nullFile <- "/dev/null"
                        else                            nullFile <- "nul"
@@ -417,28 +388,24 @@ MibrrChain$methods(
                        if(optTraceLevel == 0) sink(nullFile) # Suppress optimx output
                        
                        ## Apply over targets to optimize lambdas:
-                       convList <- lapply(X         = targetVars,
-                                          FUN       = .self$optWrap,
-                                          method    = optMethod,
-                                          lowBounds = lowBounds)
+                       lapply(X         = targetVars,
+                              FUN       = .self$optWrap,
+                              method    = optMethod,
+                              lowBounds = lowBounds)
                        
                        if(optTraceLevel == 0) sink()
-                       options(warn = 0)
                    }# CLOSE if(penalty == 1); else
-                   
-                   for(j in 1 : nTargets) {
-                                        #lambdaHistory[[j]][iter, ] <<- lambdaMat[j, ]
 
-                       if(penalty == 2)
-                           parameters[[target]]$setLambdaConv(convList[[j]])
-                       
-                       ## Smooth Lambda estimates if beginning 'tuning' phase:
+                   ## Update starting values for the next Gibbs sampler run:
+                   for(j in targetVars)
+                       parameters[[j]]$startParams(restart = TRUE)
+                   
+                   ## Smooth Lambda estimates if beginning 'tuning' phase:
                                         #if(iter == iterations[1] & smoothingWindow > 1) {
                                         #    smoothRange    <- (iter - smoothingWindow + 1) : iter         
                                         #    lambdaMat[j, ] <<-
                                         #        colMeans(lambdaHistory[[j]][smoothRange, ])        
-                   }
+                                        #}
                }
-}
-
-)# END MibrrFit$methods()
+               
+           )# END MibrrFit$methods()

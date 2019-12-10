@@ -70,18 +70,22 @@ init <- function(penalty,
                                  l2 = as.numeric(lam2PriorPar)
                                  )
     
-    ## Update any user-specified control parameters:
-    if(length(control) > 0) mibrrFit$setControl(control)
+    ## Populate the control parameters:
+    load("control0.RData")
+
+    if(length(control) > 0)
+        control0[names(control)] <- control
+    
+    setControl(x = control0, where = mibrrFit)
     
     ## Do we have any missing data:
-    haveMiss <- any(mibrrFit$countMissing() > 0)
+    haveMiss <- any(mibrrFit$missCounts > 0)
 
     ## Temporarily fill missing with single imputations:
     if(haveMiss) mibrrFit$simpleImpute()
-    
-    ## Initialize starting values for the Gibbs sampled parameters.
-    ## Important to call this before the NAs are replaced with missCode.
-                                        #mibrrFit$startParams()
+
+    ## Initialize the 'MibrrChain' objects:
+    mibrrFit$initChains()
     
     mibrrFit
 }# END init()

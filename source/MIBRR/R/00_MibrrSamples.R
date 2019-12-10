@@ -26,22 +26,23 @@
 
 MibrrSamples <- setRefClass("MibrrSamples",
                             fields = list(
-                                iter        = "integer",
-                                target      = "character",
-                                predVars    = "character",
-                                iterations  = "integer",
-                                targetScale = "numeric",
-                                beta        = "matrix",
-                                tau         = "matrix",
-                                sigma       = "numeric",
-                                lambda1     = "numeric",
-                                lambda2     = "numeric",
-                                imps        = "matrix",
-                                ppSams      = "matrix",
-                                starts      = "list",
-                                lambdaConv  = "data.frame",
-                                doMcem      = "logical",
-                                penalty     = "integer"
+                                iter       = "integer",
+                                target     = "character",
+                                predVars   = "character",
+                                nIters     = "integer",
+                                targetSd   = "numeric",
+                                beta       = "matrix",
+                                tau        = "matrix",
+                                sigma      = "numeric",
+                                lambda1    = "numeric",
+                                lambda2    = "numeric",
+                                imps       = "matrix",
+                                ppSams     = "matrix",
+                                starts     = "list",
+                                lambdaConv = "data.frame",
+                                doMcem     = "logical",
+                                penalty    = "integer",
+                                centerType = "character"
                             )
                             )
 
@@ -51,42 +52,42 @@ MibrrSamples$methods(
                  
 ################################ CONSTRUCTOR ###################################
                  
-                 initialize = function(target      = "",
-                                       predVars    = "",
-                                       iterations  = as.integer(NA),
-                                       targetScale = NA,
-                                       doMcem      = as.logical(NA),
-                                       penalty     = as.integer(NA)
+                 initialize = function(target   = "",
+                                       predVars = "",
+                                       targetSd = as.numeric(NA),
+                                       nIters   = as.integer(NA),
+                                       doMcem   = as.logical(NA),
+                                       penalty  = as.integer(NA)
                                        )
                  {
                      "Initialize an object of class MibrrSamples"
-                     target      <<- target
-                     predVars    <<- predVars
-                     iterations  <<- iterations
-                     targetScale <<- targetScale
-                     doMcem      <<- doMcem
-                     penalty     <<- penalty
-                     iter        <<- 1L
+                     target   <<- target
+                     predVars <<- predVars
+                     targetSd <<- targetSd
+                     nIters   <<- nIters
+                     doMcem   <<- doMcem
+                     penalty  <<- penalty
+                     iter     <<- 1L
                      
                      ## Initialize penalty parameter-related stuff:
                      starts$lambda1 <<- 0.5
                      starts$lambda2 <<- length(predVars) / 10
                      
                      if(doMcem) {
-                         lambda1 <<- vector("numeric", iterations)
-                         lambda2 <<- vector("numeric", iterations)
+                         lambda1 <<- vector("numeric", nIters)
+                         lambda2 <<- vector("numeric", nIters)
                          
                          lambdaConv <<-
-                             data.frame(code = vector("integer", iterations),
-                                        kkt1 = vector("logical", iterations),
-                                        kkt2 = vector("logical", iterations)
+                             data.frame(code = vector("integer", nIters),
+                                        kkt1 = vector("logical", nIters),
+                                        kkt2 = vector("logical", nIters)
                                         )
                      }
                      
                      ## Provide starting values for the parameters:
                      .self$startParams()
                  },
-################################### MUTATORS ###################################
+################################## ACCESSORS ###################################
 
                  getLambda1 = function() lambda1[iter],
                  
@@ -97,8 +98,22 @@ MibrrSamples$methods(
 ###--------------------------------------------------------------------------###
 
                  getLambdas = function() c(lambda1[iter], lambda2[iter]),
-                     
+                 
 ################################### MUTATORS ###################################
+                 
+                                        #setControl = function(x) {
+                                        #    "Assign the control parameters"
+                                        #    
+                                        #    ## Get the fields for each class:
+                                        #    fields <- getRefClass(class(.self))$fields()
+                                        #    
+                                        #    ## Assign the control list entries to the correct classes:
+                                        #    for(n in names(x))
+                                        #        if(n %in% names(fields))
+                                        #            field(n, cast(x[n], fields[n]))
+                                        #},
+                 
+###--------------------------------------------------------------------------###
                  
                  incIter = function() iter <<- iter + 1L,
                  
@@ -156,6 +171,9 @@ MibrrSamples$methods(
                          starts$sigma <<- cenTen(sigma)
                          starts$tau   <<- apply(tau, 2, cenTen)
                          starts$beta  <<- apply(beta, 2, cenTen)
+
+                         starts$lambda1 <<- getLambda1()
+                         starts$lambda2 <<- getLambda2()
                          
                          return()
                      }
@@ -169,8 +187,8 @@ MibrrSamples$methods(
                      lambda2[1] <<- starts$lambda2
                      
                      ## Populate starting values for betas, taus, and sigma:
-                     shape        <-  targetScale^2 / (0.1 * targetScale)
-                     scale        <-  (0.1 * targetScale) / targetScale
+                     shape        <-  targetSd^2 / (0.1 * targetSd)
+                     scale        <-  (0.1 * targetSd) / targetSd
                      starts$sigma <<- rgamma(1, shape = shape, scale = scale)
 
                      nPreds <- length(predVars)

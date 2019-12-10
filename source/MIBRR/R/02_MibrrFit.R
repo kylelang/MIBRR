@@ -48,10 +48,10 @@ MibrrFit <- setRefClass("MibrrFit",
                             miceRidge         = "numeric",
                             miceMethod        = "character",
                             preserveStructure = "logical",
-                            optTraceLevel     = "integer",
-                            optCheckKkt       = "logical",
-                            optMethod         = "character",
-                            optBoundLambda    = "logical",
+                                        #optTraceLevel     = "integer",
+                                        #optCheckKkt       = "logical",
+                                        #optMethod         = "character",
+                                        #optBoundLambda    = "logical",
                                         #gibbsOut          = "list",
                             ignoredColumns    = "data.frame",
                             rawNames          = "character",
@@ -74,17 +74,18 @@ MibrrFit <- setRefClass("MibrrFit",
                             totalIters        = "integer",
                             rng0              = "character",
                             userRng           = "character",
+                            streams           = "character",
                             ridge             = "numeric",
                             penalty           = "integer",
-                            savePpSams        = "logical",
-                            useBetaMeans      = "logical",
-                            optMaxRestarts    = "integer",
-                            optRestartRatio   = "numeric",
-                            optStrict         = "logical",
-                            centerType        = "character",
+                                        #savePpSams        = "logical",
+                                        #useBetaMeans      = "logical",
+                                        #optMaxRestarts    = "integer",
+                                        #optRestartRatio   = "numeric",
+                                        #optStrict         = "logical",
+                                        #centerType        = "character",
                             dumpParamHistory  = "logical",
                             phHistoryLength   = "integer",
-                            parameters        = "list"
+                            chains            = "list"
                         )
                         )
 
@@ -118,32 +119,34 @@ MibrrFit$methods(
                      missCode          <<- missCode
                      doImp             <<- doImp
                      doMcem            <<- doMcem
-                     checkConv         <<- TRUE
+                                        #checkConv         <<- TRUE
                      verbose           <<- verbose
-                     convThresh        <<- 1.1
-                     usePcStarts       <<- FALSE
-                     minPredCor        <<- 0.3
-                     miceIters         <<- 10L
-                     miceRidge         <<- 1e-4
-                     miceMethod        <<- "pmm"
-                     preserveStructure <<- TRUE
-                     optTraceLevel     <<- 0L
-                     optCheckKkt       <<- TRUE
-                     optMethod         <<- "L-BFGS-B"
-                     optBoundLambda    <<- TRUE
+                                        #convThresh        <<- 1.1
+                                        #usePcStarts       <<- FALSE
+                                        #minPredCor        <<- 0.3
+                                        #miceIters         <<- 10L
+                                        #miceRidge         <<- 1e-4
+                                        #miceMethod        <<- "pmm"
+                                        #preserveStructure <<- TRUE
+                                        #optTraceLevel     <<- 0L
+                                        #optCheckKkt       <<- TRUE
+                                        #optMethod         <<- "L-BFGS-B"
+                                        #optBoundLambda    <<- TRUE
                      nChains           <<- nChains
                      seed              <<- seed
                      userRng           <<- userRng
                      ridge             <<- ridge
                      penalty           <<- penalty
-                     savePpSams        <<- FALSE
-                     useBetaMeans      <<- FALSE
-                     optMaxRestarts    <<- 5L
-                     optRestartRatio   <<- 0.1
-                     optStrict         <<- TRUE
-                     centerType        <<- "median"
-                     dumpParamHistory  <<- FALSE
-                     phHistoryLength   <<- 10L
+                                        #savePpSams        <<- FALSE
+                                        #useBetaMeans      <<- FALSE
+                                        #optMaxRestarts    <<- 5L
+                                        #optRestartRatio   <<- 0.1
+                                        #optStrict         <<- TRUE
+                                        #centerType        <<- "median"
+                                        #dumpParamHistory  <<- FALSE
+                                        #phHistoryLength   <<- 10L
+
+                     print(class(.self))
                  },
              
 ################################### MUTATORS ###################################
@@ -157,19 +160,42 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             setControl = function(x) {
-                 "Assign the control parameters"
-                 ints <- c("smoothingWindow",
-                           "miceIters",
-                           "optTraceLevel",
-                           "phHistoryLength")
-                 
-                 for(n in names(x)) {
-                     if(n %in% ints) field(n, as.integer(x[[n]]))
-                     else            field(n, x[[n]])
-                 }
-             },
-
+                                        #setControl = function(x = NULL, where = "MibrrFit") {
+                                        #    "Assign the control parameters"
+                                        #    
+                                        #    ## Load the default control list:
+                                        #    load("control0.RData")
+                                        #    
+                                        #    ## Add user-defined control parameters:
+                                        #    if(!is.null(x)) control0[names(x)] <- x
+                                        #    
+                                        #    ## Get the fields for each class:
+                                        #    if(where == "MibrrData") {
+                                        #    fields <- getRefClass(where)$fields()
+                                        #    for(n in names(control0)) {
+                                        #        if(n %in% names(fields)) {
+                                        #            field(n, castObj(control0[n], fields[n]))
+                                        #        }
+                                        #    }
+                                        #    ## Assign the control list entries to the correct classes:
+                                        #    for(n in names(control0)) {
+                                        #        if(n %in% names(fields)) {
+                                        #            if(what == "MibrrFit")
+                                        #                field(n, castObj(control0[n], fields[n]))
+                                        #            else if(what == "MibrrChain")
+                                        #                for(k in 1 : nChains)
+                                        #                    chains[[k]]$field(n, cast(control0[n], fields[n]))
+                                        #            else if(what == "MibrrSamples")
+                                        #                for(k in 1 : nChains)
+                                        #                    for(v in targetVars)
+                                        #                        chains[[k]]$parameters[[v]]$field(n, cast(control0[n], fields[n]))
+                                        #        }
+                                        #        else
+                                        #            warning(paste0(n, " is not a valid control list parameter. It will be ignored."))
+                                        #    }
+                                        #    }
+                                        #},
+             
 ###--------------------------------------------------------------------------###
              
              setLambdaParams = function(l1, l2) {
@@ -210,10 +236,14 @@ MibrrFit$methods(
                  .lec.SetPackageSeed(seed$value)
                  
                  ## Generate the l'ecuyer RNG streams:
-                 .lec.CreateStream(
-                     paste0("mibrrStream", c(0 : length(targetVars)))
-                 )
-
+                 streams <<- c("mibrrStream0",
+                               paste0("c",
+                                      rep(1 : nChains, each = nTargets),
+                                      targetVars)
+                               )
+                 
+                 .lec.CreateStream(streams)
+                 
                  ## Set the 'master' RNG stream:
                  rng0 <<- .lec.CurrentStream("mibrrStream0")
              },
@@ -223,7 +253,7 @@ MibrrFit$methods(
              cleanRng = function() {
                  "Clean up the RNG state"
                  .lec.CurrentStreamEnd(rng0)
-                 .lec.DeleteStream(paste0("mibrrStream", c(0 : nTargets)))
+                 .lec.DeleteStream(streams)
                  
                  ## Re-set the user's stream as the active RNG:
                  check <- length(userRng) > 0 & userRng != ""
@@ -234,9 +264,9 @@ MibrrFit$methods(
              
 ################################# ACCESSORS ####################################
              
-             dataNames    = function() { colnames(data)                       },
-             targets      = function() { targetVars                           },
-             countMissing = function() { missCounts                           },
+                                        #dataNames    = function() { colnames(data)                       },
+                                        #targets      = function() { targetVars                           },
+                                        #countMissing = function() { missCounts                           },
              
 ###--------------------------------------------------------------------------###
              
@@ -309,10 +339,10 @@ MibrrFit$methods(
                  
                  ## Set aside the 'ignored' columns:
                  if(length(ignoreVars) > 0) {
-                     ignoredColumns <<- as.data.frame(data[ , ignoreVars])
-                     if(length(ignoreVars) == 1)
-                         colnames(ignoredColumns) <<- ignoreVars
-                     data <<- data[ , setdiff(colnames(data), ignoreVars)]
+                     ignoredColumns <<- data[ignoreVars]
+                                        #if(length(ignoreVars) == 1)
+                                        #    colnames(ignoredColumns) <<- ignoreVars
+                     data <<- data[setdiff(colnames(data), ignoreVars)]
                  }
                  
                  ## Store some useful metadata:
@@ -405,7 +435,7 @@ MibrrFit$methods(
                  
                  ## Store nonresponse counts:
                  missCounts <<- sapply(colSums(is.na(data)), as.integer)
-
+                 
                  ## Create a list of missing elements in each target variable
                  ## NOTE: Subtract 1 from each index vector to base indices
                  ##       at 0 for C++
@@ -413,6 +443,18 @@ MibrrFit$methods(
                  
                  ## How many targets?
                  nTargets <<- as.integer(length(targetVars))
+                 
+                 ## Initialize the 'MibrrChain' objects:
+                                        #for(k in 1 : nChains)
+                                        #    chains[[k]] <<- MibrrChain(chain       = k,
+                                        #                               targetVars  = targetVars,
+                                        #                               iterations  = totalIters,
+                                        #                               sampleSizes = sampleSizes,
+                                        #                               missList    = missList,
+                                        #                               doMcem      = doMcem,
+                                        #                               verbose     = verbose,
+                                        #                               ridge       = ridge,
+                                        #                               penalty     = penalty)
                  
                  ## Make some starting value containers:
                                         #betaStarts <<- matrix(NA, nPreds + 1, nTargets)
@@ -442,19 +484,42 @@ MibrrFit$methods(
                                         #    names(lambdaHistory) <<- names(lambdaConv) <<- targetVars
                                         #}
              },
+
+###--------------------------------------------------------------------------###
+
+             initChains = function() {
+                 "Initialize the 'MibrrChain' objects"
+                 for(k in 1 : nChains) {
+                     chains[[k]] <<- MibrrChain(chain       = k,
+                                                data        = data,
+                                                targetVars  = targetVars,
+                                                iterations  = totalIters,
+                                                sampleSizes = sampleSizes,
+                                                missList    = missList,
+                                                doMcem      = doMcem,
+                                                verbose     = verbose,
+                                                ridge       = ridge,
+                                                penalty     = penalty,
+                                                control     = control0)
+
+                     ## Set control parameters for the 'MibrrChain' objects:
+                     setControl(x = control0, where = chains[[k]])
+                 }
+             },
              
 ###--------------------------------------------------------------------------###
              
-             nameOutput = function(gibbsOut) {
+             nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
                  if(checkConv) names(rHats) <<- targetVars
-                 
-                 for(v in targetVars) {
-                     tmp <- setdiff(colnames(data), v)
-                     
-                     colnames(gibbsOut[[v]]$beta) <<- c("intercept", tmp)
-                     colnames(gibbsOut[[v]]$tau)  <<- tmp
-                 }
+
+                 for(k in 1 : nChains)
+                     for(v in targetVars) {
+                         tmp <- setdiff(colnames(data), v)
+                         
+                         colnames(chains[[k]]$parameters[[v]]$beta) <<- c("intercept", tmp)
+                         colnames(chains[[k]]$parameters[[v]]$tau)  <<- tmp
+                     }
              },
 
 ###--------------------------------------------------------------------------###
@@ -676,7 +741,7 @@ MibrrFit$methods(
              
              simpleImpute = function(intern = TRUE) { 
                  "Initially fill the missing values via single imputation"
-                 cn     <- dataNames()
+                 cn     <- colnames(data)
                  rFlags <- (missCounts > 0)[cn]
                  
                  ## Don't try to impute fully observed targets:
@@ -705,7 +770,7 @@ MibrrFit$methods(
                              vars = cn[rFlags])
                  else
                      mice::complete(miceOut, 1) 
-             },
+             }#,
              
 ###--------------------------------------------------------------------------###
              
@@ -739,4 +804,4 @@ MibrrFit$methods(
                                         #    }
                                         #}             
              
-             )# END MibrrFit$methods()
+         )# END MibrrFit$methods()
