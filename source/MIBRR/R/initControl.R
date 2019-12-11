@@ -23,5 +23,6 @@ MIBRR_CONTROL <- list(
     optStrict        = TRUE,
     centerType       = "median",
     dumpParamHistory = FALSE,
-    phHistoryLength  = 10L
+    phHistoryLength  = 10L,
+    clusterType      = "PSOCK"
 )

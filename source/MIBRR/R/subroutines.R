@@ -39,6 +39,7 @@ init <- function(penalty,
                  seed,
                  userRng,
                  nChains,
+                 nCores,
                  control)
 {
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
@@ -57,7 +58,8 @@ init <- function(penalty,
                          userRng     = userRng,
                          ridge       = ridge,
                          penalty     = as.integer(penalty),
-                         nChains     = as.integer(nChains) 
+                         nChains     = as.integer(nChains),
+                         nCores      = as.integer(nCores)
                          )
 
     ## Process and check the user inputs:
@@ -187,19 +189,58 @@ estimateModel <- function(chain, mibrrFit) {
 
 runChains <- function(mibrrFit) {
     if(mibrrFit$nCores > 1) {# Use parallel processing
-        if(.Platform$OS.type == "unix")
-            mibrrFit <- mclapply(
+        stop("Parallel processing is not yet supported")
+                                        #if(.Platform$OS.type == "unix")# Running on *nix
+                                        #    ## Run parallel estimations using forked cluster:
+                                        #    mibrrFit <- mclapply(X        = 1 : mibrrFit$nChains,
+                                        #                         FUN      = estimateModel,
+                                        #                         mibrrFit = mibrrFit,
+                                        #                         mc.cores = mibrrFit$nCores)
+                                        #else {                         # Running on Windows
+                                        #    ## Create cluster:
+                                        #    cl <- with(mibrrFit,
+                                        #               makeCluster(nCores, type = control$clusterType)
+                                        #               )
+                                        #    
+                                        #    ## Export contents of current environment to cluster nodes:
+                                        #    clusterExport(cl = cl, varlist = stuff) #setdiff(ls(), "cl"))
+                                        #    clusterEvalQ(cl = cl,
+                                        #    {
+                                        #        library(mvtnorm)
+                                        #        library(rlecuyer)
+                                        #        library(optimx)
+                                        #        
+                                        #        source("../source/MIBRR/R/00_MibrrSamples.R")
+                                        #        source("../source/MIBRR/R/01_MibrrChain.R")
+                                        #        source("../source/MIBRR/R/02_MibrrFit.R")
+                                        #        
+                                        #        source("../source/MIBRR/R/initControl.R")
+                                        #        source("../source/MIBRR/R/helperFunctions.R")
+                                        #        source("../source/MIBRR/R/subroutines.R")
+                                        #    }
+                                        #    )
+                                        #    
+                                        #    ## Run parallel estimations:
+                                        #    mibrrFit <- parLapply(cl       = cl,
+                                        #                          X        = 1 : mibrrFit$nChains,
+                                        #                          fun      = estimateModel,
+                                        #                          mibrrFit = mibrrFit)
+                                        #    
+                                        #    ## Remove cluster:
+                                        #    stopCluster(cl)
+                                        #}
+                                        #}
     }
     else                     # Serial processing
-        for(k in 1 : mibrrFit$nChains)
-            mibrrFit <- estimateModel(k, mibrrFit)
+        mibrrFit <-
+            lapply(1 : mibrrFit$nChains, estimateModel, mibrrFit = mibrrFit)
     
     mibrrFit
 }
 
 ###--------------------------------------------------------------------------###
-
-cleanRng <- function(mibrrFit) {
+    
+    cleanRng <- function(mibrrFit) {
     ## Clean the RNG state:
     mibrrFit$cleanRng()
     
@@ -229,7 +270,7 @@ postProcess <- function(mibrrFit, ...) {
         }
         
         ## Provide some pretty names for the output objects:
-        mibrrFit$nameOutput()
+                                        #mibrrFit$nameOutput()
     }
     
     ## Clean the RNG state:

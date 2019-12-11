@@ -17,10 +17,34 @@ library(mvtnorm)
 library(MIBRR)
 library(rlecuyer)
 library(optimx)
+
+source("../source/MIBRR/R/exportedPrimaryFunctions.R")
+
                                         #library(devtools)
                                         #install_github("kylelang/MIBRR/source/MIBRR", ref = "develop")
 
 data(mibrrExampleData)
+
+out <- miben(data        = mibrrExampleData,
+             targetVars  = c("y", paste0("x", c(1 : 3))),
+             ignoreVars  = "idNum",
+             iterations  = c(30L, 10L),
+             sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+             doMcem      = TRUE,
+             verbose     = TRUE,
+             seed        = 235711,
+             nChains     = 2L,
+             nCores      = 1L,
+             userRng     = "",
+             control     = list(checkConv = TRUE)
+             )
+
+length(out$chains)
+
+out$chains[[1]]
+out$chains[[2]]
+
+out$getImpDataset()
 
 mibrrFit <- init(data         = mibrrExampleData,
                  targetVars   = c("y", paste0("x", c(1 : 3))),

@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-12
-### Modified: 2019-12-09
+### Modified: 2019-12-11
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -29,6 +29,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+
 ### Specify a wrapper function to implement Multiple Imputation with the
 ### Bayesian Elastic Net (MIBEN):
 miben <- function(data,
@@ -41,6 +42,8 @@ miben <- function(data,
                   lam2PriorPar   = NULL,
                   missCode       = NA,
                   verbose        = TRUE,
+                  nChains        = 1L,
+                  nCores         = 1L,
                   seed           = NULL,
                   userRng        = "",
                   control        = list(),
@@ -50,7 +53,9 @@ miben <- function(data,
     args <- list(...)
     
     ## Initialize the output object:
-    mibrrFit <- init(penalty      = 2,
+    mibrrFit <- init(penalty      = 2L,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      doImp        = TRUE,
                      doMcem       = doMcem,
                      data         = data,
@@ -72,9 +77,8 @@ miben <- function(data,
         return(mibrrFit)
     }
     
-    ## Estimate the model with MCEM:
-    if(doMcem) mibrrFit <- mcem(mibrrFit)
-    else       mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -116,9 +120,8 @@ mibl <- function(data,
                      userRng      = userRng,
                      control      = control)
     
-    ## Estimate the model with MCEM:
-    if(doMcem) mibrrFit <- mcem(mibrrFit)
-    else       mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -162,9 +165,8 @@ ben <- function(data,
                      userRng      = userRng,
                      control      = control)
 
-    ## Estimate the model with MCEM:
-    if(doMcem) mibrrFit <- mcem(mibrrFit)
-    else       mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -207,9 +209,8 @@ bl <- function(data,
                      userRng      = userRng,
                      control      = control)
 
-    ## Estimate the model with MCEM:
-    if(doMcem) mibrrFit <- mcem(mibrrFit)
-    else       mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -249,8 +250,8 @@ vanilla <- function(data,
                      userRng      = userRng,
                      control      = control)
     
-    ## Estimate the model:
-    mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)
@@ -291,8 +292,8 @@ bvr <- function(data,
                      userRng      = userRng,
                      control      = control)
 
-    ## Estimate the model:
-    mibrrFit$doGibbs()
+    ## Run nChains MCEM/Markov chains:
+    runChains(mibrrFit)
     
     ## Clean up and return the fitted model object:
     postProcess(mibrrFit)

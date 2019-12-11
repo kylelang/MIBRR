@@ -23,6 +23,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+
 MibrrFit <- setRefClass("MibrrFit",
                         fields = list(
                             data         = "data.frame",
@@ -56,6 +57,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             ridge        = "numeric",
                             penalty      = "integer",
                             chains       = "list",
+                            nCores       = "integer",
                             control      = "list"
                         )
                         )
@@ -79,7 +81,8 @@ MibrrFit$methods(
                           userRng     = "",
                           ridge       = 0.0,
                           penalty     = 2L,
-                          nChains     = 1L)
+                          nChains     = 1L,
+                          nCores      = 1L)
                  {
                      "Initialize an object of class MibrrFit"
                      data        <<- data
@@ -96,6 +99,7 @@ MibrrFit$methods(
                      userRng     <<- userRng
                      ridge       <<- ridge
                      penalty     <<- penalty
+                     nCores      <<- nCores
                  },
              
 ################################### MUTATORS ###################################

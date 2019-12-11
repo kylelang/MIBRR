@@ -140,13 +140,15 @@ MibrrChain$methods(
                    respCounts <- nrow(data) - sapply(missList, length)
 
                    ## Get a new vector of seeds for the C++ samplers:
-                   seedVec        <- rep(NA, nTargets)
-                   names(seedVec) <- targetVars
-                   for(j in targetVars) {
-                       sName <- paste0("c", chain, j)
-                       .lec.ResetNextSubstream(sName)
-                       seedVec[j] <- .lec.GetState(sName)[1]
-                   }
+                   #seedVec        <- rep(NA, nTargets)
+                   #names(seedVec) <- targetVars
+                   #for(j in targetVars) {
+                   #    sName <- paste0("c", chain, j)
+                   #    .lec.ResetNextSubstream(sName)
+                   #    seedVec[j] <- .lec.GetState(sName)[1]
+                   #}
+
+                   seedVec <- rep(235711, nTargets)
                    
                    ## Extract starting values from the 'parameters' field:
                    starts <- prepStarts()

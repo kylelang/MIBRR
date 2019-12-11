@@ -24,6 +24,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+
 MibrrSamples <- setRefClass("MibrrSamples",
                             fields = list(
                                 iter       = "integer",
