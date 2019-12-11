@@ -97,6 +97,8 @@ mibl <- function(data,
                  lam1PriorPar = NULL,
                  missCode     = NA,
                  verbose      = TRUE,
+                 nChains      = 1L,
+                 nCores       = 1L,
                  seed         = NULL,
                  userRng      = "",
                  control      = list()
@@ -118,6 +120,8 @@ mibl <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      control      = control)
     
     ## Run nChains MCEM/Markov chains:
@@ -140,6 +144,8 @@ ben <- function(data,
                 lam2PriorPar = NULL,
                 missCode     = NA,
                 verbose      = TRUE,
+                nChains      = 1L,
+                nCores       = 1L,
                 seed         = NULL,
                 userRng      = "",
                 control      = list()
@@ -163,6 +169,8 @@ ben <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:
@@ -183,6 +191,8 @@ bl <- function(data,
                lam1PriorPar = NULL,
                doMcem       = TRUE,
                missCode     = NA,
+               nChains      = 1L,
+               nCores       = 1L,
                verbose      = TRUE,
                seed         = NULL,
                userRng      = "",
@@ -207,6 +217,8 @@ bl <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:
@@ -225,6 +237,8 @@ vanilla <- function(data,
                     ignoreVars   = NULL,
                     sampleSizes  = rep(500, 2),
                     missCode     = NA,
+                    nChains      = 1L,
+                    nCores       = 1L,
                     ridge        = 1e-4,
                     verbose      = TRUE,
                     seed         = NULL,
@@ -248,6 +262,8 @@ vanilla <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      control      = control)
     
     ## Run nChains MCEM/Markov chains:
@@ -267,6 +283,8 @@ bvr <- function(data,
                 missCode    = NA,
                 ridge       = 1e-4,
                 verbose     = TRUE,
+                nChains     = 1L,
+                nCores      = 1L,
                 seed        = NULL,
                 userRng     = "",
                 control     = list()
@@ -290,6 +308,8 @@ bvr <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     nChains      = nChains,
+                     nCores       = nCores,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:

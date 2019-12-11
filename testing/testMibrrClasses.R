@@ -39,6 +39,75 @@ out <- miben(data        = mibrrExampleData,
              control     = list(checkConv = TRUE)
              )
 
+out <- miben(data        = mibrrExampleData,
+             targetVars  = c("y", paste0("x", c(1 : 3))),
+             ignoreVars  = "idNum",
+             sampleSizes = rep(500, 2),
+             lambda1PriorPar = c(2.0, 2.0),
+             lambda2PriorPar = c(2.0, 2.0),
+             doMcem      = FALSE,
+             verbose     = TRUE,
+             seed        = 235711,
+             nChains     = 2L,
+             nCores      = 1L,
+             userRng     = "",
+             control     = list(checkConv = TRUE)
+             )
+
+out <- ben(data        = mibrrExampleData,
+           y           = "y",
+           X           = paste0("x", c(1 : 3)),
+           iterations  = c(30L, 10L),
+           sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+           doMcem      = TRUE,
+           verbose     = TRUE,
+           seed        = 235711,
+           nChains     = 2L,
+           nCores      = 1L,
+           userRng     = "",
+           control     = list(checkConv = TRUE)
+           )
+
+out <- mibl(data        = mibrrExampleData,
+            targetVars  = c("y", paste0("x", c(1 : 3))),
+            ignoreVars  = "idNum",
+            iterations  = c(30L, 10L),
+            sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+            doMcem      = TRUE,
+            verbose     = TRUE,
+            seed        = 235711,
+            nChains     = 2L,
+            nCores      = 1L,
+            userRng     = "",
+            control     = list(checkConv = TRUE)
+            )
+
+out <- bl(data        = mibrrExampleData,
+          y           = "y",
+          X           = paste0("x", c(1 : 3)),
+          iterations  = c(30L, 10L),
+          sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+          doMcem      = TRUE,
+          verbose     = TRUE,
+          seed        = 235711,
+          nChains     = 2L,
+          nCores      = 1L,
+          userRng     = "",
+          control     = list(checkConv = TRUE)
+          )
+
+out <- vanilla(data        = mibrrExampleData,
+               targetVars  = c("y", paste0("x", c(1 : 3))),
+               ignoreVars  = "idNum",
+               sampleSizes = rep(500, 2),
+               verbose     = TRUE,
+               seed        = 235711,
+               nChains     = 2L,
+               nCores      = 1L,
+               userRng     = "",
+               control     = list(checkConv = TRUE)
+               )
+
 length(out$chains)
 
 out$chains[[1]]
