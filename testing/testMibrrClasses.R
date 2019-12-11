@@ -40,8 +40,8 @@ mibenOut <- miben(data        = mibrrExampleData,
                   control     = list(checkConv = TRUE)
                   )
 
-pars <- getParams(mibenOut, "y", mix = FALSE)
-pars
+pars <- getParams(mibenOut, "y", mix = TRUE)
+pars$beta
 
 ?miben
 ?ben
@@ -148,6 +148,11 @@ out <- vanilla(data        = mibrrExampleData,
                userRng     = "",
                control     = list(checkConv = TRUE)
                )
+
+pars <- getParams(out, "y")
+pars
+
+out$chains[[1]]$parameters[["y"]]$beta
 
 length(out$chains)
 

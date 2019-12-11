@@ -24,31 +24,31 @@ fit <- lm(y ~ ., data = dat1)
 lamStart <- ncol(X) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
 
 ## Run the BL models:
-out1 <- list()
-for(rp in 1 : 4) 
-    out1[[rp]] <- bl(data        = dat1,
-                     y           = "y",
-                     X           = colnames(X),
-                     iterations  = c(500, 100),
-                     sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
-                     control     = list(
-                         lambda1Starts =
-                             lamStart + runif(1, -lamStart / 4, lamStart / 4)
-                     )
-                     )
+out1 <- bl(data        = dat1,
+           y           = "y",
+           X           = colnames(X),
+           iterations  = c(500, 100),
+           sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
+           nChains     = 4,
+           control     = list(
+               lambda1Starts =
+                   lamStart + runif(1, -lamStart / 4, lamStart / 4)
+           )
+           )
 
 ## Plot MCEM chains:
-cols <- rainbow(length(out1))
+lams <- getParams(out1, "y", mix = FALSE)$lambda1
+cols <- rainbow(length(lams))
 
-plot(out1[[1]]$lambdaHistory$y[ , 1], type = "l", col = cols[1])
-for(i in 2 : length(out1))
-    lines(out1[[i]]$lambdaHistory$y[ , 1], col = cols[i])
+plot(lams[[1]], type = "l", col = cols[1])
+for(i in 2 : length(lams))
+    lines(lams[[i]], col = cols[i])
 
 ## Choose rep:
 rp <- 1
 
 ## Extract parameters:
-pars <- getParams(out1[[rp]], "y")
+pars <- getParams(out1, "y")
 med  <- apply(pars$beta, 2, median)
 ci   <- apply(pars$beta, 2, quantile, probs = c(0.025, 0.975))
 

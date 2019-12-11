@@ -45,7 +45,12 @@ getParams <- function(mibrrFit, target, mix = TRUE) {
     out$sigma <- fun("sigma", target)
     
     if(mibrrFit$penalty != 0) {# Used shrinkage priors?
-        out$tau     <- fun("tau", target)
+        out$tau <- fun("tau", target)
+
+        ## Don't mix MCEM chains:
+        if(mibrrFit$doMcem)
+            fun <- mibrrFit$getSamples
+        
         out$lambda1 <- fun("lambda1", target)
         
         if(mibrrFit$penalty == 2)

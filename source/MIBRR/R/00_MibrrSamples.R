@@ -208,8 +208,10 @@ MibrrSamples$methods(
                          starts$tau   <<- rexp(nPreds, rate = (0.5 * lam^2))
                          betaPriorCov <-  with(starts, sigma * diag(tau))
                      }
-                     else                   # We're doing basic ridge 
-                         betaPriorCov <- diag(rep(starts$sigma, nPreds)) 
+                     else {                 # We're doing basic ridge 
+                         starts$tau   <<- rep(0.0, nPreds) # Not used
+                         betaPriorCov <-  diag(rep(starts$sigma, nPreds)) 
+                     }
                      
                      starts$beta <<-
                          c(0, rmvnorm(1, rep(0, nPreds), betaPriorCov))

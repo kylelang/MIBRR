@@ -173,8 +173,8 @@ MibrrChain$methods(
                                 savePpSams   = savePpSams,
                                 useBetaMeans = useBetaMeans,
                                 finalRep     = phase == 3,
-                                seeds        = seedVec)#,
-                                #chain        = chain)
+                                seeds        = seedVec,
+                                chain        = chain)
                    
                    names(gibbsOut) <- targetVars
 

@@ -17,44 +17,46 @@ X    <- diabetes$x
 dat1 <- data.frame(cbind(y, X))
 
 ## Run the BEN models:
-out1 <- list()
-for(rp in 1 : 4) 
-    out1[[rp]] <- try(
-        ben(data        = dat1,
+out1 <- ben(data        = dat1,
             y           = "y",
             X           = colnames(X),
             iterations  = c(500, 100),
             sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
-            control = list(lambda1Starts = 1.0 + runif(1, -0.25, 0.25),
-                           lambda2Starts = 15.0 + runif(1, -5, 5),
-                           optMethod     = "L-BFGS-B"
-                           )
+            nChains     = 4,
+            control     = list(
+                lambda1Starts = 1.0 + runif(1, -0.25, 0.25),
+                lambda2Starts = 15.0 + runif(1, -5, 5),
+                optMethod     = "L-BFGS-B"
             )
-    )
+            )
 
 ## Plot MCEM chains:
 par(mfrow = c(1, 2))
 
-cols <- rainbow(length(out1))
+lam1 <- getParams(out1, "y", mix = FALSE)$lambda1
+lam2 <- getParams(out1, "y", mix = FALSE)$lambda2
 
-plot(out1[[1]]$lambdaHistory$y[ , 1], type = "l", col = cols[1])
-for(i in 2 : length(out1))
-    lines(out1[[i]]$lambdaHistory$y[ , 1], col = cols[i])
+cols <- rainbow(length(lam1))
 
-plot(out1[[1]]$lambdaHistory$y[ , 2], type = "l", col = cols[1])
-for(i in 2 : length(out1))
-    lines(out1[[i]]$lambdaHistory$y[ , 2], col = cols[i])
+plot(lam1[[1]], type = "l", col = cols[1])
+for(i in 2 : length(lam1))
+    lines(lam1[[i]], col = cols[i])
+
+plot(lam2[[1]], type = "l", col = cols[1])
+for(i in 2 : length(lam2))
+    lines(lam2[[i]], col = cols[i])
 
 ## Choose rep:
 rp <- 1
 
 ## Extract parameters:
-pars <- getParams(out1[[rp]], "y")
+pars <- getParams(out1, "y")
 med  <- apply(pars$beta, 2, median)
 ci   <- apply(pars$beta, 2, quantile, probs = c(0.025, 0.975))
 
 ## Extract lambda estimate:
-pars$lambda
+pars$lambda1
+pars$lambda2
 
 ## Get the least squares fit:
 #dat2 <- data.frame(cbind(y, scale(X)))
@@ -63,13 +65,13 @@ summary(fit)
 
 ## Create forest plot of estimates:
 dat2 <- data.frame(var = names(med),
-                   bl  = med,
+                   ben = med,
                    lm  = coef(fit),
                    ciL = ci[1, ],
                    ciU = ci[2, ])
 dat2 <- dat2[-1, ]
 
-p1 <- ggplot(data = dat2, mapping = aes(x = bl, y = var)) +
+p1 <- ggplot(data = dat2, mapping = aes(x = ben, y = var)) +
     geom_point() +
     theme_classic() +
     geom_vline(xintercept = 0, linetype = "dotted") +

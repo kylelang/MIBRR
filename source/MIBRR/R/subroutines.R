@@ -272,7 +272,7 @@ postProcess <- function(mibrrFit, ...) {
         }
         
         ## Provide some pretty names for the output objects:
-                                        #mibrrFit$nameOutput()
+        mibrrFit$nameOutput()
     }
     
     ## Clean the RNG state:
