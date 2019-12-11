@@ -12,6 +12,7 @@ source("../source/MIBRR/R/02_MibrrFit.R")
 source("../source/MIBRR/R/initControl.R")
 source("../source/MIBRR/R/helperFunctions.R")
 source("../source/MIBRR/R/subroutines.R")
+source("../source/MIBRR/R/exportedHelperFunctions.R")
 
 library(mvtnorm)
 library(MIBRR)
@@ -25,19 +26,22 @@ source("../source/MIBRR/R/exportedPrimaryFunctions.R")
 
 data(mibrrExampleData)
 
-out <- miben(data        = mibrrExampleData,
-             targetVars  = c("y", paste0("x", c(1 : 3))),
-             ignoreVars  = "idNum",
-             iterations  = c(30L, 10L),
-             sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
-             doMcem      = TRUE,
-             verbose     = TRUE,
-             seed        = 235711,
-             nChains     = 2L,
-             nCores      = 1L,
-             userRng     = "",
-             control     = list(checkConv = TRUE)
-             )
+mibenOut <- miben(data        = mibrrExampleData,
+                  targetVars  = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars  = "idNum",
+                  iterations  = c(30L, 10L),
+                  sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+                  doMcem      = TRUE,
+                  verbose     = TRUE,
+                  seed        = 235711,
+                  nChains     = 2L,
+                  nCores      = 1L,
+                  userRng     = "",
+                  control     = list(checkConv = TRUE)
+                  )
+
+pars <- getParams(mibenOut, "y", mix = FALSE)
+pars
 
 out <- miben(data        = mibrrExampleData,
              targetVars  = c("y", paste0("x", c(1 : 3))),

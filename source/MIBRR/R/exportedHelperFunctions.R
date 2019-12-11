@@ -22,6 +22,7 @@
 ##  with this program. If not, see <http://www.gnu.org/licenses/>.            ##
 ##----------------------------------------------------------------------------##
 
+
 ## Sample the imputations from the stationary posterior predictive distibution
 ## of the missing data
 getImpData <- function(mibrrFit, nImps) {
@@ -33,17 +34,22 @@ getImpData <- function(mibrrFit, nImps) {
 ###--------------------------------------------------------------------------###
 
 ## Extract the parameter samples from a fitted MibrrFit object:
-getParams <- function(mibrrFit, target) {
-    tmp <- mibrrFit$gibbsOut[[target]]
-    out <- tmp[c("beta", "sigma")]
+getParams <- function(mibrrFit, target, mix = TRUE) {
+    ## Define an appropriate extractor function:
+    fun <-
+        switch(as.numeric(mix) + 1, mibrrFit$getSamples, mibrrFit$poolSamples)
+    
+    ## Populate the output object:
+    out       <- list()
+    out$beta  <- fun("beta", target)
+    out$sigma <- fun("sigma", target)
     
     if(mibrrFit$penalty != 0) {# Used shrinkage priors?
-        out$tau <- tmp$tau
+        out$tau     <- fun("tau", target)
+        out$lambda1 <- fun("lambda1", target)
         
-        if(mibrrFit$doMcem)
-            out$lambda <- mibrrFit$lambdaMat[target, ]
-        else
-            out$lambda <- tmp$lambda
+        if(mibrrFit$penalty == 2)
+            out$lambda2 <- fun("lambda2", target)
     }
     out
 }

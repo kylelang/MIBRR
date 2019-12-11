@@ -374,6 +374,17 @@ MibrrFit$methods(
              },
 
 ###--------------------------------------------------------------------------###
+             
+             getSamples = function(what, target) {
+                 "Extract (unpooled) posterior samples"
+                 out <- list()
+                 for(k in 1 : nChains)
+                     out[[k]] <- chains[[k]]$parameters[[target]][[what]]
+                 
+                 out
+             },
+             
+###--------------------------------------------------------------------------###
 
              poolSamples = function(what, target) {
                  "Pool posterior samples across chains"

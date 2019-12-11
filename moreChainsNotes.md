@@ -5,8 +5,7 @@
 
 ## ToDo:
 - QC each exported function
-- Update the parameter retrieval and prediction functions to work with the new 
-  setup
+- Update the 'postPredict' and 'ppCheck' functions to work with the new setup
 - Get the package to compile
 - Check the performance against the old single chain version
 
