@@ -1,7 +1,7 @@
 ### Title:    Test MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-07
-### Modified: 2019-12-09
+### Modified: 2019-12-11
 
 rm(list = ls(all = TRUE))
 
@@ -9,7 +9,7 @@ rm(list = ls(all = TRUE))
                                         #install_github("kylelang/MIBRR/source/MIBRR", ref = "multithread")
                                         #install_github("kylelang/SURF/source/SURF")
 
-source("testingSubroutines.R")
+source("subroutines.R")
 
 library(MIBRR)
 library(SURF)
