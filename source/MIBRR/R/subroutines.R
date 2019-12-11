@@ -68,12 +68,6 @@ init <- function(penalty,
     ## Setup the PRNG (each target variable gets an independent RNG stream):
     mibrrFit$setupRng()
     
-    ## Store Lambda's prior parameters:
-    if(!doMcem & penalty != 0)
-        mibrrFit$setLambdaParams(l1 = as.numeric(lam1PriorPar),
-                                 l2 = as.numeric(lam2PriorPar)
-                                 )
-    
     ## Populate the control parameters:
     if(length(control) > 0)
         MIBRR_CONTROL[names(control)] <- control
@@ -88,6 +82,14 @@ init <- function(penalty,
 
     ## Initialize the 'MibrrChain' objects:
     mibrrFit$initChains()
+
+    ## Store Lambda's prior parameters:
+    if(!doMcem & penalty != 0)
+        for(k in 1 : nChains) {
+            mibrrFit$chains[[k]]$l1Pars <- as.numeric(lam1PriorPar)
+            if(penalty == 2)
+                mibrrFit$chains[[k]]$l2Pars <- as.numeric(lam2PriorPar)
+        }
     
     mibrrFit
 }# END init()

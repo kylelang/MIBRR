@@ -12,4 +12,6 @@
 ## Status:
 - MCEM for MIBEN, MIBL, BEN, and BL run
   - May not be giving valid results; need to QC
-- Fully Bayesian estimation breaks for everyone
+- Full Bayes runs for MIBEN and MIBL
+- Vanilla functions don't run
+  - Still trying to use taus

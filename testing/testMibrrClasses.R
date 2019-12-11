@@ -43,19 +43,32 @@ mibenOut <- miben(data        = mibrrExampleData,
 pars <- getParams(mibenOut, "y", mix = FALSE)
 pars
 
-out <- miben(data        = mibrrExampleData,
-             targetVars  = c("y", paste0("x", c(1 : 3))),
-             ignoreVars  = "idNum",
-             sampleSizes = rep(500, 2),
-             lambda1PriorPar = c(2.0, 2.0),
-             lambda2PriorPar = c(2.0, 2.0),
-             doMcem      = FALSE,
-             verbose     = TRUE,
-             seed        = 235711,
-             nChains     = 2L,
-             nCores      = 1L,
-             userRng     = "",
-             control     = list(checkConv = TRUE)
+?miben
+?ben
+
+mibenOut <- miben(data         = mibrrExampleData,
+                  targetVars   = c("y", paste0("x", c(1 : 3))),
+                  ignoreVars   = "idNum",
+                  sampleSizes  = c(500, 500),
+                  doMcem       = FALSE,
+                  lam1PriorPar = c(1.0, 0.1),
+                  lam2PriorPar = c(1.0, 0.1)
+                  )
+mibenOut$rHats
+
+out <- miben(data         = mibrrExampleData,
+             targetVars   = c("y", paste0("x", c(1 : 3))),
+             ignoreVars   = "idNum",
+             sampleSizes  = rep(500, 2),
+             lam1PriorPar = c(1.0, 0.1),
+             lam2PriorPar = c(1.0, 0.1),
+             doMcem       = FALSE,
+             verbose      = TRUE,
+             seed         = 235711,
+             nChains      = 2L,
+             nCores       = 1L,
+             userRng      = "",
+             control      = list(checkConv = TRUE)
              )
 
 out <- ben(data        = mibrrExampleData,
@@ -78,6 +91,30 @@ out <- mibl(data        = mibrrExampleData,
             iterations  = c(30L, 10L),
             sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
             doMcem      = TRUE,
+            verbose     = TRUE,
+            seed        = 235711,
+            nChains     = 2L,
+            nCores      = 1L,
+            userRng     = "",
+            control     = list(checkConv = TRUE)
+            )
+
+miblOut <- mibl(data         = mibrrExampleData,
+                targetVars   = c("y", paste0("x", c(1 : 3))),
+                ignoreVars   = "idNum",
+                sampleSizes  = c(500, 500),
+                doMcem       = FALSE,
+                lam1PriorPar = c(1.0, 0.1)
+                )
+pars <- getParams(miblOut, "y")
+pars
+
+out <- mibl(data        = mibrrExampleData,
+            targetVars  = c("y", paste0("x", c(1 : 3))),
+            ignoreVars  = "idNum",
+            iterations  = c(30L, 10L),
+            sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+            doMcem      = FALSE,
             verbose     = TRUE,
             seed        = 235711,
             nChains     = 2L,

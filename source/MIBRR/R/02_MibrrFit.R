@@ -36,8 +36,8 @@ MibrrFit <- setRefClass("MibrrFit",
                             doImp        = "logical",
                             doMcem       = "logical",
                             verbose      = "logical",
-                            l1Pars       = "numeric",
-                            l2Pars       = "numeric",
+                                        #l1Pars       = "numeric",
+                                        #l2Pars       = "numeric",
                             ignoredCols  = "data.frame",
                             rawNames     = "character",
                             impRowsPool  = "matrix",
@@ -113,10 +113,10 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             setLambdaParams = function(l1, l2) {
-                 l1Pars <<- l1
-                 l2Pars <<- l2
-             },
+                                        #setLambdaParams = function(l1, l2) {
+                                        #    l1Pars <<- l1
+                                        #    l2Pars <<- l2
+                                        #},
              
 ###--------------------------------------------------------------------------###
 
@@ -352,7 +352,7 @@ MibrrFit$methods(
                                                 ridge       = ridge,
                                                 penalty     = penalty,
                                                 control     = control)
-
+                     
                      ## Set control parameters for the 'MibrrChain' objects:
                      setControl(x = control, where = chains[[k]])
                  }
@@ -461,21 +461,22 @@ MibrrFit$methods(
                      maxBetaRHat  <- max(rHats[[j]]$beta)
                      badSigmaFlag <- rHats[[j]]$sigma > control$convThresh
                      
+                     badTauCount <- badL1Count <- badL2Count <- 0
                      if(penalty != 0) {
                          badTauCount <- sum(rHats[[j]]$tau > control$convThresh)
                          maxTauRHat  <- max(rHats[[j]]$tau)
-
+                         
                          if(!doMcem) {
-                             badLamCount <-
-                                 sum(rHats[[j]]$lambda > control$convThresh)
-                             maxLamRHat  <- max(rHats[[j]]$lambda)
-                         }
-                         else
-                             badLamCount <- 0
-                     }
-                     else {
-                         badTauCount <- 0
-                         badLamCount <- 0
+                             badL1Count <-
+                                 sum(rHats[[j]]$lambda1 > control$convThresh)
+                             maxL1RHat  <- max(rHats[[j]]$lambda1)
+                             
+                             if(penalty == 2) {
+                                 badL2Count <-
+                                     sum(rHats[[j]]$lambda2 > control$convThresh)
+                                 maxL2RHat  <- max(rHats[[j]]$lambda2)
+                             }
+                         }                            
                      }
                      
                      ## Return warnings about possible failures of convergence:
@@ -515,15 +516,28 @@ MibrrFit$methods(
                                  call.      = FALSE,
                                  immediate. = TRUE)
                      }
-                     if(badLamCount > 0) {
+                     if(badL1Count > 0) {
                          warning(paste0("While imputing ",
                                         j,
-                                        ", Lambda's final Gibbs sample may not have converged.\n",
-                                        badLamCount,
+                                        ", Lambda1's final Gibbs sample may not have converged.\n",
+                                        badL1Count,
                                         " R-Hats > ",
                                         control$convThresh,
                                         " with maximum R-Hat = ",
-                                        round(maxLamRHat, 4),
+                                        round(maxL1RHat, 4),
+                                        ".\nConsider increasing the size of the (retained) Gibbs samples."),
+                                 call.      = FALSE,
+                                 immediate. = TRUE)
+                     }
+                     if(badL2Count > 0) {
+                         warning(paste0("While imputing ",
+                                        j,
+                                        ", Lambda2's final Gibbs sample may not have converged.\n",
+                                        badL2Count,
+                                        " R-Hats > ",
+                                        control$convThresh,
+                                        " with maximum R-Hat = ",
+                                        round(maxL2RHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
                                  call.      = FALSE,
                                  immediate. = TRUE)
