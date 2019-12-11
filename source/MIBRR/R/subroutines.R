@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-10
+### Modified: 2019-12-11
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -176,11 +176,25 @@ mcem <- function(mibrrFit, chain) {
 
 ###--------------------------------------------------------------------------###
 
-estimateModel <- function(mibrrFit) {
-    for(k in 1 : mibrrFit$nChains) {
-        if(mibrrFit$doMcem) mibrrFit <- mcem(mibrrFit, chain = k)
-        else                mibrrFit$chains[[k]]$doGibbs()
+estimateModel <- function(chain, mibrrFit) {
+    if(mibrrFit$doMcem) mibrrFit <- mcem(mibrrFit, chain = chain)
+    else                mibrrFit$chains[[chain]]$doGibbs()
+
+    mibrrFit
+}
+
+###--------------------------------------------------------------------------###
+
+runChains <- function(mibrrFit) {
+    if(mibrrFit$nCores > 1) {# Use parallel processing
+        if(.Platform$OS.type == "unix")
+            mibrrFit <- mclapply(
     }
+    else                     # Serial processing
+        for(k in 1 : mibrrFit$nChains)
+            mibrrFit <- estimateModel(k, mibrrFit)
+    
+    mibrrFit
 }
 
 ###--------------------------------------------------------------------------###
