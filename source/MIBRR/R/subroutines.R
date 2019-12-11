@@ -38,6 +38,7 @@ init <- function(penalty,
                  verbose,
                  seed,
                  userRng,
+                 nChains,
                  control)
 {
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
@@ -55,7 +56,8 @@ init <- function(penalty,
                          seed        = seed,
                          userRng     = userRng,
                          ridge       = ridge,
-                         penalty     = as.integer(penalty)
+                         penalty     = as.integer(penalty),
+                         nChains     = as.integer(nChains) 
                          )
 
     ## Process and check the user inputs:
@@ -74,7 +76,7 @@ init <- function(penalty,
     if(length(control) > 0)
         MIBRR_CONTROL[names(control)] <- control
 
-    mibrrFit$control <<- MIBRR_CONTROL
+    mibrrFit$control <- MIBRR_CONTROL
         
     ## Do we have any missing data:
     haveMiss <- any(mibrrFit$missCounts > 0)
@@ -91,36 +93,45 @@ init <- function(penalty,
 ###--------------------------------------------------------------------------###
 
 ## Estimate a model using MCEM:
-mcem <- function(mibrrFit) {
+mcem <- function(mibrrFit, chain) {
     iters      <- mibrrFit$iterations
     totalIters <- sum(iters)
 
     ## Create container for rolling parameter history:
-    if(mibrrFit$dumpParamHistory) {
-        phMem <- mibrrFit$phHistoryLength
+    if(mibrrFit$control$dumpParamHistory) {
+        phMem <- mibrrFit$control$phHistoryLength
         ph    <- vector("list", phMem)
     }
     
     for(i in 1 : totalIters) {
         if(i == 1) {
-            vcat("\nBeginning MCEM 'Approximation' phase\n")
+            vcat(paste0("\nChain ",
+                        chain,
+                        ": Beginning MCEM 'Approximation' phase\n")
+                 )
             phase <- 1
         }
         if(i == (iters[1] + 1)) {
-            vcat("\nBeginning MCEM 'Tuning' phase\n")
+            vcat(paste0("\nChain ",
+                        chain,
+                        ": Beginning MCEM 'Tuning' phase\n")
+                 )
             phase <- 2
         }
         if(i == totalIters) {
-            vcat("\nSampling from the stationary posterior\n")
+            vcat(paste0("\nChain ",
+                        chain,
+                        ": Sampling from the stationary posterior\n")
+                 )
             phase <- 3
         }
         vcat("\n") # Beautify output
         
         ## Estimate the BEN/BL model:
-        mibrrFit$doGibbs(phase)
+        mibrrFit$chains[[chain]]$doGibbs(phase)
         
         ## Update the rolling parameter sample histories:
-        if(mibrrFit$dumpParamHistory) 
+        if(mibrrFit$control$dumpParamHistory) 
             for (j in mibrrFit$targetVars) {
                 k            <- ifelse(i %% phMem != 0, i %% phMem, phMem)
                 ph[[k]][[j]] <- with(mibrrFit$gibbsOut[[j]],
@@ -134,20 +145,23 @@ mcem <- function(mibrrFit) {
         
         if(i < totalIters) {
             ## Print a nice message:
-            if(mibrrFit$verbose) {
-                check <- i > iters[1]
-                cat(paste0("Doing MCEM ",
-                           ifelse(check, "'Tuning'", "'Approximation'"),
-                           " iteration ",
-                           ifelse(check, i - iters[1], i),
-                           " of ",
-                           iters[as.numeric(check) + 1],
-                           "\n")
-                    )
-            }
-            
+            check <- i > iters[1]
+            vcat(paste0("Chain ",
+                        chain,
+                        ": Doing MCEM ",
+                        ifelse(check, "'Tuning'", "'Approximation'"),
+                        " iteration ",
+                        ifelse(check, i - iters[1], i),
+                        " of ",
+                        iters[as.numeric(check) + 1],
+                        "\n")
+                 )
+                        
             ## Update Lambda via MCEM:
-            optCond <- try(mibrrFit$optimizeLambda(iter = i), silent = TRUE)
+            optCond <- try(
+                mibrrFit$chains[[chain]]$optimizeLambda(),
+                silent = TRUE
+            )
         }
 
         ## Clean up the RNG in the event of an error:
@@ -159,6 +173,15 @@ mcem <- function(mibrrFit) {
     
     mibrrFit
 }# END mcem()
+
+###--------------------------------------------------------------------------###
+
+estimateModel <- function(mibrrFit) {
+    for(k in 1 : mibrrFit$nChains) {
+        if(mibrrFit$doMcem) mibrrFit <- mcem(mibrrFit, chain = k)
+        else                mibrrFit$chains[[k]]$doGibbs()
+    }
+}
 
 ###--------------------------------------------------------------------------###
 
@@ -186,7 +209,7 @@ postProcess <- function(mibrrFit, ...) {
         
         ## Compute the potential scale reduction factors (R-Hats) for the
         ## posterior imputation model parameters:
-        if(mibrrFit$checkConv) {
+        if(mibrrFit$control$checkConv) {
             mibrrFit$computeRHats()
             mibrrFit$checkGibbsConv()
         }

@@ -7,8 +7,8 @@ rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-ver  <- "0.3.3.9000"
-prod <- TRUE
+ver  <- "0.4.0.9999"
+prod <- FALSE
 
 ## Clean up:
 system("rm source/MIBRR/src/RcppExports.cpp \

@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // runGibbs
-Rcpp::List runGibbs(Eigen::MatrixXd data, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd l1Parms, Eigen::VectorXd l2Parms, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, int penType, double ridge, bool verbose, bool fullBayes, bool noMiss, bool savePpSams, bool useBetaMeans, bool finalRep, std::vector<unsigned int> seeds);
-RcppExport SEXP _MIBRR_runGibbs(SEXP dataSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP l1ParmsSEXP, SEXP l2ParmsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP penTypeSEXP, SEXP ridgeSEXP, SEXP verboseSEXP, SEXP fullBayesSEXP, SEXP noMissSEXP, SEXP savePpSamsSEXP, SEXP useBetaMeansSEXP, SEXP finalRepSEXP, SEXP seedsSEXP) {
+Rcpp::List runGibbs(Eigen::MatrixXd data, int nTargets, Rcpp::List missList, Eigen::VectorXi respCounts, Eigen::VectorXd lambda1, Eigen::VectorXd lambda2, Eigen::VectorXd l1Parms, Eigen::VectorXd l2Parms, Eigen::VectorXd sigmaStarts, Eigen::MatrixXd tauStarts, Eigen::MatrixXd betaStarts, int burnSams, int totalSams, int penType, double ridge, bool verbose, bool fullBayes, bool noMiss, bool savePpSams, bool useBetaMeans, bool finalRep, std::vector<unsigned int> seeds, int chain);
+RcppExport SEXP _MIBRR_runGibbs(SEXP dataSEXP, SEXP nTargetsSEXP, SEXP missListSEXP, SEXP respCountsSEXP, SEXP lambda1SEXP, SEXP lambda2SEXP, SEXP l1ParmsSEXP, SEXP l2ParmsSEXP, SEXP sigmaStartsSEXP, SEXP tauStartsSEXP, SEXP betaStartsSEXP, SEXP burnSamsSEXP, SEXP totalSamsSEXP, SEXP penTypeSEXP, SEXP ridgeSEXP, SEXP verboseSEXP, SEXP fullBayesSEXP, SEXP noMissSEXP, SEXP savePpSamsSEXP, SEXP useBetaMeansSEXP, SEXP finalRepSEXP, SEXP seedsSEXP, SEXP chainSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -34,7 +34,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type useBetaMeans(useBetaMeansSEXP);
     Rcpp::traits::input_parameter< bool >::type finalRep(finalRepSEXP);
     Rcpp::traits::input_parameter< std::vector<unsigned int> >::type seeds(seedsSEXP);
-    rcpp_result_gen = Rcpp::wrap(runGibbs(data, nTargets, missList, respCounts, lambda1, lambda2, l1Parms, l2Parms, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, penType, ridge, verbose, fullBayes, noMiss, savePpSams, useBetaMeans, finalRep, seeds));
+    Rcpp::traits::input_parameter< int >::type chain(chainSEXP);
+    rcpp_result_gen = Rcpp::wrap(runGibbs(data, nTargets, missList, respCounts, lambda1, lambda2, l1Parms, l2Parms, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams, penType, ridge, verbose, fullBayes, noMiss, savePpSams, useBetaMeans, finalRep, seeds, chain));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -228,7 +229,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 22},
+    {"_MIBRR_runGibbs", (DL_FUNC) &_MIBRR_runGibbs, 23},
     {"_MIBRR_drawNorm", (DL_FUNC) &_MIBRR_drawNorm, 4},
     {"_MIBRR_drawGamma", (DL_FUNC) &_MIBRR_drawGamma, 4},
     {"_MIBRR_drawInvGamma", (DL_FUNC) &_MIBRR_drawInvGamma, 4},

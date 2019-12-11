@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-10
+### Modified: 2019-12-11
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -37,9 +37,9 @@ MibrrFit <- setRefClass("MibrrFit",
                             verbose      = "logical",
                             l1Pars       = "numeric",
                             l2Pars       = "numeric",
-                            ignoreCols   = "data.frame",
+                            ignoredCols  = "data.frame",
                             rawNames     = "character",
-                            impRowsPool  = "integer",
+                            impRowsPool  = "matrix",
                             missList     = "list",
                             nChains      = "integer",
                             rHats        = "list",
@@ -175,50 +175,33 @@ MibrrFit$methods(
              
 ################################# ACCESSORS ####################################
              
-             getControl = function () {
-                 "Return the 'control' list"
-                 list(convThresh        = convThresh,
-                      usePcStarts       = usePcStarts,
-                      minPredCor        = minPredCor,
-                      miceIters         = miceIters,
-                      miceRidge         = miceRidge,
-                      miceMethod        = miceMethod,
-                      preserveStructure = preserveStructure,
-                      checkConv         = checkConv,
-                      optTraceLevel     = optTraceLevel,
-                      optCheckKkt       = optCheckKkt,
-                      optMethod         = optMethod,
-                      optBoundLambda    = optBoundLambda,
-                      centerType        = centerType,
-                      dumpParamHistory  = dumpParamHistory,
-                      phHistoryLength   = phHistoryLength)
-             },
-             
-###--------------------------------------------------------------------------###
-             
              getImpDataset = function(reset = FALSE) {
                  "Fill missing values to produce a single imputed dataset"
                  if(reset)
-                     impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
+                     impRowsPool <<- as.matrix(
+                         expand.grid(chain = 1 : nChains,
+                                     row   = 1 : sampleSizes[[length(sampleSizes)]][2]
+                                     )
+                     )
                  
                  tmp <- data # Make a local copy of 'data'
                  
                  ## Randomly choose a posterior draw to use as imputations:
-                 impRow      <-  sample(impRowsPool, 1)
-                 impRowsPool <<- setdiff(impRowsPool, impRow)
-
+                 index       <-  sample(1 : nrow(impRowsPool), 1)
+                 impRow      <-  impRowsPool[index, ]
+                 impRowsPool <<- impRowsPool[-index, ]
+                 
                  for(j in targetVars) {
-                     impSam                <- gibbsOut[[j]]$imps[impRow, ]
+                     impSam <-
+                         chains[[impRow["chain"]]]$parameters[[j]]$imps[impRow["row"], ]
                      tmp[missList[[j]], j] <- impSam
                  }
                  
                  ## Restructure imputed data to match the raw data layout:
-                 if(preserveStructure & length(ignoreVars) > 0)
-                     data.frame(tmp, ignoreCols)[ , rawNames]
-                 else if(preserveStructure)
-                     tmp[ , rawNames]
+                 if(length(ignoreVars) > 0)
+                     data.frame(tmp, ignoredCols)[rawNames]
                  else
-                     tmp
+                     tmp[rawNames]
              },
              
 ######################### COMPLEX METHODS/SUBROUTINES ##########################
@@ -254,9 +237,9 @@ MibrrFit$methods(
                  nObs   <<- as.integer(nrow(data))
 
                  if(doMcem) {
-                     smoothingWindow <<- as.integer(
-                         min(10, ceiling(iterations[1] / 10))
-                     )
+                                        #smoothingWindow <<- as.integer(
+                                        #    min(10, ceiling(iterations[1] / 10))
+                                        #)
                      
                      totalIters <<- sum(iterations)
                  }
@@ -274,8 +257,12 @@ MibrrFit$methods(
                  
                  ## Generate a pool of potential imputation indices:
                  if(doImp)
-                     impRowsPool <<- 1 : sampleSizes[[length(sampleSizes)]][2]
-
+                     impRowsPool <<- as.matrix(
+                         expand.grid(chain = 1 : nChains,
+                                     row   = 1 : sampleSizes[[length(sampleSizes)]][2]
+                                     )
+                     )
+                 
                  ## Check Inputs' Admissability ##
                  
                  ## Check for target variables. When no targets are given, all
@@ -371,19 +358,33 @@ MibrrFit$methods(
              
              nameOutput = function() {
                  "Give the Gibb's sampling output pretty names"
-                 if(checkConv) names(rHats) <<- targetVars
+                 if(control$checkConv) names(rHats) <<- targetVars
 
                  for(k in 1 : nChains)
-                     for(v in targetVars) {
-                         tmp <- setdiff(colnames(data), v)
+                     for(j in targetVars) {
+                         tmp <- setdiff(colnames(data), j)
                          
-                         colnames(chains[[k]]$parameters[[v]]$beta) <<- c("intercept", tmp)
-                         colnames(chains[[k]]$parameters[[v]]$tau)  <<- tmp
+                         colnames(chains[[k]]$parameters[[j]]$beta) <<- c("intercept", tmp)
+                         colnames(chains[[k]]$parameters[[j]]$tau)  <<- tmp
                      }
              },
 
 ###--------------------------------------------------------------------------###
 
+             poolSamples = function(what, target) {
+                 "Pool posterior samples across chains"
+                 tmp <- list()
+                 for(k in 1 : nChains)
+                     tmp[[k]] <- chains[[k]]$parameters[[target]][[what]]
+
+                 if(what %in% c("sigma", "lambda1", "lambda2"))
+                     unlist(tmp, use.names = FALSE)
+                 else
+                     do.call(rbind, tmp)
+             },
+             
+###--------------------------------------------------------------------------###
+             
              calcRHat = function(sims) {
                  "Compute a single split-chain Potential Scale Reduction Factor"
                  subChainLen <- floor(length(sims) / 2)
@@ -415,20 +416,21 @@ MibrrFit$methods(
              computeRHats = function() {
                  "Compute the potential scale reduction factors"
                  for(j in targetVars) {
-                     rHats[[j]]$beta  <<- apply(gibbsOut[[j]]$beta, 2, calcRHat)
-                     rHats[[j]]$sigma <<- calcRHat(gibbsOut[[j]]$sigma)
+                     rHats[[j]]$sigma <<- calcRHat(poolSamples("sigma", j))
+                     rHats[[j]]$beta  <<-
+                         apply(poolSamples("beta", j), 2, calcRHat)
                      
                      if(penalty != 0) {# Using a shrinkage prior?
                          rHats[[j]]$tau <<-
-                             apply(gibbsOut[[j]]$tau, 2, calcRHat)
+                             apply(poolSamples("tau", j), 2, calcRHat)
                          
                          if(!doMcem) {# Fully Bayesian estimation of lambdas?
+                             rHats[[j]]$lambda1 <<-
+                                 calcRHat(poolSamples("lambda1", j))
+                             
                              if(penalty == 2)
-                                 rHats[[j]]$lambda <<-
-                                     apply(gibbsOut[[j]]$lambda, 2, calcRHat)
-                             else
-                                 rHats[[j]]$lambda <<-
-                                     calcRHat(gibbsOut[[j]]$lambda[ , 1])
+                                 rHats[[j]]$lambda2 <<-
+                                     calcRHat(poolSamples("lambda2", j))
                          }# CLOSE if(!doMcem)
                      }# CLOSE if(penalty != 0)
                  }# END for(j in targetVars)
@@ -440,16 +442,17 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(rHats[[j]]$beta > convThresh)
+                     badBetaCount <- sum(rHats[[j]]$beta > control$convThresh)
                      maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badSigmaFlag <- rHats[[j]]$sigma > convThresh
+                     badSigmaFlag <- rHats[[j]]$sigma > control$convThresh
                      
                      if(penalty != 0) {
-                         badTauCount  <- sum(rHats[[j]]$tau > convThresh)
-                         maxTauRHat   <- max(rHats[[j]]$tau)
+                         badTauCount <- sum(rHats[[j]]$tau > control$convThresh)
+                         maxTauRHat  <- max(rHats[[j]]$tau)
 
                          if(!doMcem) {
-                             badLamCount <- sum(rHats[[j]]$lambda > convThresh)
+                             badLamCount <-
+                                 sum(rHats[[j]]$lambda > control$convThresh)
                              maxLamRHat  <- max(rHats[[j]]$lambda)
                          }
                          else
@@ -467,7 +470,7 @@ MibrrFit$methods(
                                         ", Beta's final Gibbs sample may not have converged.\n",
                                         badBetaCount,
                                         " R-Hats > ",
-                                        convThresh,
+                                        control$convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxBetaRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
@@ -480,7 +483,7 @@ MibrrFit$methods(
                                         ", Tau's final Gibbs sample may not have converged.\n",
                                         badTauCount,
                                         " R-Hats > ",
-                                        convThresh,
+                                        control$convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxTauRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
@@ -503,7 +506,7 @@ MibrrFit$methods(
                                         ", Lambda's final Gibbs sample may not have converged.\n",
                                         badLamCount,
                                         " R-Hats > ",
-                                        convThresh,
+                                        control$convThresh,
                                         " with maximum R-Hat = ",
                                         round(maxLamRHat, 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),

@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-02-26
+### Modified: 2019-12-11
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -70,4 +70,23 @@ vcat <- function(x) if(parent.frame()$mibrrFit$verbose) cat(x)
 numMode <- function(x) {
     dens <- density(x, na.rm = TRUE)
     dens$x[which.max(dens$y)]
+}
+
+###--------------------------------------------------------------------------###
+
+## Cast object to given type:
+cast <- function(obj, type)
+    eval(call(paste0("as.", type), obj))
+
+###--------------------------------------------------------------------------###
+
+## Set the control list arguments for a particular class:
+setControl <- function(x, where) {
+    ## Get the fields for the current class:
+    fields <- getRefClass(class(where))$fields()
+    
+    ## Assign the control list entries to the correct classes:
+    for(n in names(x))
+        if(n %in% names(fields))
+            where$field(n, cast(x[n], fields[n]))
 }

@@ -1,7 +1,7 @@
 ### Title:    Test Reference Classes for MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2019-10-09
-### Modified: 2019-12-10
+### Modified: 2019-12-11
 
 rm(list = ls(all = TRUE))
 
@@ -10,6 +10,8 @@ source("../source/MIBRR/R/01_MibrrChain.R")
 source("../source/MIBRR/R/02_MibrrFit.R")
 
 source("../source/MIBRR/R/initControl.R")
+source("../source/MIBRR/R/helperFunctions.R")
+source("../source/MIBRR/R/subroutines.R")
 
 library(mvtnorm)
 library(MIBRR)
@@ -20,53 +22,49 @@ library(optimx)
 
 data(mibrrExampleData)
 
-## Estimate the mode of a continous vector:
-numMode <- function(x) {
-    dens <- density(x, na.rm = TRUE)
-    dens$x[which.max(dens$y)]
-}
+mibrrFit <- init(data         = mibrrExampleData,
+                 targetVars   = c("y", paste0("x", c(1 : 3))),
+                 ignoreVars   = "idNum",
+                 iterations   = c(30L, 10L),
+                 sampleSizes  = list(rep(50, 2), rep(100, 2), rep(500, 2)),
+                 doImp        = TRUE,
+                 doMcem       = TRUE,
+                 verbose      = TRUE,
+                 seed         = 235711,
+                 penalty      = 2L,
+                 nChains      = 3L,
+                 missCode     = NA,
+                 lam1PriorPar = NA,
+                 lam2PriorPar = NA,
+                 ridge        = 0.0,
+                 userRng      = "",
+                 control      = list(checkConv = TRUE)
+                 )
 
-cast <- function(obj, type)
-    eval(call(paste0("as.", type), obj))
+for(k in 1 : 3)
+    mibrrFit <- mcem(mibrrFit, chain = k)
+mibrrFit <- postProcess(mibrrFit)
 
-setControl <- function(x, where = .self) {
-    ## Get the fields for the current class:
-    fields <- getRefClass(class(where))$fields()
-    
-    ## Assign the control list entries to the correct classes:
-    for(n in names(x))
-        if(n %in% names(fields))
-            where$field(n, cast(x[n], fields[n]))
-}
+mibrrFit$rHats
 
-mibrrFit <- MibrrFit(data        = mibrrExampleData,
-                     targetVars  = c("y", paste0("x", c(1 : 3))),
-                     ignoreVars  = "idNum",
-                     iterations  = c(30L, 10L),
-                     sampleSizes = list(rep(50, 2), rep(100, 2), rep(500, 2)),
-                     doImp       = TRUE,
-                     doMcem      = TRUE,
-                     verbose     = TRUE,
-                     seed        = 235711,
-                     penalty     = 2L,
-                     nChains     = 2L)
+imps <- list()
+for(m in 1 : 5)
+    imps[[m]] <- mibrrFit$getImpDataset()
 
-## Process and check the user inputs:
-mibrrFit$processInputs()
+all.equal(imps[[1]], imps[[2]])
+all.equal(imps[[1]], imps[[3]])
+all.equal(imps[[1]], imps[[4]])
+all.equal(imps[[1]], imps[[5]])
 
-## Setup the PRNG (each target variable gets an independent RNG stream):
-mibrrFit$setupRng()
+all.equal(imps[[2]], imps[[3]])
+all.equal(imps[[2]], imps[[4]])
+all.equal(imps[[2]], imps[[5]])
 
-mibrrFit$control <- MIBRR_CONTROL
+all.equal(imps[[3]], imps[[4]])
+all.equal(imps[[3]], imps[[5]])
 
-## Do we have any missing data:
-haveMiss <- any(mibrrFit$missCounts > 0)
+all.equal(imps[[4]], imps[[5]])
 
-## Temporarily fill missing with single imputations:
-if(haveMiss) mibrrFit$simpleImpute()
-
-## Initialize the 'MibrrChain' objects:
-mibrrFit$initChains()
 
 mibrrFit$chains[[1]]$doGibbs()
 mibrrFit$chains[[1]]$optimizeLambda()
@@ -183,3 +181,8 @@ sams$imps
 names(mibenOut$gibbsOut[["y"]])
 
 length(mibenOut$gibbsOut[["y"]][["ppSams"]])
+
+
+tmp <- list(matrix(rnorm(100), 20, 5), matrix(rnorm(100), 20, 5))
+
+do.call(rbind, tmp)

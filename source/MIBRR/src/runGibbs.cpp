@@ -1,7 +1,7 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-08-20
-// Modified: 2019-12-09
+// Modified: 2019-12-11
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
@@ -52,7 +52,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    bool                      savePpSams,
 		    bool                      useBetaMeans,
 		    bool                      finalRep,
-		    std::vector<unsigned int> seeds)
+		    std::vector<unsigned int> seeds,
+		    int                       chain)
 {
   // Disable multithreading for Eigen ops:
   Eigen::setNbThreads(1);
@@ -113,8 +114,9 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 	max    = burnSams - marg;
 	check0 = (i % (max / 5) == 0) & ((burnSams - i) > marg);
 	if(check0) {
-	  Rcpp::Rcout << "Doing Gibbs burn-in iteration " << (i + 1);
-	  Rcpp::Rcout << " of " << burnSams << endl;
+	  Rcpp::Rcout << "Chain " << chain <<
+	    ": Doing Gibbs burn-in iteration " << (i + 1) << " of " <<
+	    burnSams << endl;
 	}
       }
       else {
@@ -122,9 +124,9 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 	max    = (totalSams - burnSams) - marg;
 	check0 = ((i - burnSams) % (max / 5) == 0) & ((totalSams - i) > marg);
 	if(check0) {
-	  Rcpp::Rcout <<
-	    "Doing Gibbs sampling iteration " << (i + 1) - burnSams;
-	  Rcpp::Rcout << " of " << totalSams - burnSams << endl;
+	  Rcpp::Rcout << "Chain " << chain <<
+	    ": Doing Gibbs sampling iteration " << (i + 1) - burnSams <<
+	    " of " << totalSams - burnSams << endl;
 	}
       }
     }

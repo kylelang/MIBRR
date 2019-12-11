@@ -142,10 +142,10 @@ MibrrChain$methods(
                    ## Get a new vector of seeds for the C++ samplers:
                    seedVec        <- rep(NA, nTargets)
                    names(seedVec) <- targetVars
-                   for(v in targetVars) {
-                       sName <- paste0("c", chain, v)
+                   for(j in targetVars) {
+                       sName <- paste0("c", chain, j)
                        .lec.ResetNextSubstream(sName)
-                       seedVec[v] <- .lec.GetState(sName)[1]
+                       seedVec[j] <- .lec.GetState(sName)[1]
                    }
                    
                    ## Extract starting values from the 'parameters' field:
@@ -173,7 +173,8 @@ MibrrChain$methods(
                                 savePpSams   = savePpSams,
                                 useBetaMeans = useBetaMeans,
                                 finalRep     = phase == 3,
-                                seeds        = seedVec)
+                                seeds        = seedVec)#,
+                                #chain        = chain)
                    
                    names(gibbsOut) <- targetVars
 
