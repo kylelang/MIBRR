@@ -1,7 +1,7 @@
 ### Title:    R-Based Unit Tests for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2010-01-23
-### Modified: 2019-02-04
+### Modified: 2019-12-12
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -429,13 +429,14 @@ testMissFill <- function(data) {
             nMiss <- obj$missCounts[v]
             
             ## Generate some dummy imputations:
-            imp0  <- runif(nMiss)
+            imp0 <- runif(nMiss)
             
             ## Replace MibrrFit imps with dummies:
-            obj$gibbsOut[[v]]$imps <- matrix(imp0,
-                                             length(obj$gibbsOut[[1]]$sigma),
-                                             nMiss,
-                                             byrow = TRUE)
+            pars      <- obj$chains[[1]]$parameters[[v]]
+            pars$imps <- matrix(imp0,
+                                length(pars$sigma),
+                                nMiss,
+                                byrow = TRUE)
             
             ## Replace raw data's missing with dummy imputations:
             dat0[is.na(dat0[ , v]), v] <- imp0

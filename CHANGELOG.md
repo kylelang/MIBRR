@@ -14,7 +14,13 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.3.3.9000 - 2019-12-09 - ACTIVE
+## 0.4.0-9000 - 2019-12-12 - ACTIVE
+
+### Added
+- The ability to run multiple MCEM/Markov chains.
+  - The number of chains is controled by the `nChains` argument.
+  
+## 0.3.3.9000 - 2019-12-09
 
 ### Fixed
 - A bug whereby standardization of Beta was reverted before computing the

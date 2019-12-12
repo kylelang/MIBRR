@@ -1,7 +1,7 @@
 ### Title:    Testing Subroutines
 ### Author:   Kyle M. Lang
-### Created:  2015-JAN-01
-### Modified: 2019-JAN-24
+### Created:  2015-01-01
+### Modified: 2019-01-24
 
 ###--------------------------------------------------------------------------###
 

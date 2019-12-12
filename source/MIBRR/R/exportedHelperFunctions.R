@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-02-26
+### Modified: 2019-12-12
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -61,12 +61,25 @@ getParams <- function(mibrrFit, target, mix = TRUE) {
 
 ###--------------------------------------------------------------------------###
 
+## Extract the posterior predictive samples from a fitted MibrrFit object:
+getPostPredSams <- function(mibrrFit, target, mix = TRUE) {
+    ## Define an appropriate extractor function:
+    fun <-
+        switch(as.numeric(mix) + 1, mibrrFit$getSamples, mibrrFit$poolSamples)
+    
+    ## Extract and return the posterior samples:
+    fun("ppSams", target)
+}
+
+###--------------------------------------------------------------------------###
+
 ## Generate posterior predictions from a fitted BEN or BL model:
 postPredict <- function(mibrrFit,
                         newData,
                         targetVars = NULL,
                         nDraws     = 0,
-                        scale      = FALSE)
+                        scale      = FALSE,
+                        cenType    = "mode")
 {
     if(!is.data.frame(newData)) stop("'newData' must be a data.frame")
     if(is.null(targetVars))     targetVars <- mibrrFit$targetVars
@@ -94,8 +107,16 @@ postPredict <- function(mibrrFit,
                 sigma <- numMode(pars$sigma)
             }
             else {# nDraws < 0
-                beta  <- matrix(colMeans(pars$beta))
-                sigma <- mean(pars$sigma)
+                cenTen <-
+                    switch(cenType,
+                           mode   = numMode,
+                           median = median,
+                           mean   = mean,
+                           stop("'cenType' must be one of {'mode', 'median', 'mean'}")
+                           )
+                
+                beta  <- matrix(apply(pars$beta, 2, cenTen))
+                sigma <- cenTen(pars$sigma)
             }
             out <- testData %*% beta + rnorm(1, 0, sqrt(sigma))
         }
@@ -110,12 +131,19 @@ postPredict <- function(mibrrFit,
 ## densities:
 ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
     
-    if(!mibrrFit$savePpSams)
+    if(!mibrrFit$control$savePpSams)
         stop("The object provided for 'mibrrFit' does not contain posterior predictive samples.")
     
     if(is.null(targetVars)) targetVars <- mibrrFit$targetVars
-    
-    index <- 1 : nrow(mibrrFit$gibbsOut[[1]]$ppSams)
+
+    ## Extract the posterior predictive samples:
+    ppSams0        <- lapply(X   = targetVars,
+                             FUN = function(x, y) getPostPredSams(y, x),
+                             y   = mibrrFit)
+    names(ppSams0) <- targetVars
+
+    ## Define the index of rows to sample:
+    index <- 1 : nrow(ppSams0[[1]])
     if(!is.null(nSams)) {
         check <- nSams > length(index)
         if(check) {
@@ -128,9 +156,10 @@ ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
         }
         index <- sample(index, nSams)
     }
-    
+
+    ## Plot the posterior predictive densities:
     for(v in targetVars) {
-        ppSams <- mibrrFit$gibbsOut[[v]]$ppSams[index, ]
+        ppSams <- ppSams0[[v]][index, ]
         
         d0 <- density(mibrrFit$data[ , v], na.rm = TRUE)
         d1 <- apply(ppSams, 1, density)
@@ -140,8 +169,9 @@ ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
              xlim = range(d0$x, lapply(d1, "[[", x = "x")),
              main = paste0("Variable = ",
                            v,
-                           "\nPP Densities (Red) vs. Obs. Density (Black)")
-             )
+                           "\nPP Densities (Red) vs. Obs. Density (Black)"),
+             ylab = "Density",
+             xlab = v)
         
         lapply(d1, lines, col = "red")
         lines(d0, col = "black", lwd = 2.5)
