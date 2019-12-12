@@ -1,7 +1,7 @@
 ### Title:    Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-12-11
+### Modified: 2019-12-12
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -89,4 +89,35 @@ setControl <- function(x, where) {
     for(n in names(x))
         if(n %in% names(fields))
             where$field(n, cast(x[n], fields[n]))
+}
+
+###--------------------------------------------------------------------------###
+
+## Split the rows of a matrix into two equally sized sub-matrices:
+split <- function(x) {
+    ## Make sure we're working with a matrix:
+    if(!is.matrix(x)) x <- as.matrix(x)
+
+    ## Make sure N is a multiple of two:
+    extra <- nrow(x) %% 2
+    if(extra != 0) x <- as.matrix(x[(extra + 1) : nrow(x), ])
+
+    ## Define subchain length:
+    n <- nrow(x) / 2
+
+    ## Split the sample:
+    list(x[1 : n, ],
+         x[(n + 1) : nrow(x), ]
+         )
+}
+
+###--------------------------------------------------------------------------###
+
+## Prepare posterior samples for coda functions:
+prepSam <- function(sam) {
+    ## Split each sample into two subchain samples:
+    tmp <- do.call(c, lapply(sam, split))
+
+    ## Convert samples into an mcmc.list object:
+    mcmc.list(lapply(tmp, mcmc))
 }
