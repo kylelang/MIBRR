@@ -1,6 +1,9 @@
 
-library(coda)
+rm(list = ls(all = TRUE))
+
+                                        #library(coda)
 library(MIBRR)
+library(lars)
 
 data(mibrrExampleData)
 
@@ -9,9 +12,35 @@ mibenOut <- miben(data       = mibrrExampleData,
                   iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum",
-                  nChains    = 3)
+                  nChains    = 2)
 
-pars <- getParams(mibenOut, "y", FALSE)
+mibenOut$rHats
+
+## Prep the data:
+data(diabetes)
+
+y    <- diabetes$y
+X    <- diabetes$x
+dat1 <- data.frame(cbind(y, X))
+
+## Run the BEN models:
+out1 <- ben(data        = dat1,
+            y           = "y",
+            X           = colnames(X),
+            iterations  = c(500, 500),
+            sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
+            nChains     = 4,
+            control     = list(
+                lambda1Starts = 1.0 + runif(1, -0.25, 0.25),
+                lambda2Starts = 15.0 + runif(1, -5, 5),
+                optMethod     = "L-BFGS-B"
+            )
+            )
+
+rHats <- getField(out1, "rHats")
+rHats
+
+pars <- getParams(out1, "y", FALSE)
 
 names(pars)
 
@@ -37,20 +66,74 @@ split <- function(x) {
          )
 }
 
-prepSam <- function(sam) {
+prepSams <- function(sams, split = TRUE) {
     ## Split each sample into two subchain samples:
-    tmp <- do.call(c, lapply(sam, split))
-
+    if(split)
+        sams <- do.call(c, lapply(sams, split))
+    
     ## Convert samples into an mcmc.list object:
-    mcmc.list(lapply(tmp, mcmc))
+    mcmc.list(lapply(sams, mcmc))
 }
 
 tmp <- split(pars$sigma[[1]])
 tmp
 
-tmp <- prepSam(pars$beta)
+tmp <- prepSam(pars$lambda1, FALSE)
+tmp
 
-gelman.diag(tmp)
+n <- out1$iterations[2]
+
+iterations <- out1$iterations
+iterations[2] <- 50
+
+prepMcemChains <- function(sams) {
+    sams <- lapply(X   = sams,
+                   FUN = function(x, n) x[(length(x) - n + 1) : length(x)],
+                   n   = ceiling(iterations[2] / 2)
+                   )
+    
+    prepSams(sams)
+}
+
+tmp <- prepMcemChains(pars$lambda1)
+
+tmp
+
+m <- mean(unlist(tmp))
+s <- sd(unlist(tmp))
+
+lapply(tmp, function(x, m, s) (x - m) / s, m = m, s = s)
+
+rHats <- gelman.diag(tmp, transform = TRUE)
+rHats
+
+geweke.diag(tmp)
+
+## Plot MCEM chains:
+par(mfrow = c(1, 2))
+
+lam1 <- getParams(out1, "y", mix = FALSE)$lambda1
+lam2 <- getParams(out1, "y", mix = FALSE)$lambda2
+
+cols <- rainbow(length(lam1))
+
+plot(lam1[[1]], type = "l", col = cols[1])
+for(i in 2 : length(lam1))
+    lines(lam1[[i]], col = cols[i])
+
+plot(lam2[[1]], type = "l", col = cols[1])
+for(i in 2 : length(lam2))
+    lines(lam2[[i]], col = cols[i])
+
+length(tmp)
+
+par(mfrow = c(2, 4))
+lapply(tmp, function(x) plot(density(log(x))))
+
+class(rHats)
+rHats$psrf[ , 1]
+rHats$psrf[ , 2]
+
 geweke.diag(tmp)
 heidel.diag(tmp)
 

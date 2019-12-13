@@ -114,10 +114,11 @@ split <- function(x) {
 ###--------------------------------------------------------------------------###
 
 ## Prepare posterior samples for coda functions:
-prepSam <- function(sam) {
+prepSams <- function(sams, split = TRUE) {
     ## Split each sample into two subchain samples:
-    tmp <- do.call(c, lapply(sam, split))
-
+    if(split)
+        sams <- do.call(c, lapply(sams, split))
+    
     ## Convert samples into an mcmc.list object:
-    mcmc.list(lapply(tmp, mcmc))
+    mcmc.list(lapply(sams, mcmc))
 }

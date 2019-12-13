@@ -32,6 +32,7 @@ importFrom(rlecuyer,
            .lec.GetState,
            .lec.DeleteStream,
            .lec.CurrentStreamEnd)
+importFrom(coda, mcmc, mcmc.list, gelman.diag)
 
 export(mibl,
        miben,

@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-11
+### Modified: 2019-12-13
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -393,52 +393,65 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-             calcRHat = function(sims) {
-                 "Compute a single split-chain Potential Scale Reduction Factor"
-                 subChainLen <- floor(length(sims) / 2)
-                 nSubChains  <- nChains * 2
-                 
-                 if(length(sims) %% nSubChains == 0) {
-                     simsMat <- matrix(sims, ncol = nSubChains)
-                 } else {
-                     simsMat <- matrix(
-                         sims[1 : (length(sims) - (nSubChains - 1))],
-                         ncol = nSubChains
-                     )
-                 }
-                 
-                 wMean     <- colMeans(simsMat)
-                 grandMean <- mean(simsMat)
+                                        #calcRHat = function(sims) {
+                                        #    "Compute a single split-chain Potential Scale Reduction Factor"
+                                        #    subChainLen <- floor(length(sims) / 2)
+                                        #    nSubChains  <- nChains * 2
+                                        #    
+                                        #    if(length(sims) %% nSubChains == 0) {
+                                        #        simsMat <- matrix(sims, ncol = nSubChains)
+                                        #    } else {
+                                        #        simsMat <- matrix(
+                                        #            sims[1 : (length(sims) - (nSubChains - 1))],
+                                        #            ncol = nSubChains
+                                        #        )
+                                        #    }
+                                        #    
+                                        #    wMean     <- colMeans(simsMat)
+                                        #    grandMean <- mean(simsMat)
+                                        #
+                                        #    wVar <- mean(apply(simsMat, 2, var))
+                                        #    bVar <- (subChainLen / (nSubChains - 1)) *
+                                        #        sum((wMean - grandMean)^2)
+                                        #    tVar <- ((subChainLen - 1) / subChainLen) * wVar +
+                                        #        (1 / subChainLen) * bVar
+                                        #    
+                                        #    sqrt(tVar / wVar)
+                                        #},
 
-                 wVar <- mean(apply(simsMat, 2, var))
-                 bVar <- (subChainLen / (nSubChains - 1)) *
-                     sum((wMean - grandMean)^2)
-                 tVar <- ((subChainLen - 1) / subChainLen) * wVar +
-                     (1 / subChainLen) * bVar
-                 
-                 sqrt(tVar / wVar)
+             calcRHats = function(sims, trans = FALSE, mv = TRUE) {
+                 ## Prepare the samples for coda:
+                 sims <- prepSams(sims)
+
+                 ## Calculate the R-Hats:
+                 gelman.diag(sims, transform = trans, multivariate = mv)
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              computeRHats = function() {
                  "Compute the potential scale reduction factors"
                  for(j in targetVars) {
-                     rHats[[j]]$sigma <<- calcRHat(poolSamples("sigma", j))
-                     rHats[[j]]$beta  <<-
-                         apply(poolSamples("beta", j), 2, calcRHat)
+                     tmp <- calcRHats(getSamples("sigma", j), trans = TRUE)
+                     rHats[[j]]$sigma <<- tmp
+                     
+                     tmp <- calcRHats(getSamples("beta", j))
+                     rHats[[j]]$beta <<- tmp
                      
                      if(penalty != 0) {# Using a shrinkage prior?
-                         rHats[[j]]$tau <<-
-                             apply(poolSamples("tau", j), 2, calcRHat)
+                         tmp <- calcRHats(getSamples("tau", j), trans = TRUE)
+                         rHats[[j]]$tau <<- tmp
                          
                          if(!doMcem) {# Fully Bayesian estimation of lambdas?
-                             rHats[[j]]$lambda1 <<-
-                                 calcRHat(poolSamples("lambda1", j))
+                             tmp <- calcRHats(getSamples("lambda1", j),
+                                              trans = TRUE)
+                             rHats[[j]]$lambda1 <<- tmp
                              
-                             if(penalty == 2)
-                                 rHats[[j]]$lambda2 <<-
-                                     calcRHat(poolSamples("lambda2", j))
+                             if(penalty == 2) {
+                                 tmp <- calcRHats(getSamples("lambda2", j),
+                                                  trans = TRUE)
+                                 rHats[[j]]$lambda2 <<- tmp
+                             }
                          }# CLOSE if(!doMcem)
                      }# CLOSE if(penalty != 0)
                  }# END for(j in targetVars)
@@ -450,24 +463,24 @@ MibrrFit$methods(
                  "Check that the Gibb's sampler has converged everywhere"
                  for(j in targetVars) {
                      ## Find nonconvergent Gibbs samples:
-                     badBetaCount <- sum(rHats[[j]]$beta > control$convThresh)
-                     maxBetaRHat  <- max(rHats[[j]]$beta)
-                     badSigmaFlag <- rHats[[j]]$sigma > control$convThresh
+                     badBetaCount <- sum(rHats[[j]]$beta$psrf[ , 2] > control$convThresh)
+                     maxBetaRHat  <- max(rHats[[j]]$beta$psrf[ , 1])
+                     badSigmaFlag <- rHats[[j]]$sigma$psrf[ , 2] > control$convThresh
                      
                      badTauCount <- badL1Count <- badL2Count <- 0
                      if(penalty != 0) {
-                         badTauCount <- sum(rHats[[j]]$tau > control$convThresh)
-                         maxTauRHat  <- max(rHats[[j]]$tau)
+                         badTauCount <- sum(rHats[[j]]$tau$psrf[ , 2] > control$convThresh)
+                         maxTauRHat  <- max(rHats[[j]]$tau$psrf[ , 1])
                          
                          if(!doMcem) {
                              badL1Count <-
-                                 sum(rHats[[j]]$lambda1 > control$convThresh)
-                             maxL1RHat  <- max(rHats[[j]]$lambda1)
+                                 sum(rHats[[j]]$lambda1$psrf[ , 2] > control$convThresh)
+                             maxL1RHat  <- max(rHats[[j]]$lambda1$psrf[ , 1])
                              
                              if(penalty == 2) {
                                  badL2Count <-
-                                     sum(rHats[[j]]$lambda2 > control$convThresh)
-                                 maxL2RHat  <- max(rHats[[j]]$lambda2)
+                                     sum(rHats[[j]]$lambda2$psrf[ , 2] > control$convThresh)
+                                 maxL2RHat  <- max(rHats[[j]]$lambda2$psrf[ , 1])
                              }
                          }                            
                      }
@@ -504,7 +517,7 @@ MibrrFit$methods(
                                         j,
                                         ", Sigma's final Gibbs sample ",
                                         "may not have converged.\nR-Hat = ",
-                                        round(rHats[[j]]$sigma, 4),
+                                        round(rHats[[j]]$sigma$psrf[ , 1], 4),
                                         ".\nConsider increasing the size of the (retained) Gibbs samples."),
                                  call.      = FALSE,
                                  immediate. = TRUE)
