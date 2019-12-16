@@ -1,7 +1,7 @@
 ### Title:    MibrrChain Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-09-30
-### Modified: 2019-12-10
+### Modified: 2019-12-16
 ### Notes:    The MibrrChain class hold the methods and metadata associated
 ###           with one Markov chain
 
@@ -182,11 +182,11 @@ MibrrChain$methods(
                    for(j in targetVars)
                        parameters[[j]]$setSamples(gibbsOut)
                },
-               
+
 ###--------------------------------------------------------------------------###
 
                eNetLL = function(lambdas, target) {
-                   "Conditional loglikelihood function of Lambda (used for MCEM)"
+                   "Conditional loglikelihood function of Elastic Net Lambdas (used for MCEM)"
                    
                    l1 <- lambdas[1]
                    l2 <- lambdas[2]
@@ -330,6 +330,9 @@ MibrrChain$methods(
                    
                    ## Save convergence info:
                    parameters[[target]]$setLambdaConv(conv)
+
+                   ## Save the final loglikelihood value:
+                   parameters[[target]]$setLogLik(optOut$value)
                },
 
 ###--------------------------------------------------------------------------###
@@ -347,7 +350,23 @@ MibrrChain$methods(
                                             sqrt((2 * p) / sum(colMeans(taus)))
                                         )
                },
+               
+###--------------------------------------------------------------------------###
 
+               saveBlLogLik = function(target) {
+                   "Save the conditional loglikelihood value of the LASSO lambda"
+                   
+                   l1   <- parameters[[target]]$getLambda1()
+                   taus <- parameters[[target]]$tau
+                   p    <- ncol(taus)
+
+                   ## Compute the (un-normalized) loglikelihood value:
+                   ll <- p * log(l1^2) - (l1^2 / 2) * sum(colMeans(taus))
+
+                   ## Update the loglikelihood history:
+                   parameters[[target]]$setLogLik(ll)
+               },
+               
 ###--------------------------------------------------------------------------###
 
                optimizeLambda = function() {
@@ -356,6 +375,7 @@ MibrrChain$methods(
                    ## Use simple update rule and return early when doing BL:
                    if(penalty == 1) {
                        lapply(targetVars, .self$updateBlLambda)
+                       sapply(targetVars, .self$saveBlLogLik)
                    }
                    else {
                        if(optBoundLambda) lowBounds <- c(1e-5, 1e-5)

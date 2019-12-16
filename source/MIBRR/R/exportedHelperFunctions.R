@@ -61,6 +61,28 @@ getParams <- function(mibrrFit, target, mix = TRUE) {
 
 ###--------------------------------------------------------------------------###
 
+## Extract the penalty parameter samples (and associated convergence info) from
+## a fitted MibrrFit object:
+getLambda <- function(mibrrFit, target) {
+    out <- list()
+    for(k in 1 : mibrrFit$nChains) {
+        tmp  <- mibrrFit$chains[[k]]$parameters[[target]]
+        out0 <- list(logLik  = tmp$logLik,
+                     lambda1 = tmp$lambda1)
+        
+        if(mibrrFit$penalty == 2) {
+            out0$lambda2 <- tmp$lambda2
+            
+            if(mibrrFit$doMcem)
+                out0$conv <- tmp$lambdaConv
+        }
+        out[[k]] <- out0
+    }
+    out
+}
+
+###--------------------------------------------------------------------------###
+
 ## Extract the posterior predictive samples from a fitted MibrrFit object:
 getPostPredSams <- function(mibrrFit, target, mix = TRUE) {
     ## Define an appropriate extractor function:
@@ -182,3 +204,45 @@ ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
     
 ## Access arbitrary fields in a 'MibrrFit' object:
 getField <- function(mibrrFit, what) mibrrFit$field(what)
+
+###--------------------------------------------------------------------------###
+
+plotLambda <- function(mibrrFit, target, logLik = FALSE) {
+    
+    lams <- getLambda(mibrrFit, target)
+    cols <- rainbow(length(lams))
+
+    if(logLik) {
+        par(mfrow = c(1, 1))
+            
+        plot(x    = lams[[1]]$logLik[-1],
+             type = "l",
+             col  = cols[1],
+             ylab = "Loglikelihood",
+             xlab = "Iteration")
+        for(i in 2 : length(lams))
+            lines(lams[[i]]$logLik[-1], col = cols[i])
+    }
+    else {
+        if(mibrrFit$penalty == 2) par(mfrow = c(1, 2))
+        else                      par(mfrow = c(1, 1))
+        
+        plot(x    = lams[[1]]$lambda1,
+             type = "l",
+             col  = cols[1],
+             ylab = "Lambda 1",
+             xlab = "Iteration")
+        for(i in 2 : length(lams))
+            lines(lams[[i]]$lambda1, col = cols[i])
+        
+        if(mibrrFit$penalty == 2) {
+            plot(x    = lams[[1]]$lambda2,
+                 type = "l",
+                 col  = cols[1],
+                 ylab = "Lambda 2",
+                 xlab = "Iteration")
+            for(i in 2 : length(lams))
+                lines(lams[[i]]$lambda2, col = cols[i])
+        }
+    }
+}

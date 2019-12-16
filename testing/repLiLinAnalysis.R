@@ -31,20 +31,10 @@ out1 <- ben(data        = dat1,
             )
 
 ## Plot MCEM chains:
-par(mfrow = c(1, 2))
+MIBRR:::plotLambda(out1, "y")
 
-lam1 <- getParams(out1, "y", mix = FALSE)$lambda1
-lam2 <- getParams(out1, "y", mix = FALSE)$lambda2
-
-cols <- rainbow(length(lam1))
-
-plot(lam1[[1]], type = "l", col = cols[1])
-for(i in 2 : length(lam1))
-    lines(lam1[[i]], col = cols[i])
-
-plot(lam2[[1]], type = "l", col = cols[1])
-for(i in 2 : length(lam2))
-    lines(lam2[[i]], col = cols[i])
+## Plot loglikelihood trace:
+MIBRR:::plotLambda(out1, "y", TRUE)
 
 ## Choose rep:
 rp <- 1

@@ -5,6 +5,8 @@
 
 rm(list = ls(all = TRUE))
 
+                                        #install.packages("coda", repos = "http://cloud.r-project.org")
+
 library(RcppEigen)
 
 ver  <- "0.4.0-9000"

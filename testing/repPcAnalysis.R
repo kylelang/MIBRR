@@ -37,12 +37,10 @@ out1 <- bl(data        = dat1,
            )
 
 ## Plot MCEM chains:
-lams <- getParams(out1, "y", mix = FALSE)$lambda1
-cols <- rainbow(length(lams))
+MIBRR:::plotLambda(out1, "y")
 
-plot(lams[[1]], type = "l", col = cols[1])
-for(i in 2 : length(lams))
-    lines(lams[[i]], col = cols[i])
+## Plot loglikelihood trace:
+MIBRR:::plotLambda(out1, "y", TRUE)
 
 ## Choose rep:
 rp <- 1

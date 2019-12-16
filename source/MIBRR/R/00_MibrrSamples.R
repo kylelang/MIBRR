@@ -1,7 +1,7 @@
 ### Title:    MibrrSamples Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-12-09
-### Modified: 2019-12-09
+### Modified: 2019-12-16
 ### Note:     The MibrrSamples class holds the parameter samples for one target
 ###           variable and one Markov chain
 
@@ -41,6 +41,7 @@ MibrrSamples <- setRefClass("MibrrSamples",
                                 ppSams     = "matrix",
                                 starts     = "list",
                                 lambdaConv = "data.frame",
+                                logLik     = "numeric",
                                 doMcem     = "logical",
                                 penalty    = "integer",
                                 centerType = "character"
@@ -75,8 +76,8 @@ MibrrSamples$methods(
                      starts$lambda2 <<- length(predVars) / 10
                      
                      if(doMcem) {
-                         lambda1 <<- vector("numeric", nIters)
-                         lambda2 <<- vector("numeric", nIters)
+                         lambda1 <<- lambda2 <<- logLik <<-
+                             vector("numeric", nIters)
                          
                          lambdaConv <<-
                              data.frame(code = vector("integer", nIters),
@@ -142,6 +143,10 @@ MibrrSamples$methods(
 ###--------------------------------------------------------------------------###
                  
                  setLambdaConv = function(x) lambdaConv[iter, ] <<- x,
+
+###--------------------------------------------------------------------------###
+                 
+                 setLogLik = function(x) logLik[iter] <<- x,
                  
 ###--------------------------------------------------------------------------###
                  
