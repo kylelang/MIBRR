@@ -8,6 +8,7 @@ rm(list = ls(all = TRUE))
 library(lars)
 library(MIBRR)
 library(ggplot2)
+library(coda)
 
 ## Prep the data:
 data(diabetes)
@@ -27,9 +28,9 @@ lamStart <- ncol(X) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
 out1 <- bl(data        = dat1,
            y           = "y",
            X           = colnames(X),
-           iterations  = c(500, 100),
-           sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
-           nChains     = 4,
+           iterations  = c(100, 100, 100),
+           sampleSizes = list(rep(100, 2), rep(500, 2), rep(500, 2)),
+           nChains     = 2,
            control     = list(
                lambda1Starts =
                    lamStart + runif(1, -lamStart / 4, lamStart / 4)
@@ -41,6 +42,27 @@ MIBRR:::plotLambda(out1, "y")
 
 ## Plot loglikelihood trace:
 MIBRR:::plotLambda(out1, "y", TRUE)
+
+## Extract lambdas:
+lams <- MIBRR:::getLambda(out1, "y")
+
+l1 <- lams[[2]]$lambda1[601 : 1000]
+summary(mcmc(l1))
+
+plot(l1, type = "l")
+
+x <- 1 : 400
+
+lmOut <- lm(scale(l1) ~ scale(x))
+
+summary(lmOut)
+
+dat <- data.frame(x = x, l1 = l1)
+ggplot(data = dat, mapping = aes(x = x, y = l1)) + geom_point() + geom_smooth(method = "lm")
+
+sd(l1)
+
+plot(l1)
 
 ## Choose rep:
 rp <- 1

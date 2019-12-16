@@ -48,7 +48,8 @@ MibrrChain <- setRefClass("MibrrChain",
                               optMaxRestarts  = "integer",
                               optRestartRatio = "numeric",
                               optStrict       = "logical",
-                              parameters      = "list"
+                              parameters      = "list",
+                              n0              = "numeric"
                           )
                           )
 
@@ -150,9 +151,9 @@ MibrrChain$methods(
                   
                    ## Extract starting values from the 'parameters' field:
                    starts <- prepStarts()
-                   
+
                    gibbsOut <-
-                       MIBRR:::runGibbs(data         = as.matrix(data),
+                       runGibbs(data         = as.matrix(data),
                                 nTargets     = nTargets,
                                 missList     = missList[targetVars],
                                 respCounts   = respCounts[targetVars],
@@ -163,8 +164,8 @@ MibrrChain$methods(
                                 sigmaStarts  = starts$sigma,
                                 tauStarts    = starts$tau,
                                 betaStarts   = starts$beta,
-                                burnSams     = sampleSizes[[phase]][1],
-                                totalSams    = sum(sampleSizes[[phase]]),
+                                burnSams     = n0[1],
+                                totalSams    = sum(n0),
                                 penType      = penalty,
                                 ridge        = ridge,
                                 verbose      = verbose,
@@ -172,7 +173,7 @@ MibrrChain$methods(
                                 noMiss       = all(respCounts == nrow(data)),
                                 savePpSams   = savePpSams,
                                 useBetaMeans = useBetaMeans,
-                                finalRep     = phase == 3,
+                                finalRep     = phase == 4,
                                 seeds        = seedVec,
                                 chain        = chain)
                    

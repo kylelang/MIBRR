@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-11
+### Modified: 2019-12-16
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -106,6 +106,18 @@ mcem <- function(mibrrFit, chain) {
         phMem <- mibrrFit$control$phHistoryLength
         ph    <- vector("list", phMem)
     }
+
+    ## Create a gradient of sample sizes for the 'tuning' phase:
+    nMat <- round(
+        cbind(
+            seq(from       = mibrrFit$sampleSizes[[1]][1],
+                to         = mibrrFit$sampleSizes[[2]][1],
+                length.out = iters[2]),
+            seq(from       = mibrrFit$sampleSizes[[1]][2],
+                to         = mibrrFit$sampleSizes[[2]][2],
+                length.out = iters[2])
+        )
+    )
     
     for(i in 1 : totalIters) {
         if(i == 1) {
@@ -114,6 +126,7 @@ mcem <- function(mibrrFit, chain) {
                         ": Beginning MCEM 'Approximation' phase\n")
                  )
             phase <- 1
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
         }
         if(i == (iters[1] + 1)) {
             vcat(paste0("\nChain ",
@@ -121,13 +134,23 @@ mcem <- function(mibrrFit, chain) {
                         ": Beginning MCEM 'Tuning' phase\n")
                  )
             phase <- 2
+            mibrrFit$chains[[chain]]$n0 <- nMat[i - iters[1], ]
+        }
+        if(i == (iters[2] + 1)) {
+            vcat(paste0("\nChain ",
+                        chain,
+                        ": Beginning MCEM 'Stationary' phase\n")
+                 )
+            phase <- 3
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
         }
         if(i == totalIters) {
             vcat(paste0("\nChain ",
                         chain,
                         ": Sampling from the stationary posterior\n")
                  )
-            phase <- 3
+            phase <- 4
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
         }
         vcat("\n") # Beautify output
         
@@ -149,18 +172,32 @@ mcem <- function(mibrrFit, chain) {
         
         if(i < totalIters) {
             ## Print a nice message:
-            check <- i > iters[1]
+                                        #check <- i > iters[1]
+                                        #vcat(paste0("Chain ",
+                                        #            chain,
+                                        #            ": Doing MCEM ",
+                                        #            ifelse(check, "'Tuning'", "'Approximation'"),
+                                        #            " iteration ",
+                                        #            ifelse(check, i - iters[1], i),
+                                        #            " of ",
+                                        #            iters[as.numeric(check) + 1],
+                                        #            "\n")
+                                        #     )
+            
+                                        #check <- i > iters[1]
+            
             vcat(paste0("Chain ",
                         chain,
                         ": Doing MCEM ",
-                        ifelse(check, "'Tuning'", "'Approximation'"),
+                        switch(phase,
+                               "'Approximation'", "'Tuning'", "'Stationary'"),
                         " iteration ",
-                        ifelse(check, i - iters[1], i),
+                        i - cumsum(c(0, iters))[phase],
                         " of ",
-                        iters[as.numeric(check) + 1],
+                        iters[phase],
                         "\n")
                  )
-                        
+            
             ## Update Lambda via MCEM:
             optCond <- try(
                 mibrrFit$chains[[chain]]$optimizeLambda(),
