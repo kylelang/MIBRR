@@ -9,7 +9,8 @@ importFrom(optimx, optimx)
 importFrom(mvtnorm, rmvnorm)
 importFrom(LaplacesDemon, rinvgamma, rinvchisq, rinvgaussian)
 importFrom(HyperbolicDist, rgig)
-importFrom(graphics, plot, lines)
+importFrom(graphics, plot, lines, par)
+importFrom(grDevices, rainbow)
 importFrom(stats,
            anova,
            lm,
@@ -23,7 +24,8 @@ importFrom(stats,
            density,
            na.omit,
            ks.test,
-           quantile)
+           quantile,
+           median)
 importFrom(rlecuyer,
            .lec.SetPackageSeed,
            .lec.CreateStream,
@@ -46,7 +48,9 @@ export(mibl,
        getParams,
        vanilla,
        bvr,
-       ppCheck)
+       ppCheck,
+       plotLambda,
+       getLambda)
 
 ### NOTE: The following non-exported, undocumented functions are available for
 ###       testing/debugging. See the relevant source code for details of their

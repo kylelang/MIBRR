@@ -14,6 +14,8 @@ bvr(data,
     missCode    = NA,
     ridge       = 1e-4,
     verbose     = TRUE,
+    nChains     = 1L,
+    nCores      = 1L,
     seed        = NULL,
     userRng     = "",
     control     = list()
@@ -50,6 +52,12 @@ bvr(data,
   \item{verbose}{
     A logical switch: Should verbose output be printed to stdout?\cr
     Defaults to \code{verbose = TRUE}.
+  }
+  \item{nChains}{
+    An integer dictating how many MCEM/Markov chains should be run.
+  }
+  \item{nCores}{
+    Not yet implemented
   }
   \item{seed}{
     Either a positive, integer-valued seed a one-element character

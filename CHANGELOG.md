@@ -14,12 +14,36 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.4.0-9000 - 2019-12-12 - ACTIVE
+## 0.4.0-9000 - 2019-12-17 - ACTIVE
 
 ### Added
 - The ability to run multiple MCEM/Markov chains.
   - The number of chains is controled by the `nChains` argument.
+  - A `getLamba` function to extract samples/estimates of the penalty parameters 
+	and associated metadata
+  - A `plotLambda` function to plot the MCEM trace of the penalty parameters or 
+	their loglikelihood
   
+### Changed
+- The MCEM algorithm is now divided into four phases (as opposed to the previous 
+  three phases)
+  - This four-phase scheme follows the logic of the MCEM alrogithm described by 
+	[Veda, Meng, and Xu (2004)][vedaEtAl:2004].
+  - The new phases are:
+	1. Approximation: A burn-in phase where the MCEM chain should "forget" its 
+	   starting values (equivalent to the Veda et al, 2004, "burn-in" phase)
+	1. Tuning: A phase wherein the MC sample size is linearly increased to 
+	   narrow in on a precise neighborhood of the MLE (equivalent to the Veda et 
+	   al, 2004, "transition" phase)
+	1. Stationary: A phase wherein large MC samples are taken to get a reliable 
+	   pool of estimates from the MLE's neighborhood (equivalent to the Veda et 
+	   al, 2004, "plateau" phase)
+	1. Terminal Gibbs Sampling: The average of the Lambda estimates from the 
+	   'stationary' phase is used to parameterize the final run of the Gibbs 
+	   sampler
+- To accomodate the above change, the `iterations` and `sampleSizes` arguments 
+  must now be formatted differently.
+
 ## 0.3.3.9000 - 2019-12-09
 
 ### Fixed
@@ -339,6 +363,7 @@ NOTE:
 ### Added
 - This changelog file (CHANGELOG.md).
 
-[kacl]: http://keepachangelog.com/
-[sv]:   http://semver.org/
-[hw]:   http://r-pkgs.had.co.nz/
+[kacl]:          http://keepachangelog.com/
+[sv]:            http://semver.org/
+[hw]:            http://r-pkgs.had.co.nz/
+[vedaEtAl:2004]: https://doi.org/10.1002/0470090456.ch23

@@ -9,7 +9,7 @@
   model parameters.
 }
 \usage{
-getParams(mibrrFit, target)
+getParams(mibrrFit, target, mix = TRUE)
 }
 \arguments{
   \item{mibrrFit}{
@@ -19,6 +19,10 @@ getParams(mibrrFit, target)
   \item{target}{
     The column label for the target variable whose parameter samples are
     to be extracted.
+  }
+  \item{mix}{
+    A logical switch indicating if the samples from seperate MCEM/Markov
+    chains should be combined before returning.
   }
 }
 \value{

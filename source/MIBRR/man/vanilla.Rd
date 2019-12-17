@@ -14,6 +14,8 @@ vanilla(data,
         ignoreVars  = NULL,
         sampleSizes = rep(500, 2),
         missCode    = NA,
+        nChains     = 1L,
+        nCores      = 1L,
         ridge       = 1e-4,
         verbose     = TRUE,
         seed        = NULL,
@@ -44,6 +46,12 @@ vanilla(data,
     An optional integer-valued code used to flag the missing data in
     \code{data}. Should take a value that cannot naturally occur in
     \code{data}. Not needed when the missing data are coded as \code{NA}.
+  }
+  \item{nChains}{
+    An integer dictating how many MCEM/Markov chains should be run.
+  }
+  \item{nCores}{
+    Not yet implemented
   }
   \item{ridge}{
     The ridge penalty to apply to the crossproducts matrix of the

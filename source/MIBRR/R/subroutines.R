@@ -213,7 +213,7 @@ mcem <- function(mibrrFit, chain) {
 
 estimateModel <- function(chain, mibrrFit) {
     if(mibrrFit$doMcem) mibrrFit <- mcem(mibrrFit, chain = chain)
-    else                mibrrFit$chains[[chain]]$doGibbs()
+    else                mibrrFit$chains[[chain]]$doGibbs(phase = 4)
 
     mibrrFit
 }

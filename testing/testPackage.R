@@ -74,8 +74,8 @@ bl1 <-
     bl(data        = dat0,
        y           = "y",
        X           = xNames,
-       iterations  = iters,
-       sampleSizes = sams,
+                                        #iterations  = rep(100, 3),
+                                        #sampleSizes = sams,
        verbose     = TRUE,
        control     = list(lambda1Starts = 1.0, useBetaMeans = FALSE)
        )

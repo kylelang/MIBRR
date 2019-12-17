@@ -10,11 +10,13 @@ Bayesian LASSO
 bl(data,
    y,
    X            = NULL,
-   iterations   = c(100, 10),
-   sampleSizes  = list(rep(25, 2), rep(250, 2), rep(500, 2)),
+   iterations   = rep(100, 3),
+   sampleSizes  = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
    lam1PriorPar = NULL,
    doMcem       = TRUE,
    missCode     = NA,
+   nChains      = 1L,
+   nCores       = 1L,
    verbose      = TRUE,
    seed         = NULL,
    userRng      = "",
@@ -35,15 +37,13 @@ bl(data,
     other variables in \code{data}.
   }
   \item{iterations}{
-    A two-element numeric vector giving the number of iterations to employ
-    during the MCEM approximation and tuning phases, respectively.\cr
-    Defaults to \code{iterations = c(100, 10)}.
+    A three-element numeric vector giving the number of iterations to employ
+    during the MCEM approximation, tuning, and stationary phases, respectively.\cr
+    Defaults to \code{iterations = rep(100, 3)}.
   }
   \item{sampleSizes}{
     A list or vector giving the desired Gibbs sample sizes (see
-    Details for more information).\cr 
-    Defaults to \code{sampleSizes = list(rep(25, 2), rep(250, 2),
-      rep(500, 2))}.
+    Details for more information).
   }
   \item{doMcem}{
     A logical switch: Should the model be estimated using Markov Chain
@@ -61,6 +61,12 @@ bl(data,
     An optional integer-valued code used to flag the missing data in
     \code{data}. Should take a value that cannot naturally occur in
     \code{data}. Not needed when the missing data are coded as \code{NA}.
+  }
+  \item{nChains}{
+    An integer dictating how many MCEM/Markov chains should be run.
+  }
+  \item{nCores}{
+    Not yet implemented
   }
   \item{verbose}{
     A logical switch: Should verbose output be printed to stdout?\cr
@@ -87,7 +93,9 @@ bl(data,
   \code{doMcem = TRUE}. In this case, the list must contain three
   two-element numeric (integer) vectors giving the number of MCMC draws
   to discard as burn-in and to retain, respectively, during the MCEM
-  approximation, tuning, and sampling phases.
+  approximation, stationary, and sampling phases. The samples sizes are
+  linearly increased between the approximation sample size and the
+  stationary sample size during each iteration of the tuning phase.
 
   When \code{doMcem = FALSE}, only a single Gibbs sample is drawn, so
   the\code{sampleSizes} argument must be a   two-element numeric
@@ -217,10 +225,9 @@ bl(data,
 data(mibrrExampleData)
 
 ## MCEM estimation:
-blOut <- bl(data       = mibrrExampleData,
-            y          = "y",
-            X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
-            iterations = c(50, 10)
+blOut <- bl(data = mibrrExampleData,
+            y    = "y",
+            X    = setdiff(colnames(mibrrExampleData), c("y", "idNum"))
             )
 
 ## Fully Bayesian estimation:

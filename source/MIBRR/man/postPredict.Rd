@@ -12,7 +12,8 @@ postPredict(mibrrFit,
             newData,
             targetVars = NULL,
             nDraws     = 0,
-            scale      = FALSE)
+            scale      = FALSE,
+            cenType    = "mode")
 }
 \arguments{
   \item{mibrrFit}{
@@ -42,6 +43,10 @@ postPredict(mibrrFit,
   \item{scale}{
     A logical switch. Should the columns of \code{newData} be
     standardized before generating predictions.
+  }
+  \item{cenType}{
+    A length-one character vector giving the type of central tendency to
+    use. Valid options are "mode", "median", and "mean".
   }
 }
 \value{
@@ -76,10 +81,9 @@ postPredict(mibrrFit,
 data(predictData)
 
 ## Fit a Bayesian elastic net model:
-benOut <- ben(data       = predictData$train,
-              y          = "agree",
-              X          = setdiff(colnames(predictData$train), "agree"),
-              iterations = c(30, 10)
+benOut <- ben(data = predictData$train,
+              y    = "agree",
+              X    = setdiff(colnames(predictData$train), "agree")
               )
 
 ## Generate 10 posterior predictions for 'y':
@@ -98,7 +102,7 @@ benPred <- postPredict(mibrrFit = benOut,
                        nDraws   = -1)
 
 ## Fit chained Bayesian elastic net models to support MI:
-mibenOut <- miben(data = predictData$incomplete, iterations = c(30, 10))
+mibenOut <- miben(data = predictData$incomplete)
 
 ## Generate posterior predictions from elementary imputation models:
 mibenPred <- postPredict(mibrrFit = mibenOut, newData = predictData$test)

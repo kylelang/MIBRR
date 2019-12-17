@@ -168,7 +168,7 @@ void MibrrGibbs::startParameters(VectorXd &betaStarts,
 //----------------------------------------------------------------------------//
 
 void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
-{
+{ 
   if(_doImp) _impSam = MatrixXd(_nDraws, mibrrData.nMiss(_targetIndex));
   else       _impSam = MatrixXd::Zero(1, 1);
   
@@ -194,7 +194,7 @@ void MibrrGibbs::updateLambdas(const MibrrData &mibrrData)
   int    nPreds = mibrrData.nPreds();
   double lam1   = _lambdas[0];
   double tauSum = _taus.sum();
-  
+    
   if(_penType == 1) {// MIBL Version
     double shape = _l1Parms[0] + nPreds;
     double rate  = _l1Parms[1] + tauSum / 2.0;

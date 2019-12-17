@@ -34,25 +34,21 @@ Maintainer: \packageMaintainer{MIBRR}
 data(mibrrExampleData)
 
 mibenOut <- miben(data       = mibrrExampleData,
-                  iterations = c(30, 10),
                   targetVars = c("y", paste0("x", c(1 : 3))),
                   ignoreVars = "idNum")
 
 miblOut <- mibl(data       = mibrrExampleData,
-                iterations = c(50, 10),
                 targetVars = c("y", paste0("x", c(1 : 3))),
                 ignoreVars = "idNum")
 
-benOut <- ben(data       = mibrrExampleData,
-              y          = "y",
-              X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
-              iterations = c(30, 10)
+benOut <- ben(data = mibrrExampleData,
+              y    = "y",
+              X    = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
               )
 
-blOut <- bl(data       = mibrrExampleData,
-            y          = "y",
-            X          = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
-            iterations = c(50, 10)
+blOut <- bl(data = mibrrExampleData,
+            y    = "y",
+            X    = setdiff(colnames(mibrrExampleData), c("y", "idNum")),
             )
 }
 \keyword{ package }

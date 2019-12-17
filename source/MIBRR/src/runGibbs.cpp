@@ -143,7 +143,8 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
       mibrrGibbs[j].doGibbsIteration(mibrrData);
       
       // Start saving iterations after burn-in:
-      if((i + 1) == burnSams) mibrrGibbs[j].startGibbsSampling(mibrrData);
+      if((i + 1) == burnSams)
+	mibrrGibbs[j].startGibbsSampling(mibrrData);
     }   
   }// CLOSE for (int i = 0; i < totalSams; i++)
   

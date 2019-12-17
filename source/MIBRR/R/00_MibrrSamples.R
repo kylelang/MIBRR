@@ -124,7 +124,7 @@ MibrrSamples$methods(
                          field("ppSams", gibbsOut[[target]]$ppSams)
                      
                      ## Update the penalty parameters' samples:
-                     if(!doMcem & penalty != 0) {
+                     if(!doMcem & penalty != 0) {                        
                          field("lambda1", gibbsOut[[target]]$lambda[ , 1])
                          
                          if(penalty == 2)

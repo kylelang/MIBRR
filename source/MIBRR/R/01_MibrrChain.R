@@ -84,6 +84,9 @@ MibrrChain$methods(
                        verbose     <<- verbose
                        ridge       <<- ridge
                        penalty     <<- penalty
+
+                       ## Set sample sizes for fully Bayesian estimation:
+                       if(!doMcem) n0 <<- sampleSizes[[1]]
                        
                        ## Initialize the parameter samples:
                        for(j in targetVars) {
