@@ -20,8 +20,8 @@ dat1 <- data.frame(cbind(y, X))
 out1 <- ben(data        = dat1,
             y           = "y",
             X           = colnames(X),
-            iterations  = c(500, 100),
-            sampleSizes = list(rep(250, 2), rep(500, 2), rep(1000, 2)),
+            iterations  = c(250, 100, 50),
+            sampleSizes = list(rep(100, 2), rep(5000, 2), rep(5000, 2)),
             nChains     = 4,
             control     = list(
                 lambda1Starts = 1.0 + runif(1, -0.25, 0.25),

@@ -55,8 +55,6 @@ MibrrChain <- setRefClass("MibrrChain",
 
 ###--------------------------------------------------------------------------###
 
-data.frame(NULL)
-
 MibrrChain$methods(
                
 ################################ CONSTRUCTOR ###################################
@@ -90,15 +88,15 @@ MibrrChain$methods(
                        ## Initialize the parameter samples:
                        for(j in targetVars) {
                            parameters[[j]] <<-
-                               MibrrSamples(target   = j,
-                                            nIters   = iterations,
-                                            doMcem   = doMcem,
-                                            penalty  = penalty,
-                                            targetSd = sd(data[[j]]),
-                                            predVars =
+                               MibrrSamples(target     = j,
+                                            iterations = iterations,
+                                            doMcem     = doMcem,
+                                            penalty    = penalty,
+                                            targetSd   = sd(data[[j]]),
+                                            predVars   =
                                                 setdiff(colnames(data), j)
                                             )
-
+                           
                            ## Set control parameters for the 'MibrrSamples'
                            ## objects:
                            setControl(x = control, where = parameters[[j]])
@@ -370,7 +368,7 @@ MibrrChain$methods(
                
 ###--------------------------------------------------------------------------###
 
-               optimizeLambda = function() {
+               optimizeLambda = function(phase) {
                    "Optimize the BEN or BL penalty parameters"
                    
                    ## Use simple update rule and return early when doing BL:
@@ -398,15 +396,20 @@ MibrrChain$methods(
                    }# CLOSE if(penalty == 1); else
 
                    ## Update starting values for the next Gibbs sampler run:
-                   for(j in targetVars)
+                   for(j in targetVars) 
                        parameters[[j]]$startParams(restart = TRUE)
-                   
-                   ## Smooth Lambda estimates if beginning 'tuning' phase:
-                                        #if(iter == iterations[1] & smoothingWindow > 1) {
-                                        #    smoothRange    <- (iter - smoothingWindow + 1) : iter         
-                                        #    lambdaMat[j, ] <<-
-                                        #        colMeans(lambdaHistory[[j]][smoothRange, ])        
-                                        #}
+               },
+               
+###--------------------------------------------------------------------------###
+
+               finalizeLambda = function() {
+                   "Use the average of 'stationary' phase lambdas for the final Gibbs run"
+                   for(j in targetVars) {
+                       parameters[[j]]$finalizeLambda1()
+                       
+                       if(penalty == 2)
+                           parameters[[j]]$finalizeLambda2()
+                   }
                }
                
            )# END MibrrFit$methods()

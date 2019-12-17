@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-13
+### Modified: 2019-12-17
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -50,7 +50,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             nVar         = "integer",
                             nPreds       = "integer",
                             nObs         = "integer",
-                            totalIters   = "integer",
+                                        #totalIters   = "integer",
                             rng0         = "character",
                             userRng      = "character",
                             streams      = "character",
@@ -233,13 +233,7 @@ MibrrFit$methods(
                  nPreds <<- as.integer(nVar - 1)
                  nObs   <<- as.integer(nrow(data))
 
-                 if(doMcem) {
-                                        #smoothingWindow <<- as.integer(
-                                        #    min(10, ceiling(iterations[1] / 10))
-                                        #)
-                     
-                     totalIters <<- sum(iterations)
-                 }
+                                        #if(doMcem) totalIters <<- sum(iterations)
                  
                  rHats <<- list()
                  for(j in targetVars) rHats[[j]] <<- list()
@@ -337,7 +331,7 @@ MibrrFit$methods(
                      chains[[k]] <<- MibrrChain(chain       = k,
                                                 data        = data,
                                                 targetVars  = targetVars,
-                                                iterations  = totalIters,
+                                                iterations  = iterations,
                                                 sampleSizes = sampleSizes,
                                                 missList    = missList,
                                                 doMcem      = doMcem,

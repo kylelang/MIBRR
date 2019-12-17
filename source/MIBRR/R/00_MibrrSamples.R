@@ -1,7 +1,7 @@
 ### Title:    MibrrSamples Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-12-09
-### Modified: 2019-12-16
+### Modified: 2019-12-17
 ### Note:     The MibrrSamples class holds the parameter samples for one target
 ###           variable and one Markov chain
 
@@ -30,7 +30,7 @@ MibrrSamples <- setRefClass("MibrrSamples",
                                 iter       = "integer",
                                 target     = "character",
                                 predVars   = "character",
-                                nIters     = "integer",
+                                iterations = "integer",
                                 targetSd   = "numeric",
                                 beta       = "matrix",
                                 tau        = "matrix",
@@ -54,26 +54,29 @@ MibrrSamples$methods(
                  
 ################################ CONSTRUCTOR ###################################
                  
-                 initialize = function(target   = "",
-                                       predVars = "",
-                                       targetSd = as.numeric(NA),
-                                       nIters   = as.integer(NA),
-                                       doMcem   = as.logical(NA),
-                                       penalty  = as.integer(NA)
+                 initialize = function(target     = "",
+                                       predVars   = "",
+                                       targetSd   = as.numeric(NA),
+                                       iterations = as.integer(NA),
+                                       doMcem     = as.logical(NA),
+                                       penalty    = as.integer(NA)
                                        )
                  {
                      "Initialize an object of class MibrrSamples"
-                     target   <<- target
-                     predVars <<- predVars
-                     targetSd <<- targetSd
-                     nIters   <<- nIters
-                     doMcem   <<- doMcem
-                     penalty  <<- penalty
-                     iter     <<- 1L
+                     target     <<- target
+                     predVars   <<- predVars
+                     targetSd   <<- targetSd
+                     iterations <<- iterations
+                     doMcem     <<- doMcem
+                     penalty    <<- penalty
+                     iter       <<- 1L
                      
                      ## Initialize penalty parameter-related stuff:
                      starts$lambda1 <<- 0.5
                      starts$lambda2 <<- length(predVars) / 10
+
+                     ## Compute total number of MCEM iterations:
+                     nIters <- sum(iterations)
                      
                      if(doMcem) {
                          lambda1 <<- lambda2 <<- logLik <<-
@@ -220,7 +223,17 @@ MibrrSamples$methods(
                      
                      starts$beta <<-
                          c(0, rmvnorm(1, rep(0, nPreds), betaPriorCov))
-                 }
+                 },
+
+###--------------------------------------------------------------------------###
+
+                 finalizeLambda1 = function()                      
+                     starts$lambda1 <<- mean(tail(lambda1, iterations[3])),
+                 
+###--------------------------------------------------------------------------###
+                 
+                 finalizeLambda2 = function()                      
+                     starts$lambda2 <<- mean(tail(lambda2, iterations[3]))
                  
              )# END MibrrSamples$methods()
 

@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-16
+### Modified: 2019-12-17
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -118,15 +118,15 @@ mcem <- function(mibrrFit, chain) {
                 length.out = iters[2])
         )
     )
-    
-    for(i in 1 : totalIters) {
+
+    for(i in 1 : (totalIters + 1)) {
         if(i == 1) {
             vcat(paste0("\nChain ",
                         chain,
                         ": Beginning MCEM 'Approximation' phase\n")
                  )
             phase <- 1
-            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[1]]
         }
         if(i == (iters[1] + 1)) {
             vcat(paste0("\nChain ",
@@ -134,25 +134,28 @@ mcem <- function(mibrrFit, chain) {
                         ": Beginning MCEM 'Tuning' phase\n")
                  )
             phase <- 2
-            mibrrFit$chains[[chain]]$n0 <- nMat[i - iters[1], ]
         }
-        if(i == (iters[2] + 1)) {
+        if(i == (sum(iters[1 : 2]) + 1)) {
             vcat(paste0("\nChain ",
                         chain,
                         ": Beginning MCEM 'Stationary' phase\n")
                  )
             phase <- 3
-            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[2]]
         }
-        if(i == totalIters) {
+        if(i == (totalIters + 1)) {
             vcat(paste0("\nChain ",
                         chain,
                         ": Sampling from the stationary posterior\n")
                  )
             phase <- 4
-            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[phase]]
+            mibrrFit$chains[[chain]]$n0 <- mibrrFit$sampleSizes[[3]]
         }
         vcat("\n") # Beautify output
+
+        ## Update sample sizes for 'tuning' phase:
+        if(phase == 2)
+            mibrrFit$chains[[chain]]$n0 <- nMat[i - iters[1], ]
         
         ## Estimate the BEN/BL model:
         mibrrFit$chains[[chain]]$doGibbs(phase)
@@ -170,22 +173,8 @@ mcem <- function(mibrrFit, chain) {
                 saveRDS(ph, "parameterHistory.rds")
             }
         
-        if(i < totalIters) {
-            ## Print a nice message:
-                                        #check <- i > iters[1]
-                                        #vcat(paste0("Chain ",
-                                        #            chain,
-                                        #            ": Doing MCEM ",
-                                        #            ifelse(check, "'Tuning'", "'Approximation'"),
-                                        #            " iteration ",
-                                        #            ifelse(check, i - iters[1], i),
-                                        #            " of ",
-                                        #            iters[as.numeric(check) + 1],
-                                        #            "\n")
-                                        #     )
-            
-                                        #check <- i > iters[1]
-            
+        if(i <= totalIters) {
+            ## Print a nice message:         
             vcat(paste0("Chain ",
                         chain,
                         ": Doing MCEM ",
@@ -200,17 +189,22 @@ mcem <- function(mibrrFit, chain) {
             
             ## Update Lambda via MCEM:
             optCond <- try(
-                mibrrFit$chains[[chain]]$optimizeLambda(),
+                mibrrFit$chains[[chain]]$optimizeLambda(phase),
                 silent = TRUE
             )
         }
 
+        ## Use the average of the 'stationary' phase lambda estimates to
+        ## parameterize the final Gibbs run:
+        if(i == totalIters)             
+            mibrrFit$chains[[chain]]$finalizeLambda()
+        
         ## Clean up the RNG in the event of an error:
         if(class(optCond) == "try-error") {
             cleanRng(mibrrFit)
             stop(gsub("Error : ", "", optCond[[1]]), call. = FALSE)
         }
-    }# END for(i in 1 : totalIters)
+    }# END for(i in 1 : (totalIters + 1))
     
     mibrrFit
 }# END mcem()

@@ -28,9 +28,9 @@ lamStart <- ncol(X) * summary(fit)$sigma / sum(abs(coef(fit)[-1]))
 out1 <- bl(data        = dat1,
            y           = "y",
            X           = colnames(X),
-           iterations  = c(100, 100, 100),
-           sampleSizes = list(rep(100, 2), rep(500, 2), rep(500, 2)),
-           nChains     = 2,
+           iterations  = c(250, 100, 50),
+           sampleSizes = list(rep(100, 2), rep(5000, 2), rep(5000, 2)),
+           nChains     = 4,
            control     = list(
                lambda1Starts =
                    lamStart + runif(1, -lamStart / 4, lamStart / 4)
@@ -46,7 +46,7 @@ MIBRR:::plotLambda(out1, "y", TRUE)
 ## Extract lambdas:
 lams <- MIBRR:::getLambda(out1, "y")
 
-l1 <- lams[[2]]$lambda1[601 : 1000]
+l1 <- lams[[1]]$lambda1[351 : 400]
 summary(mcmc(l1))
 
 plot(l1, type = "l")
