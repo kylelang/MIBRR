@@ -1,7 +1,7 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-17
+### Modified: 2019-12-18
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -300,6 +300,7 @@ postProcess <- function(mibrrFit, ...) {
         if(mibrrFit$control$checkConv) {
             mibrrFit$computeRHats()
             mibrrFit$checkGibbsConv()
+            mibrrFit$lambdaMct()
         }
         
         ## Provide some pretty names for the output objects:

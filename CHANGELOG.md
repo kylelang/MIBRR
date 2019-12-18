@@ -14,7 +14,7 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.4.0-9000 - 2019-12-17 - ACTIVE
+## 0.4.0-9000 - 2019-12-18 - ACTIVE
 
 ### Added
 - The ability to run multiple MCEM/Markov chains.
@@ -23,7 +23,13 @@ NOTE:
 	and associated metadata
   - A `plotLambda` function to plot the MCEM trace of the penalty parameters or 
 	their loglikelihood
-  
+- A so-called "Median Closure Test" as a possible way to assess convergence of 
+  MCEM chains.
+  - Strong: Checks if the median of each (split) chain is contained within the 
+	range of every other (split) chain.
+  - Weak: Checks if the overall median of all chains is contained within the 
+	range of every (split) chain.
+	
 ### Changed
 - The MCEM algorithm is now divided into four phases (as opposed to the previous 
   three phases)

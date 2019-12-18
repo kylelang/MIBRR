@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-17
+### Modified: 2019-12-18
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -44,6 +44,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             missList     = "list",
                             nChains      = "integer",
                             rHats        = "list",
+                            mct          = "list",
                             userMissCode = "logical",
                             missCounts   = "integer",
                             nTargets     = "integer",
@@ -235,8 +236,8 @@ MibrrFit$methods(
 
                                         #if(doMcem) totalIters <<- sum(iterations)
                  
-                 rHats <<- list()
-                 for(j in targetVars) rHats[[j]] <<- list()
+                                        #rHats <<- list() 
+                                        #for(j in targetVars) rHats[[j]] <<- list()
                  
                  ## Replace missCode entries in data with NAs
                  if(!is.na(missCode)) {
@@ -321,6 +322,10 @@ MibrrFit$methods(
                  
                  ## How many targets?
                  nTargets <<- as.integer(length(targetVars))
+
+                 ## Prep containers for R-Hats and MCTs:
+                 rHats <<- mct <<- vector("list", nTargets)
+                 names(rHats) <<- names(mct) <<- targetVars
              },
              
 ###--------------------------------------------------------------------------###
@@ -372,6 +377,14 @@ MibrrFit$methods(
              },
              
 ###--------------------------------------------------------------------------###
+             
+                                        #splitSamples = function(what, target)
+                                        #    unlist(
+                                        #        lapply(getSamples(what, target), split),
+                                        #        recursive = FALSE
+                                        #    ),
+             
+###--------------------------------------------------------------------------###
 
              poolSamples = function(what, target) {
                  "Pool posterior samples across chains"
@@ -387,32 +400,6 @@ MibrrFit$methods(
              
 ###--------------------------------------------------------------------------###
              
-                                        #calcRHat = function(sims) {
-                                        #    "Compute a single split-chain Potential Scale Reduction Factor"
-                                        #    subChainLen <- floor(length(sims) / 2)
-                                        #    nSubChains  <- nChains * 2
-                                        #    
-                                        #    if(length(sims) %% nSubChains == 0) {
-                                        #        simsMat <- matrix(sims, ncol = nSubChains)
-                                        #    } else {
-                                        #        simsMat <- matrix(
-                                        #            sims[1 : (length(sims) - (nSubChains - 1))],
-                                        #            ncol = nSubChains
-                                        #        )
-                                        #    }
-                                        #    
-                                        #    wMean     <- colMeans(simsMat)
-                                        #    grandMean <- mean(simsMat)
-                                        #
-                                        #    wVar <- mean(apply(simsMat, 2, var))
-                                        #    bVar <- (subChainLen / (nSubChains - 1)) *
-                                        #        sum((wMean - grandMean)^2)
-                                        #    tVar <- ((subChainLen - 1) / subChainLen) * wVar +
-                                        #        (1 / subChainLen) * bVar
-                                        #    
-                                        #    sqrt(tVar / wVar)
-                                        #},
-
              calcRHats = function(sims, trans = FALSE, mv = TRUE) {
                  ## Prepare the samples for coda:
                  sims <- prepSams(sims)
@@ -449,6 +436,30 @@ MibrrFit$methods(
                          }# CLOSE if(!doMcem)
                      }# CLOSE if(penalty != 0)
                  }# END for(j in targetVars)
+             },
+             
+###--------------------------------------------------------------------------###
+             
+             doMct = function(what, target, n) {
+                 ## Prepare the samples:
+                 sams <- getSamples(what, target)
+                 sams <- lapply(sams, tail, n = n)
+                 sams <- unlist(lapply(sams, split), recursive = FALSE)
+
+                 ## Conduct the MCT:
+                 mct(sams)
+             },
+
+###--------------------------------------------------------------------------###
+
+             lambdaMct = function() {
+                 for(j in targetVars) {
+                     mct[[j]]$lambda1 <<- doMct("lambda1", j, iterations[3])
+                     mct[[j]]$logLik  <<- doMct("logLik", j, iterations[3])
+
+                     if(penalty == 2)
+                         mct[[j]]$lambda2 <<- doMct("lambda2", j, iterations[3])
+                 }
              },
              
 ###--------------------------------------------------------------------------###

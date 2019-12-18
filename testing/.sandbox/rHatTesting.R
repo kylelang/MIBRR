@@ -4,15 +4,72 @@ rm(list = ls(all = TRUE))
                                         #library(coda)
 library(MIBRR)
 library(lars)
+library(mvtnorm)
 
 data(mibrrExampleData)
+dim(mibrrExampleData)
+
+sigma       <- matrix(0.3, 30, 30)
+diag(sigma) <- 1.0
+
+dat1           <- as.data.frame(rmvnorm(20, rep(0, 30), sigma))
+colnames(dat1) <- paste0("x", 1 : 30)
 
 ## MCEM estimation:
-mibenOut <- miben(data       = mibrrExampleData,
-                  iterations = c(30, 10),
-                  targetVars = c("y", paste0("x", c(1 : 3))),
-                  ignoreVars = "idNum",
-                  nChains    = 2)
+blOut <- bl(data    = dat1,
+            y       = "x1",
+            X       = paste0("x", 2 : 30),
+            nChains = 2)
+
+benOut <- ben(data    = dat1,
+              y       = "x1",
+              X       = paste0("x", 2 : 30),
+              nChains = 2)
+
+plotLambda(benOut, "x1")
+
+lams <- getLambda(benOut, "x1")
+
+l1 <- lapply(lams, function(x, n) tail(x$lambda1, n), n = 100)
+l2 <- lapply(lams, function(x, n) tail(x$lambda2, n), n = 100)
+ll <- lapply(lams, function(x, n) tail(x$logLik, n), n = 100)
+
+l1 <- unlist(lapply(l1, MIBRR:::split), recursive = FALSE)
+l2 <- unlist(lapply(l2, MIBRR:::split), recursive = FALSE)
+ll <- unlist(lapply(ll, MIBRR:::split), recursive = FALSE)
+
+mct <- function(sams) {
+    ## Compute the medians and ranges of each sample:
+    med <- sapply(sams, median)
+    ran <- sapply(sams, range)
+    
+    ## Test that each median is within the range of every sample:
+    all(
+        sapply(X   = med,
+               FUN = function(m, r) m >= r[1, ] & m <= r[2, ],
+               r   = ran)
+    )
+}
+
+unlist(lapply(benOut$getSamples("logLik", "x1"), MIBRR:::split), recursive = FALSE)
+
+mct(l1)
+mct(l2)
+mct(ll)
+
+all(checks)
+
+unlist(l1, FALSE)
+
+l1[[1]]
+
+l1[[1]]
+
+l1
+l1
+ll
+
+mibenOut
 
 mibenOut$rHats
 

@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-12-12
+### Modified: 2019-12-18
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -245,4 +245,26 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
                 lines(lams[[i]]$lambda2, col = cols[i])
         }
     }
+}
+
+###--------------------------------------------------------------------------###
+
+## Conduct the "Median Closure Test" for a set of samples:
+mct <- function(sams) {
+    ## Compute the medians and ranges of each sample:
+    m0 <- median(unlist(sams))
+    m1 <- sapply(sams, median)
+    r  <- sapply(sams, range)
+    
+    ## Test that each median is within the range of every sample:
+    strong <- all(
+        sapply(X   = m1,
+               FUN = function(m, r) m >= r[1, ] & m <= r[2, ],
+               r   = r)
+    )
+
+    ## Test the the overall median is within the range of each sample:
+    weak <- all(m0 >= r[1, ] & m0 <= r[2, ])
+
+    c(strong = strong, weak = weak)
 }
