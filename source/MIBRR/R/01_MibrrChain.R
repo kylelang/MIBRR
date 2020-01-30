@@ -1,7 +1,7 @@
 ### Title:    MibrrChain Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-09-30
-### Modified: 2019-12-16
+### Modified: 2020-01-30
 ### Notes:    The MibrrChain class hold the methods and metadata associated
 ###           with one Markov chain
 
@@ -73,7 +73,7 @@ MibrrChain$methods(
                             control     = list()
                             )
                    {
-                       "Initialize an object of class MibrrFit"
+                       "Initialize an object of class MibrrChain"
                        chain       <<- chain
                        data        <<- data
                        targetVars  <<- targetVars
@@ -176,7 +176,8 @@ MibrrChain$methods(
                                 useBetaMeans = useBetaMeans,
                                 finalRep     = phase == 4,
                                 seeds        = seedVec,
-                                chain        = chain)
+                                chain        = chain,
+                                incInt       = FALSE)##################################################
                    
                    names(gibbsOut) <- targetVars
 

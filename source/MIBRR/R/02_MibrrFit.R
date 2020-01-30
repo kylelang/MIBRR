@@ -1,7 +1,7 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-18
+### Modified: 2020-01-30
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
@@ -455,10 +455,12 @@ MibrrFit$methods(
              lambdaMct = function() {
                  for(j in targetVars) {
                      mct[[j]]$lambda1 <<- doMct("lambda1", j, iterations[3])
-                     mct[[j]]$logLik  <<- doMct("logLik", j, iterations[3])
-
+                     
                      if(penalty == 2)
                          mct[[j]]$lambda2 <<- doMct("lambda2", j, iterations[3])
+                     
+                     if(doMcem)
+                         mct[[j]]$logLik  <<- doMct("logLik", j, iterations[3])
                  }
              },
              

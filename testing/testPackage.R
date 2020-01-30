@@ -9,6 +9,8 @@ rm(list = ls(all = TRUE))
                                         #install_github("kylelang/MIBRR/source/MIBRR", ref = "multithread")
                                         #install_github("kylelang/SURF/source/SURF")
 
+install.packages(c("monomvn", "rstan"), repos = "http://cloud.r-project.org")
+
 source("subroutines.R")
 
 library(MIBRR)
@@ -57,6 +59,8 @@ MIBRR:::testSamplers()
 xNames <- setdiff(colnames(dat0), "y")
 iters  <- c(500, 20)
 sams   <- list(c(25, 25), c(100, 100), c(1000, 1000))
+
+?miben
 
 ### MCEM Estimation:
 
@@ -205,8 +209,8 @@ ben1 <-
     ben(data         = dat0,
         y            = "y",
         X            = xNames,
-        iterations   = iters,
-        sampleSizes  = sams[[3]],
+                                        #iterations   = iters,
+        sampleSizes  = rep(1000, 2),    #sams[[3]],
         doMcem       = FALSE,
         lam1PriorPar = c(1.0, 0.1),
         lam2PriorPar = c(1.0, 0.1),

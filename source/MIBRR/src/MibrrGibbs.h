@@ -1,7 +1,7 @@
 // Title:    Header file for the MibrrGibbs Class
 // Author:   Kyle M. Lang
 // Created:  2014-12-04
-// Modified: 2019-12-09
+// Modified: 2020-01-30
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -119,6 +119,9 @@ public:
   void beQuiet();
   // @effect: turn off verbose output
 
+  void noIntercept();
+  // @effect: don't include an intercept in the model
+  
   void doFullBayes();
   // @effect: set the estimation method to fully Bayesian Gibbs sampling
   
@@ -248,6 +251,7 @@ private:
   bool     _fullBayes;
   bool     _useBetaMeans;
   bool     _finalRep;
+  bool     _intercept;
 };
 
 #endif

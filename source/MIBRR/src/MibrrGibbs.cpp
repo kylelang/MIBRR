@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2019-12-09
+// Modified: 2020-01-30
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -43,6 +43,7 @@ MibrrGibbs::MibrrGibbs()
   _penType           = 2;
   _fullBayes         = false;
   _savePpSams        = false;
+  _intercept         = true;
 }
 
 //----------------------------------------------------------------------------//
@@ -96,6 +97,7 @@ void MibrrGibbs::setTargetIndex(int index)         { _targetIndex = index;     }
 void MibrrGibbs::setNDraws     (int nDraws)        { _nDraws      = nDraws;    }
 void MibrrGibbs::setDoImp      (bool doImp)        { _doImp       = doImp;     }
 void MibrrGibbs::beQuiet       ()                  { _verbose     = false;     }
+void MibrrGibbs::noIntercept   ()                  { _intercept   = false;     }
 void MibrrGibbs::doFullBayes   ()                  { _fullBayes   = true;      }
 void MibrrGibbs::savePpSams    ()                  { _savePpSams  = true;      }
 void MibrrGibbs::setPenType    (int penType)       { _penType     = penType;   }
@@ -308,12 +310,15 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   
   // Draw new values of the regression slope coefficients:
   _betas.tail(nPreds) = drawMvn(_betaMeans.tail(nPreds), betaCov);
-  
-  // Compute the mean of the intercept's distribution:
-  _betaMeans[0] = mibrrData.getDV(_targetIndex).mean();
-  
-  // Draw a new value of the intercept term:  
-  _betas[0] = drawNorm(_betaMeans[0], sqrt(_sigma / double(nObs)));
+
+  if(_intercept) {
+    // Compute the mean of the intercept's distribution:
+    _betaMeans[0] = mibrrData.getDV(_targetIndex).mean();
+    
+    // Draw a new value of the intercept term:  
+    _betas[0] = drawNorm(_betaMeans[0], sqrt(_sigma / double(nObs)));
+  }
+  else _betas[0] = 0;
   
   if(_storeGibbsSamples) {
     VectorXd betas = _betas;

@@ -7,7 +7,7 @@ rm(list = ls(all = TRUE))
 
 library(RcppEigen)
 
-ver  <- "0.4.0-9000"
+ver  <- "0.4.1-9999"
 prod <- FALSE
 
 ## Clean up:
