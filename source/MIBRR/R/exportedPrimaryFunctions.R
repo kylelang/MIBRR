@@ -1,7 +1,7 @@
 ### Title:    Primary User-Facing Routines of the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-12
-### Modified: 2019-12-11
+### Modified: 2020-01-31
 ### Purpose:  The following functions implement MIBEN or MIBL to create multiple
 ###           imputations within a MICE framework that uses the Bayesian
 ###           Elastic Net (BEN) or the Bayesian LASSO (BL), respectively, as its
@@ -11,7 +11,7 @@
 ###           returning any missing data imputations.
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -35,6 +35,7 @@
 miben <- function(data,
                   targetVars     = NULL,
                   ignoreVars     = NULL,
+                  intercept      = TRUE,
                   iterations     = rep(100, 3),
                   sampleSizes    = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
                   doMcem         = TRUE,
@@ -70,6 +71,7 @@ miben <- function(data,
                      verbose      = verbose,
                      seed         = seed,
                      userRng      = userRng,
+                     intercept    = intercept,
                      control      = control)
     
     if(!is.null(args$initOnly) && args$initOnly) {
@@ -91,6 +93,7 @@ miben <- function(data,
 mibl <- function(data,
                  targetVars   = NULL,
                  ignoreVars   = NULL,
+                 intercept    = TRUE,
                  iterations   = rep(100, 3),
                  sampleSizes  = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
                  doMcem       = TRUE,
@@ -122,6 +125,7 @@ mibl <- function(data,
                      userRng      = userRng,
                      nChains      = nChains,
                      nCores       = nCores,
+                     intercept    = intercept,
                      control      = control)
     
     ## Run nChains MCEM/Markov chains:
@@ -137,6 +141,7 @@ mibl <- function(data,
 ben <- function(data,
                 y,
                 X            = NULL,
+                intercept    = TRUE,
                 iterations   = rep(100, 3),
                 sampleSizes  = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
                 doMcem       = TRUE,
@@ -171,6 +176,7 @@ ben <- function(data,
                      userRng      = userRng,
                      nChains      = nChains,
                      nCores       = nCores,
+                     intercept    = intercept,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:
@@ -186,6 +192,7 @@ ben <- function(data,
 bl <- function(data,
                y,
                X            = NULL,
+               intercept    = TRUE,
                iterations   = rep(100, 3),
                sampleSizes  = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
                lam1PriorPar = NULL,
@@ -219,6 +226,7 @@ bl <- function(data,
                      userRng      = userRng,
                      nChains      = nChains,
                      nCores       = nCores,
+                     intercept    = intercept,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:
@@ -235,6 +243,7 @@ bl <- function(data,
 vanilla <- function(data,
                     targetVars   = NULL,
                     ignoreVars   = NULL,
+                    intercept    = TRUE,
                     sampleSizes  = rep(500, 2),
                     missCode     = NA,
                     nChains      = 1L,
@@ -264,6 +273,7 @@ vanilla <- function(data,
                      userRng      = userRng,
                      nChains      = nChains,
                      nCores       = nCores,
+                     intercept    = intercept,
                      control      = control)
     
     ## Run nChains MCEM/Markov chains:
@@ -279,6 +289,7 @@ vanilla <- function(data,
 bvr <- function(data,
                 y,
                 X           = NULL,
+                intercept   = TRUE,
                 sampleSizes = rep(500, 2),
                 missCode    = NA,
                 ridge       = 1e-4,
@@ -310,6 +321,7 @@ bvr <- function(data,
                      userRng      = userRng,
                      nChains      = nChains,
                      nCores       = nCores,
+                     intercept    = intercept,
                      control      = control)
 
     ## Run nChains MCEM/Markov chains:

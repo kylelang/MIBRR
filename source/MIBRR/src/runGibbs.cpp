@@ -1,12 +1,12 @@
 // Title:    Gibbs Sampler for MIBEN & MIBL
 // Author:   Kyle M. Lang
 // Created:  2014-08-20
-// Modified: 2020-01-30
+// Modified: 2020-01-31
 // Purpose:  This function will do the Gibbs sampling for the Bayesian Elastic
 //           Net and Bayesian LASSO models that underlie MIBRR's core functions.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //
+//  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         //
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -54,7 +54,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
 		    bool                      finalRep,
 		    std::vector<unsigned int> seeds,
 		    int                       chain,
-		    bool                      incInt)
+		    bool                      intercept)
 {
   // Disable multithreading for Eigen ops:
   Eigen::setNbThreads(1);
@@ -87,7 +87,7 @@ Rcpp::List runGibbs(Eigen::MatrixXd           data,
     }
     
     if(savePpSams) mibrrGibbs[j].savePpSams();
-    if(!incInt) mibrrGibbs[j].noIntercept();
+    if(!intercept) mibrrGibbs[j].noIntercept();
     
     mibrrGibbs[j].seedRng(seeds[j]);
  

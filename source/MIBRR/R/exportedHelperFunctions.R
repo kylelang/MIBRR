@@ -1,10 +1,10 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-12-18
+### Modified: 2020-01-31
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -111,7 +111,9 @@ postPredict <- function(mibrrFit,
     outList <- list()
     for(nm in targetVars) {
         pars     <- getParams(mibrrFit, nm)
-        testData <- cbind(1, as.matrix(newData[ , colnames(pars$tau)]))
+        testData <- as.matrix(newData[ , colnames(pars$tau)])
+
+        if(mibrrFit$intercept) testData <- cbind(1, testData)
         
         if(nDraws > 0) {
             index <- sample(c(1 : length(pars$sigma)), nDraws)

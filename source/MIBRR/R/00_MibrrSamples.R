@@ -165,8 +165,14 @@ MibrrSamples$methods(
                          
                          starts$sigma <<- cenTen(sigma)
                          starts$tau   <<- apply(tau, 2, cenTen)
-                         starts$beta  <<- apply(beta, 2, cenTen)
 
+                         tmp   <- apply(beta, 2, cenTen)
+                         check <- ncol(beta) == ncol(tau)
+                         ## Add a dummy starting value if we don't estimate an
+                         ## intercept:
+                         if(check) starts$beta <<- c(0, tmp) 
+                         else      starts$beta <<- tmp
+                         
                          starts$lambda1 <<- getLambda1()
                          starts$lambda2 <<- getLambda2()
                          

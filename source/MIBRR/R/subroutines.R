@@ -1,10 +1,10 @@
 ### Title:    Subroutines for the MIBRR Package
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2019-12-18
+### Modified: 2020-01-31
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -40,7 +40,8 @@ init <- function(penalty,
                  userRng,
                  nChains,
                  nCores,
-                 control)
+                 control,
+                 intercept)
 {
     if(!is.list(sampleSizes)) sampleSizes <- list(sampleSizes)
     
@@ -59,8 +60,8 @@ init <- function(penalty,
                          ridge       = ridge,
                          penalty     = as.integer(penalty),
                          nChains     = as.integer(nChains),
-                         nCores      = as.integer(nCores)
-                         )
+                         nCores      = as.integer(nCores),
+                         intercept   = intercept)
 
     ## Process and check the user inputs:
     mibrrFit$processInputs()

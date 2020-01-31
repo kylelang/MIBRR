@@ -1,12 +1,12 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2020-01-30
+// Modified: 2020-01-31
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
 //--------------------- COPYRIGHT & LICENSING INFORMATION --------------------//
-//  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
+//  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         //  
 //                                                                            //
 //  This file is part of MIBRR.                                               //
 //                                                                            //
@@ -54,20 +54,20 @@ MibrrGibbs::~MibrrGibbs() {}
 //////////////////////////////// ACCESSORS /////////////////////////////////////
 
 
-VectorXd MibrrGibbs::getBetas()           const { return _betas;               }
-ArrayXd  MibrrGibbs::getTaus()            const { return _taus;                }
-double   MibrrGibbs::getSigma()           const { return _sigma;               }
-MatrixXd MibrrGibbs::getBetaSam()         const { return _betaSam;             }
-ArrayXXd MibrrGibbs::getTauSam()          const { return _tauSam;              }
-VectorXd MibrrGibbs::getSigmaSam()        const { return _sigmaSam;            }
-MatrixXd MibrrGibbs::getImpSam()          const { return _impSam;              }
-MatrixXd MibrrGibbs::getPpSam()           const { return _ppSam;               }
-MatrixXd MibrrGibbs::getLambdaSam()       const { return _lambdaSam;           }
-int      MibrrGibbs::getNDraws()          const { return _nDraws;              }
-int      MibrrGibbs::getPenType()         const { return _penType;             }
-double   MibrrGibbs::getRidge()           const { return _ridge;               }
-bool     MibrrGibbs::getVerbosity()       const { return _verbose;             }
-bool     MibrrGibbs::getDoImp()           const { return _doImp;               }
+VectorXd MibrrGibbs::getBetas()     const { return _betas;                     }
+ArrayXd  MibrrGibbs::getTaus()      const { return _taus;                      }
+double   MibrrGibbs::getSigma()     const { return _sigma;                     }
+MatrixXd MibrrGibbs::getBetaSam()   const { return _betaSam;                   }
+ArrayXXd MibrrGibbs::getTauSam()    const { return _tauSam;                    }
+VectorXd MibrrGibbs::getSigmaSam()  const { return _sigmaSam;                  }
+MatrixXd MibrrGibbs::getImpSam()    const { return _impSam;                    }
+MatrixXd MibrrGibbs::getPpSam()     const { return _ppSam;                     }
+MatrixXd MibrrGibbs::getLambdaSam() const { return _lambdaSam;                 }
+int      MibrrGibbs::getNDraws()    const { return _nDraws;                    }
+int      MibrrGibbs::getPenType()   const { return _penType;                   }
+double   MibrrGibbs::getRidge()     const { return _ridge;                     }
+bool     MibrrGibbs::getVerbosity() const { return _verbose;                   }
+bool     MibrrGibbs::getDoImp()     const { return _doImp;                     }
 
 //----------------------------------------------------------------------------//
 
@@ -179,8 +179,10 @@ void MibrrGibbs::startGibbsSampling(const MibrrData &mibrrData)
   
   if(_fullBayes) _lambdaSam = MatrixXd(_nDraws, 2);
   else           _lambdaSam = MatrixXd::Zero(1, 1);
+
+  if(_intercept) _betaSam = MatrixXd(_nDraws, _betas.size());
+  else           _betaSam = MatrixXd(_nDraws, mibrrData.nPreds());
   
-  _betaSam  = MatrixXd(_nDraws, _betas.size());
   _tauSam   = MatrixXd(_nDraws, _taus.size());
   _sigmaSam = VectorXd(_nDraws); 
   
@@ -318,7 +320,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
     // Draw a new value of the intercept term:  
     _betas[0] = drawNorm(_betaMeans[0], sqrt(_sigma / double(nObs)));
   }
-  else _betas[0] = 0;
+  else _betaMeans[0] = _betas[0] = 0;
   
   if(_storeGibbsSamples) {
     VectorXd betas = _betas;
@@ -328,8 +330,9 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
       betas.tail(nPreds).array() /= mibrrData.getScales(_targetIndex).array();
       betas[0] -= mibrrData.getMeans(_targetIndex) * betas.tail(nPreds);
     }
-    
-    _betaSam.row(_drawNum) = betas.transpose();
+
+    if(_intercept) _betaSam.row(_drawNum) = betas.transpose();
+    else           _betaSam.row(_drawNum) = betas.transpose().tail(nPreds);
   }
 }// END updateBetas()
 

@@ -1,11 +1,11 @@
 ### Title:    MibrrFit Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-11-28
-### Modified: 2020-01-30
+### Modified: 2020-01-31
 ### Note:     MibrrFit is the metadata class for the MIBRR package
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -59,6 +59,7 @@ MibrrFit <- setRefClass("MibrrFit",
                             penalty      = "integer",
                             chains       = "list",
                             nCores       = "integer",
+                            intercept    = "logical",
                             control      = "list"
                         )
                         )
@@ -83,7 +84,8 @@ MibrrFit$methods(
                           ridge       = 0.0,
                           penalty     = 2L,
                           nChains     = 1L,
-                          nCores      = 1L)
+                          nCores      = 1L,
+                          intercept   = TRUE)
                  {
                      "Initialize an object of class MibrrFit"
                      data        <<- data
@@ -101,6 +103,7 @@ MibrrFit$methods(
                      ridge       <<- ridge
                      penalty     <<- penalty
                      nCores      <<- nCores
+                     intercept   <<- intercept
                  },
              
 ################################### MUTATORS ###################################
@@ -343,6 +346,7 @@ MibrrFit$methods(
                                                 verbose     = verbose,
                                                 ridge       = ridge,
                                                 penalty     = penalty,
+                                                intercept   = intercept,
                                                 control     = control)
                      
                      ## Set control parameters for the 'MibrrChain' objects:
@@ -360,11 +364,13 @@ MibrrFit$methods(
                      for(j in targetVars) {
                          tmp <- setdiff(colnames(data), j)
                          
-                         colnames(chains[[k]]$parameters[[j]]$beta) <<- c("intercept", tmp)
-                         colnames(chains[[k]]$parameters[[j]]$tau)  <<- tmp
+                         colnames(chains[[k]]$parameters[[j]]$tau) <<- tmp
+                         
+                         if(intercept) tmp <- c("intercept", tmp)
+                         colnames(chains[[k]]$parameters[[j]]$beta) <<- tmp
                      }
              },
-
+             
 ###--------------------------------------------------------------------------###
              
              getSamples = function(what, target) {

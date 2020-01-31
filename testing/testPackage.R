@@ -70,7 +70,7 @@ bl0 <- bl0Mcem(data      = dat0,
                xNames    = xNames,
                iters     = iters,
                sams      = sams,
-               intercept = TRUE,
+               intercept = FALSE,
                norm      = TRUE)
 
 ## Estimate the model using MIBRR:bl:
@@ -78,6 +78,7 @@ bl1 <-
     bl(data        = dat0,
        y           = "y",
        X           = xNames,
+       intercept   = FALSE,
                                         #iterations  = rep(100, 3),
                                         #sampleSizes = sams,
        verbose     = TRUE,
@@ -100,7 +101,8 @@ for(x in sample(1 : nrow(dat0), 25)) {
 }
 
 ## Extract parameter samples:
-b0 <- cbind(bl0$out$mu[-1], bl0$out$beta[-1, ])
+                                        #b0 <- cbind(bl0$out$mu[-1], bl0$out$beta[-1, ])
+b0 <- bl0$out$beta[-1, ]
 b1 <- getParams(bl1, "y")$beta
 
 par(mfrow = c(4, 4))
@@ -118,23 +120,26 @@ for(x in 1 : ncol(b1)) {
 ## Estimate the model using monomvn::blasso:
 bl0 <- blasso(y         = dat0$y,
               X         = dat0[ , xNames],
-              T         = sams[[3]][2],
-              thin      = sams[[3]][1],
+              T         = 10000,
+              thin      = 1,
               lambda2   = 1.0,
               s2        = with(dat0, var(y - mean(y))),
               beta      = rnorm(ncol(dat0) - 1),
               rd        = c(0.5, 0.5),
               RJ        = FALSE,
               rao.s2    = FALSE,
-              icept     = TRUE,
+              icept     = FALSE,
               normalize = TRUE)
+
+?blasso
 
 ## Estimate the model using MIBRR:bl:
 bl1 <-
     bl(data         = dat0,
        y            = "y",
        X            = xNames,
-       sampleSizes  = sams[[3]],
+       intercept    = FALSE,
+       sampleSizes  = c(10000, 10000),
        verbose      = TRUE,
        doMcem       = FALSE,
        lam1PriorPar = c(0.5, 0.5),
@@ -170,8 +175,8 @@ plot(d0, ylim = range(d0$y, d1$y), xlim = range(d0$x, d1$x))
 lines(d1, col = "red")
 
 ## Extract parameter samples:
-
-b0 <- cbind(bl0$mu[-1], bl0$beta[-1, ])
+                                        #b0 <- cbind(bl0$mu[-1], bl0$beta[-1, ])
+b0 <- bl0$beta[-1, ]
 b1 <- getParams(bl1, "y")$beta
 
 par(mfrow = c(4, 4))
@@ -209,6 +214,7 @@ ben1 <-
     ben(data         = dat0,
         y            = "y",
         X            = xNames,
+        intercept    = FALSE,
                                         #iterations   = iters,
         sampleSizes  = rep(1000, 2),    #sams[[3]],
         doMcem       = FALSE,

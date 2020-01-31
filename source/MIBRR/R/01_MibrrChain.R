@@ -1,12 +1,12 @@
 ### Title:    MibrrChain Reference Class Definition
 ### Author:   Kyle M. Lang
 ### Created:  2017-09-30
-### Modified: 2020-01-30
+### Modified: 2020-01-31
 ### Notes:    The MibrrChain class hold the methods and metadata associated
 ###           with one Markov chain
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -49,7 +49,8 @@ MibrrChain <- setRefClass("MibrrChain",
                               optRestartRatio = "numeric",
                               optStrict       = "logical",
                               parameters      = "list",
-                              n0              = "numeric"
+                              n0              = "numeric",
+                              intercept       = "logical"
                           )
                           )
 
@@ -70,6 +71,7 @@ MibrrChain$methods(
                             verbose     = as.logical(NA),
                             ridge       = 0.0,
                             penalty     = 2L,
+                            intercept   = TRUE,
                             control     = list()
                             )
                    {
@@ -84,6 +86,7 @@ MibrrChain$methods(
                        verbose     <<- verbose
                        ridge       <<- ridge
                        penalty     <<- penalty
+                       intercept   <<- intercept
 
                        ## Set sample sizes for fully Bayesian estimation:
                        if(!doMcem) n0 <<- sampleSizes[[1]]
@@ -177,7 +180,7 @@ MibrrChain$methods(
                                 finalRep     = phase == 4,
                                 seeds        = seedVec,
                                 chain        = chain,
-                                incInt       = FALSE)##################################################
+                                intercept    = intercept)
                    
                    names(gibbsOut) <- targetVars
 
