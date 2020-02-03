@@ -14,7 +14,7 @@ NOTE:
 - On 2017-11-06 the package name was changed from `mibrr` to `MIBRR`, so the 
   version number was reset to 0.0.0.9000, as well
 
-## 0.4.1-9000 - 2020-01-31 - ACTIVE
+## 0.4.1-9000 - 2020-02-03 - ACTIVE
 
 ### Added
 - An option to estimate the model without an intercept term

@@ -11,6 +11,7 @@ Multiple Imputation with the Bayesian LASSO
 mibl(data,
      targetVars   = NULL,
      ignoreVars   = NULL,
+     intercept    = TRUE,
      iterations   = rep(100, 3),
      sampleSizes  = list(rep(100, 2), rep(500, 2), rep(1000, 2)),
      doMcem       = TRUE,
@@ -37,6 +38,9 @@ mibl(data,
   \item{ignoreVars}{
     An optional character vector giving the column labels for those variables
     that should be excluded from the imputation model (e.g., ID variables).
+  }
+  \item{intercept}{
+    A logical switch: Should the model contain an intercept term?
   }
   \item{iterations}{
     A three-element numeric vector giving the number of iterations to employ

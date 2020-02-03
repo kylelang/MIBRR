@@ -12,6 +12,7 @@ Basic Multiple Imputation without Regularization
 vanilla(data,
         targetVars  = NULL,
         ignoreVars  = NULL,
+        intercept   = TRUE,
         sampleSizes = rep(500, 2),
         missCode    = NA,
         nChains     = 1L,
@@ -36,6 +37,9 @@ vanilla(data,
   \item{ignoreVars}{
     An optional character vector giving the column labels for those variables
     that should be excluded from the imputation model (e.g., ID variables).
+  }
+  \item{intercept}{
+    A logical switch: Should the model contain an intercept term?
   }
   \item{sampleSizes}{
     A two-element numeric vector giving the desired Gibbs sample sizes (see

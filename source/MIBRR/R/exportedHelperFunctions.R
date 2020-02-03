@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2020-01-31
+### Modified: 2020-02-03
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -222,8 +222,10 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
              col  = cols[1],
              ylab = "Loglikelihood",
              xlab = "Iteration")
-        for(i in 2 : length(lams))
-            lines(lams[[i]]$logLik[-1], col = cols[i])
+
+        if(length(lams) > 1)
+            for(i in 2 : length(lams))
+                lines(lams[[i]]$logLik[-1], col = cols[i])
     }
     else {
         if(mibrrFit$penalty == 2) par(mfrow = c(1, 2))
@@ -234,8 +236,10 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
              col  = cols[1],
              ylab = "Lambda 1",
              xlab = "Iteration")
-        for(i in 2 : length(lams))
-            lines(lams[[i]]$lambda1, col = cols[i])
+
+        if(length(lams) > 1)
+            for(i in 2 : length(lams))
+                lines(lams[[i]]$lambda1, col = cols[i])
         
         if(mibrrFit$penalty == 2) {
             plot(x    = lams[[1]]$lambda2,
@@ -243,8 +247,10 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
                  col  = cols[1],
                  ylab = "Lambda 2",
                  xlab = "Iteration")
-            for(i in 2 : length(lams))
-                lines(lams[[i]]$lambda2, col = cols[i])
+
+            if(length(lams) > 1)
+                for(i in 2 : length(lams))
+                    lines(lams[[i]]$lambda2, col = cols[i])
         }
     }
 }

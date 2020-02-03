@@ -4,12 +4,14 @@
 Bayesian Vanilla Regression
 }
 \description{
-  This function will fit a basic Bayesian linear regression model to (possibly) incomplete data.
+  This function will fit a basic Bayesian linear regression model to (possibly) 
+  incomplete data.
 }
 \usage{
 bvr(data,
     y,
     X           = NULL,
+    intercept   = TRUE,
     sampleSizes = rep(500, 2),
     missCode    = NA,
     ridge       = 1e-4,
@@ -33,6 +35,9 @@ bvr(data,
     An optional character vector giving the column labels for the predictor
     variables. When \code{X = NULL} the target variable is regressed onto all
     other variables in \code{data}.
+  }
+  \item{intercept}{
+    A logical switch: Should the model contain an intercept term?
   }
   \item{sampleSizes}{
     A two-element numeric vector giving the desired Gibbs sample sizes (see
