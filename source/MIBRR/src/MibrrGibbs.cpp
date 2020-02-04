@@ -1,7 +1,7 @@
 // Title:    Function definitions for the MibrrGibbs class
 // Author:   Kyle M. Lang
 // Created:  2014-08-24
-// Modified: 2020-01-31
+// Modified: 2020-02-04
 // Purpose:  This class contains the Gibbs sampling-related functions for the
 //           MIBRR package.
 
@@ -297,7 +297,7 @@ void MibrrGibbs::updateBetas(MibrrData &mibrrData)
   // Penalize the IV's crossproducts matrix:
   aMat += penalty;
   
-  VectorXd betaMeans;
+  //VectorXd betaMeans;
   MatrixXd betaCov;
   try {
     // Compute the Cholesky decomposition of the IV's crossproducts, and use it
