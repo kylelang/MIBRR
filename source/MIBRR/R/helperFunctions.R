@@ -1,10 +1,10 @@
 ### Title:    Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2019-12-12
+### Modified: 2020-02-07
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
-##  Copyright (C) 2019 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
+##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
 ##                                                                            ##
 ##  This file is part of MIBRR.                                               ##
 ##                                                                            ##
@@ -121,4 +121,14 @@ prepSams <- function(sams, split = TRUE) {
     
     ## Convert samples into an mcmc.list object:
     mcmc.list(lapply(sams, mcmc))
+}
+
+###--------------------------------------------------------------------------###
+
+## Extract the range of lambda samples for plotting purposes:
+getRange <- function(lams, what) {
+    tmp <- sapply(lams, function(x, y) x[[y]], y = what)
+    if(what == "logLik")
+        tmp <- tmp[-1, ]
+    range(tmp)
 }

@@ -1,7 +1,7 @@
 ### Title:    Exported Helper Functions for MIBRR
 ### Author:   Kyle M. Lang
 ### Created:  2014-12-09
-### Modified: 2020-02-03
+### Modified: 2020-02-07
 
 ##--------------------- COPYRIGHT & LICENSING INFORMATION --------------------##
 ##  Copyright (C) 2020 Kyle M. Lang <k.m.lang@uvt.nl>                         ##
@@ -208,7 +208,7 @@ ppCheck <- function(mibrrFit, targetVars = NULL, nSams = NULL) {
 getField <- function(mibrrFit, what) mibrrFit$field(what)
 
 ###--------------------------------------------------------------------------###
-
+    
 plotLambda <- function(mibrrFit, target, logLik = FALSE) {
     
     lams <- getLambda(mibrrFit, target)
@@ -216,12 +216,14 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
 
     if(logLik) {
         par(mfrow = c(1, 1))
-            
+               
         plot(x    = lams[[1]]$logLik[-1],
              type = "l",
              col  = cols[1],
              ylab = "Loglikelihood",
-             xlab = "Iteration")
+             xlab = "Iteration",
+             ylim = getRange(lams, "logLik")
+             )
 
         if(length(lams) > 1)
             for(i in 2 : length(lams))
@@ -235,7 +237,9 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
              type = "l",
              col  = cols[1],
              ylab = "Lambda 1",
-             xlab = "Iteration")
+             xlab = "Iteration",
+             ylim = getRange(lams, "lambda1")
+             )
 
         if(length(lams) > 1)
             for(i in 2 : length(lams))
@@ -246,7 +250,9 @@ plotLambda <- function(mibrrFit, target, logLik = FALSE) {
                  type = "l",
                  col  = cols[1],
                  ylab = "Lambda 2",
-                 xlab = "Iteration")
+                 xlab = "Iteration",
+                 ylim = getRange(lams, "lambda2")
+                 )
 
             if(length(lams) > 1)
                 for(i in 2 : length(lams))
