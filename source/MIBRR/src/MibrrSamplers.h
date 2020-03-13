@@ -34,7 +34,10 @@
 
 #include "MibrrDefs.h"
 #include <random>
+
+#ifdef RCPP_BUILD
 #include <Rmath.h>
+#endif
 
 class MibrrSamplers {
 

@@ -377,8 +377,10 @@ void MibrrGibbs::updateSigma(MibrrData &mibrrData)
       
       validDraw =
 	log(thresh) <= (nBetas * log(tgamma(0.5))) - (nBetas * log(igVal));
-      
+
+#ifdef RCPP_BUILD
       Rcpp::checkUserInterrupt();
+#endif
     };
     _sigma = testDraw;
   }
@@ -459,7 +461,8 @@ void MibrrGibbs::doGibbsIteration(MibrrData &mibrrData)
 
 
 void MibrrGibbs::tauError(int errorCode) const
-{ 
+{
+#ifdef RCPP_BUILD
   if(errorCode == 1) {
     Rcpp::Rcout << "\n";
     Rcpp::stop("Ouch! My tau is broken :(\nSomething terrible has occured \
@@ -470,15 +473,18 @@ while updating Tau,\nand one of its mean values is non-positive.\n");
     Rcpp::stop("Ouch! My tau is broken :(\nSomething terrible has occured \
 while updating Tau,\nand one of its scale values is non-positive.\n");
   }
+#endif
 }
 
 //----------------------------------------------------------------------------//
 
 void MibrrGibbs::betaError(exception &e) const
 {
+#ifdef RCPP_BUILD
   Rcpp::Rcerr << e.what() << endl;
   Rcpp::stop("Something terrible has occured while updating Beta.\nAbove this \
 message, I've printed the that exception I caught.\nBeta luck next time.");
+#endif
 }
 
 //----------------------------------------------------------------------------//

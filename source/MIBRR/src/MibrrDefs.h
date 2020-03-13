@@ -25,7 +25,12 @@
 #ifndef MIBRRDEFS_H
 #define MIBRRDEFS_H
 
-#include <RcppEigen.h>
+#ifdef RCPP_BUILD
+    #include <RcppEigen.h>
+#else
+    #include <Eigen/Eigen>
+#endif
+
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -49,7 +54,9 @@ typedef Eigen::Array <bool, Eigen::Dynamic, Eigen::Dynamic> ArrayXXb;
 typedef Eigen::Matrix <double,       5,              1> Vector5d;
 //typedef Eigen::Matrix <unsigned int, Eigen::Dynamic, 1> VectorXui;
 
-typedef Rcpp::List RList;
+#ifdef RCPP_BUILD
+    typedef Rcpp::List RList;
+#endif
 //typedef Eigen::Map <const Eigen::MatrixXd> DataMap;
 
 using namespace Eigen;

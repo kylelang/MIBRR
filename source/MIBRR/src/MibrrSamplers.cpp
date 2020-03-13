@@ -31,6 +31,10 @@
 
 #include "MibrrSamplers.h"
 
+#ifndef RCPP_BUILD
+#include <boost/math/distributions/gamma.hpp>
+#endif
+
 ///////////////////////// CONSTRUCTORS / DESTRUCTOR ////////////////////////////
 
 MibrrSamplers::MibrrSamplers() {}
@@ -102,8 +106,17 @@ double MibrrSamplers::calcIncGamma(const double shape,
   double scale   = 1.0;
   int    lower   = (int)lowerTail;
   int    logTran = 0; // Don't want log transform
-  
+
+  boost::math::gamma_distribution<double> gamma_dist(shape);
+
+#ifdef RCPP_BUILD
   return Rf_pgamma(cutVal, shape, scale, lower, logTran) * tgamma(shape);
+#else
+  if (lower)
+    boost::math::cdf(gamma_dist, cutVal);
+  else
+    boost::math::cdf(boost::math::complement(gamma_dist, cutVal));
+#endif
 }
 
 //----------------------------------------------------------------------------//
