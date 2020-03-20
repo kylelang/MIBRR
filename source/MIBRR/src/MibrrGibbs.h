@@ -30,6 +30,35 @@
 #include "MibrrData.h"
 #include "MibrrSamplers.h"
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+json runGibbs(Eigen::MatrixXd           data,
+              int                       nTargets,
+              std::vector<std::vector<int>> missList,
+              Eigen::VectorXi           respCounts,
+              Eigen::VectorXd           lambda1,
+              Eigen::VectorXd           lambda2,
+              Eigen::VectorXd           l1Parms,
+              Eigen::VectorXd           l2Parms,
+              Eigen::VectorXd           sigmaStarts,
+              Eigen::MatrixXd           tauStarts,
+              Eigen::MatrixXd           betaStarts,
+              int                       burnSams,
+              int                       totalSams,
+              int                       penType,
+              double                    ridge,
+              bool                      verbose,
+              bool                      fullBayes,
+              bool                      noMiss,
+              bool                      savePpSams,
+              bool                      useBetaMeans,
+              bool                      finalRep,
+              std::vector<unsigned int> seeds,
+              int                       chain,
+              bool                      intercept);
+
 class MibrrGibbs: public MibrrSamplers {
 
 public:
