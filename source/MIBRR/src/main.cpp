@@ -4,32 +4,14 @@
 
 #include <fstream>
 #include <iostream>
-
 #include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
 
 #include "MibrrDefs.h"
 #include "MibrrGibbs.h"
 
-template <typename VectorType, typename T>
-VectorType to_eigen_vector(json &j_vector) {
-  return Eigen::Map<VectorType, Eigen::Unaligned>(
-      j_vector.get<std::vector<T>>().data(), j_vector.size());
-}
+#include "utils/ioutils.h"
 
-template <typename MatrixType, typename VectorType, typename T>
-MatrixType to_eigen_matrix(json &j_matrix) {
-  int n_cols, n_rows;
-  n_rows = j_matrix.size();
-  n_cols = j_matrix[0].size();
-  Eigen::MatrixXd matrix(n_rows, n_cols);
-  for (int i = 0; i < n_rows; ++i) {
-    matrix.row(i) = to_eigen_vector<VectorType, T>(j_matrix[i]);
-  }
-
-  return matrix;
-}
+using json = nlohmann::json;
 
 int main() {
 
@@ -38,17 +20,25 @@ int main() {
   json configs;
   configfile >> configs;
 
+  // Reading the CSV file directory to an Eigen Matrix
+  auto csvdata = csv_to_eigen<Eigen::MatrixXd, Eigen::VectorXd, double>(
+      configs["datafile"], true, true);
+
+  // Reading the data from a JSON _2d_ array (object)
   Eigen::MatrixXd data =
       to_eigen_matrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
           configs["data"]);
 
   int nTargets = configs["nTargets"].get<int>();
 
-  auto missList = configs["missList"].get<std::vector<std::vector<int>>>();
+  auto missList = configs["missLists"].get<std::vector<std::vector<int>>>();
 
+  // Reading a 1D array into a vector
+  // I was hopping that my template makes it easier to read different types of
+  // data but for some reason Eigen doesn't like when I construct an integer vector
+  // the way I do. I'm going to fix this at some point.
   Eigen::VectorXd respCounts_d =
       to_eigen_vector<Eigen::VectorXd, double>(configs["respCounts"]);
-  // to_eigen_vector<Eigen::VectorXi, int>(configs["respCounts"]);
   Eigen::VectorXi respCounts = respCounts_d.cast<int>();
 
   Eigen::VectorXd lambda1 =
@@ -89,11 +79,12 @@ int main() {
   int chain = configs["chain"].get<int>();
   bool intercept = configs["intercept"].get<bool>();
 
-  auto j_out =
-      runGibbs(data, nTargets, missList, respCounts, lambda1, lambda2, l1Parms,
-               l2Parms, sigmaStarts, tauStarts, betaStarts, burnSams, totalSams,
-               penType, ridge, verbose, fullBayes, noMiss, savePpSams,
-               useBetaMeans, finalRep, seeds, chain, intercept);
+  //  auto j_out =
+  //      runGibbs(data, nTargets, missList, respCounts, lambda1, lambda2,
+  //      l1Parms,
+  //               l2Parms, sigmaStarts, tauStarts, betaStarts, burnSams,
+  //               totalSams, penType, ridge, verbose, fullBayes, noMiss,
+  //               savePpSams, useBetaMeans, finalRep, seeds, chain, intercept);
 
   return 0;
 }

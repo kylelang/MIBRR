@@ -10,6 +10,7 @@ find_package(Boost)
 find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 
+include_directories(src/utils)
 include_directories(${Boost_INCLUDE_DIRS})
 
 set(NLOHMANN_JSON_LIBRARIES "nlohmann_json::nlohmann_json")
