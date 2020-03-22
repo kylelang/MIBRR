@@ -21,13 +21,12 @@ int main() {
   configfile >> configs;
 
   // Reading the CSV file directory to an Eigen Matrix
-  auto csvdata = csv_to_eigen<Eigen::MatrixXd, Eigen::VectorXd, double>(
+  auto csvdata = csvToEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
       configs["datafile"], true, true);
 
   // Reading the data from a JSON _2d_ array (object)
   Eigen::MatrixXd data =
-      to_eigen_matrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
-          configs["data"]);
+      toEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(configs["data"]);
 
   int nTargets = configs["nTargets"].get<int>();
 
@@ -35,33 +34,33 @@ int main() {
 
   // Reading a 1D array into a vector
   // I was hopping that my template makes it easier to read different types of
-  // data but for some reason Eigen doesn't like when I construct an integer vector
-  // the way I do. I'm going to fix this at some point.
+  // data but for some reason Eigen doesn't like when I construct an integer
+  // vector the way I do. I'm going to fix this at some point.
   Eigen::VectorXd respCounts_d =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["respCounts"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["respCounts"]);
   Eigen::VectorXi respCounts = respCounts_d.cast<int>();
 
   Eigen::VectorXd lambda1 =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["lambda1"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["lambda1"]);
 
   Eigen::VectorXd lambda2 =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["lambda2"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["lambda2"]);
 
   Eigen::VectorXd l1Parms =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["l1Parms"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["l1Parms"]);
 
   Eigen::VectorXd l2Parms =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["l2Parms"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["l2Parms"]);
 
   Eigen::VectorXd sigmaStarts =
-      to_eigen_vector<Eigen::VectorXd, double>(configs["sigmaStarts"]);
+      toEigenVector<Eigen::VectorXd, double>(configs["sigmaStarts"]);
 
   Eigen::MatrixXd tauStarts =
-      to_eigen_matrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
+      toEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
           configs["tauStarts"]);
 
   Eigen::MatrixXd betaStarts =
-      to_eigen_matrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
+      toEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
           configs["betaStarts"]);
 
   int burnSams = configs["burnSams"].get<int>();
