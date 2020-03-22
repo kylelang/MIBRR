@@ -27,25 +27,36 @@ int main(int argc, char *argv[]) {
   json configs;
   configfile >> configs;
 
-  // Reading the CSV file directory to an Eigen Matrix
-  auto csvdata = csvToEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
-      configs["datafile"], true, true);
-
+  //-- data
   // Reading the data from a JSON _2d_ array (object)
-  Eigen::MatrixXd data =
-      toEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(configs["data"]);
+//  Eigen::MatrixXd data =
+//      toEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(configs["data"]);
+
+  // Reading the CSV file directory to an Eigen Matrix
+  auto data = csvToEigenMatrix<Eigen::MatrixXd, Eigen::VectorXd, double>(
+      configs["datafile"], true, true);
 
   int nTargets = configs["nTargets"].get<int>();
 
-  auto missList = configs["missLists"].get<std::vector<std::vector<int>>>();
+  //-- missList
+//  auto missList = configs["missList"].get<std::vector<std::vector<int>>>();
+  auto missList = findMisses(data);
 
+  //-- respCounts
   // Reading a 1D array into a vector
   // I was hopping that my template makes it easier to read different types of
   // data but for some reason Eigen doesn't like when I construct an integer
   // vector the way I do. I'm going to fix this at some point.
-  Eigen::VectorXd respCounts_d =
-      toEigenVector<Eigen::VectorXd, double>(configs["respCounts"]);
-  Eigen::VectorXi respCounts = respCounts_d.cast<int>();
+//  Eigen::VectorXd respCounts_d =
+//      toEigenVector<Eigen::VectorXd, double>(configs["respCounts"]);
+//  Eigen::VectorXi respCounts = respCounts_d.cast<int>();
+
+  int nObs = data.rows();
+  Eigen::VectorXi respCounts(data.cols());
+  std::for_each(missList.begin(), missList.end(), [&, i =0](const auto &col) mutable {
+    respCounts[i++] = nObs - col.size();
+  });
+
 
   Eigen::VectorXd lambda1 =
       toEigenVector<Eigen::VectorXd, double>(configs["lambda1"]);

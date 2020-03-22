@@ -74,4 +74,19 @@ MatrixType csvToEigenMatrix(const std::string filename, bool has_index = true,
   return toEigenMatrix<MatrixType, VectorType, T>(vdata);
 }
 
+auto findMisses(Eigen::MatrixXd &data) {
+  std::vector<std::vector<int>> misses;
+
+  for (int i = 0; i < data.cols(); ++i) {
+    misses.push_back(std::vector<int>());
+    for (int j = 0; j < data.rows(); ++j) {
+      if (isnan(data.col(i)[j])) {
+        misses.back().push_back(j);
+      }
+    }
+  }
+
+  return misses;
+}
+
 #endif // MIBRR_SERIALIZERS_H
