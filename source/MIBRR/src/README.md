@@ -41,3 +41,10 @@ nice and it can format your code based on different standards, e.g., Google, Mic
 From what I see, your style is quite close to LLVM with some minor changes. ClangFormat even 
 allows you to define your style, and most likely enforce it automatically. You can based the
 style on LLVM, and tweak it until you are happy. It's fun! :D
+
+### TODO:
+
+- [ ] Including more variable, and variable types to the JSON file
+    - [ ] Find a replacement for `Rcpp::List`. Either, `std::map` or `nlohmann::json` probably.
+- [ ] Initial implementation and testing of the new runGibbs
+- [ ] Link the `json runGibbs(...)` or `Rcpp::List runGibbs(...)` if necessary
