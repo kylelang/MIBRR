@@ -13,9 +13,16 @@
 
 using json = nlohmann::json;
 
-int main() {
+int main(int argc, char *argv[]) {
 
-  std::ifstream configfile("../config.json");
+  std::string config_file_name;
+  if (argc == 2) {
+    config_file_name = argv[1];
+  } else {
+    config_file_name = "../config.json";
+  }
+
+  std::ifstream configfile(config_file_name);
 
   json configs;
   configfile >> configs;
