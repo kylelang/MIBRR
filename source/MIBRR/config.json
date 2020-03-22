@@ -2,7 +2,7 @@
   "data": [[1, 2], [1.0, 3.0]],
   "datafile": "../../../mibrrExampleData.csv",
   "nTargets": 1,
-  "missLists": [[1.0, 1], [1, 1]],
+  "missList": [[1.0, 1], [1, 1]],
   "respCounts": [1],
   "lambda1": [1],
   "lambda2": [1],
